@@ -1826,7 +1826,7 @@ final class PHTVVietnameseEngine {
     // MARK: - Session bootstrap (EngineSessionBootstrap.inc)
 
     func vPrimeUpperCaseFirstChar() {
-        if phtvRuntimeUpperCaseFirstCharEnabled() != 0 && phtvRuntimeUpperCaseExcludedForCurrentApp() == 0 {
+        if phtvRuntimeUpperCaseFirstCharEnabled() != 0 && phtvRuntimeUpperCaseExcludedForVietnamese() == 0 {
             upperCaseStatus = 2
             upperCaseEllipsisContinuation = false
         }
@@ -2369,7 +2369,7 @@ final class PHTVVietnameseEngine {
             typingWord[i] = rawKey
             hData[restoreCount - 1 - i] = rawKey
         }
-        if snapshotUpperCaseFirstChar != 0 && phtvRuntimeUpperCaseExcludedForCurrentApp() == 0 &&
+        if snapshotUpperCaseFirstChar != 0 && phtvRuntimeUpperCaseExcludedForVietnamese() == 0 &&
            shouldUpperCaseEnglishRestore && restoreCount > 0 {
             hData[restoreCount - 1] |= CAPS_MASK
         }
@@ -2531,7 +2531,7 @@ final class PHTVVietnameseEngine {
             }
         }
 
-        if snapshotUpperCaseFirstChar != 0 && phtvRuntimeUpperCaseExcludedForCurrentApp() == 0 {
+        if snapshotUpperCaseFirstChar != 0 && phtvRuntimeUpperCaseExcludedForVietnamese() == 0 {
             if previousUpperCaseStatus == 2 && previousUpperCaseNeedsSpaceConfirm && data == KEY_DOT && capsStatus != 1 {
                 upperCaseStatus = 0
                 upperCaseNeedsSpaceConfirm = false
@@ -2611,7 +2611,7 @@ final class PHTVVietnameseEngine {
 
         // EngineKeyHandleEventSpaceFinalize.inc
         if phtvRuntimeUseMacroEnabled() != 0 { hMacroKey.removeAll(); hMacroRawKey.removeAll(); hasHandledMacro = false }
-        if snapshotUpperCaseFirstChar != 0 && phtvRuntimeUpperCaseExcludedForCurrentApp() == 0 {
+        if snapshotUpperCaseFirstChar != 0 && phtvRuntimeUpperCaseExcludedForVietnamese() == 0 {
             if isConsecutiveSpace && phtvRuntimeDoubleSpacePeriodEnabled() != 0 {
                 // macOS turned this second space into ". "; treat it as a
                 // fully confirmed sentence terminator so the next word is
@@ -2773,7 +2773,7 @@ final class PHTVVietnameseEngine {
 
 
 
-        if snapshotUpperCaseFirstChar != 0 && phtvRuntimeUpperCaseExcludedForCurrentApp() == 0 {
+        if snapshotUpperCaseFirstChar != 0 && phtvRuntimeUpperCaseExcludedForVietnamese() == 0 {
             if idx == 1 && upperCaseStatus == 2 && !upperCaseNeedsSpaceConfirm {
                 upperCaseFirstCharacter(); shouldUpperCaseEnglishRestore = true
             }

@@ -65,7 +65,8 @@ private final class RuntimeSettingsStateBox: @unchecked Sendable {
     var quickStartConsonant: Int32 = 0
     var quickEndConsonant: Int32 = 0
     var upperCaseFirstChar: Int32 = 0
-    var upperCaseExcludedForCurrentApp: Int32 = 0
+    /// PHTVUpperCaseExclusion encoding (none/both/englishOnly/vietnameseOnly).
+    var upperCaseExcludeScope: Int32 = 0
     var doubleSpacePeriod: Int32 = 0
     var rememberCode: Int32 = 1
     var otherLanguage: Int32 = 1
@@ -206,9 +207,9 @@ private var runtimeUpperCaseFirstChar: Int32 {
     set { withRuntimeSettings { $0.upperCaseFirstChar = newValue } }
 }
 
-private var runtimeUpperCaseExcludedForCurrentApp: Int32 {
-    get { withRuntimeSettings { $0.upperCaseExcludedForCurrentApp } }
-    set { withRuntimeSettings { $0.upperCaseExcludedForCurrentApp = newValue } }
+private var runtimeUpperCaseExcludeScope: Int32 {
+    get { withRuntimeSettings { $0.upperCaseExcludeScope } }
+    set { withRuntimeSettings { $0.upperCaseExcludeScope = newValue } }
 }
 
 private var runtimeDoubleSpacePeriod: Int32 {
@@ -734,9 +735,14 @@ func phtvRuntimeUpperCaseFirstCharEnabled() -> Int32 {
     runtimeUpperCaseFirstChar
 }
 
-@_cdecl("phtvRuntimeUpperCaseExcludedForCurrentApp")
-func phtvRuntimeUpperCaseExcludedForCurrentApp() -> Int32 {
-    runtimeUpperCaseExcludedForCurrentApp
+/// The engine only applies auto-capitalize while typing Vietnamese, so this
+/// resolves the exclusion for the Vietnamese side of the scope.
+@_cdecl("phtvRuntimeUpperCaseExcludedForVietnamese")
+func phtvRuntimeUpperCaseExcludedForVietnamese() -> Int32 {
+    PHTVUpperCaseExclusion.isExcluded(
+        runtimeValue: runtimeUpperCaseExcludeScope,
+        typingVietnamese: true
+    ) ? 1 : 0
 }
 
 /// Whether macOS "double-space inserts a period" is active. When enabled, two
@@ -815,7 +821,7 @@ struct PHTVEventDispatchSettings {
     let emojiHotkeyModifiers: Int32
     let emojiHotkeyKeyCode: Int32
     let upperCaseFirstChar: Int32
-    let upperCaseExcludedForCurrentApp: Int32
+    let upperCaseExcludeScope: Int32
     let doubleSpacePeriod: Int32
     let restoreOnEscape: Int32
     let customEscapeKey: Int32
@@ -848,7 +854,7 @@ final class PHTVEngineRuntimeFacade: NSObject {
                 emojiHotkeyModifiers: state.emojiHotkeyModifiers,
                 emojiHotkeyKeyCode: state.emojiHotkeyKeyCode,
                 upperCaseFirstChar: state.upperCaseFirstChar,
-                upperCaseExcludedForCurrentApp: state.upperCaseExcludedForCurrentApp,
+                upperCaseExcludeScope: state.upperCaseExcludeScope,
                 doubleSpacePeriod: state.doubleSpacePeriod,
                 restoreOnEscape: state.restoreOnEscape,
                 customEscapeKey: state.customEscapeKey,
@@ -928,10 +934,6 @@ final class PHTVEngineRuntimeFacade: NSObject {
         runtimeSendKeyStepByStep = enabled ? 1 : 0
     }
 
-    class func setUpperCaseExcludedForCurrentApp(_ excluded: Bool) {
-        runtimeUpperCaseExcludedForCurrentApp = excluded ? 1 : 0
-    }
-
     class func switchKeyStatus() -> Int32 {
         runtimeSwitchKeyStatus
     }
@@ -964,8 +966,12 @@ final class PHTVEngineRuntimeFacade: NSObject {
         runtimeUpperCaseFirstChar = value
     }
 
-    class func upperCaseExcludedForCurrentApp() -> Int32 {
-        runtimeUpperCaseExcludedForCurrentApp
+    class func upperCaseExcludeScope() -> Int32 {
+        runtimeUpperCaseExcludeScope
+    }
+
+    class func setUpperCaseExcludeScope(_ scope: Int32) {
+        runtimeUpperCaseExcludeScope = scope
     }
 
     class func doubleSpacePeriod() -> Int32 {

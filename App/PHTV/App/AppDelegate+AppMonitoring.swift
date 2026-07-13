@@ -47,6 +47,30 @@ private func phtvDecodeAppList(_ data: Data?) -> [[String: Any]]? {
     return appList
 }
 
+/// Resolves the auto-capitalize exclusion scope for `bundleIdentifier`.
+/// Returns nil when the app is not in the list. Entries written before the
+/// scope existed have no `upperCaseScope` key and fall back to `.both`, so an
+/// upgrade never changes what the user already configured.
+private func phtvUpperCaseExcludeScope(
+    _ appList: [[String: Any]]?,
+    bundleIdentifier: String
+) -> UpperCaseExcludeScope? {
+    guard !bundleIdentifier.isEmpty, let appList, !appList.isEmpty else {
+        return nil
+    }
+
+    for entry in appList {
+        guard let candidate = entry["bundleIdentifier"] as? String,
+              PHTVAppDetectionService.bundleId(bundleIdentifier, matchesAppListBundleId: candidate) else {
+            continue
+        }
+        let rawScope = entry["upperCaseScope"] as? Int
+        return rawScope.flatMap(UpperCaseExcludeScope.init(rawValue:)) ?? .both
+    }
+
+    return nil
+}
+
 private func phtvListContainsBundleIdentifier(_ appList: [[String: Any]]?, bundleIdentifier: String) -> Bool {
     guard !bundleIdentifier.isEmpty, let appList, !appList.isEmpty else {
         return false
@@ -376,11 +400,12 @@ private func phtvListContainsBundleIdentifier(_ appList: [[String: Any]]?, bundl
         }
 
         let appList = phtvDecodeAppList(UserDefaults.standard.data(forKey: phtvDefaultsKeyUpperCaseExcludedApps))
-        let isExcluded = phtvListContainsBundleIdentifier(appList, bundleIdentifier: bundleIdentifier)
-        PHTVManager.setUpperCaseExcludedForCurrentApp(isExcluded)
+        let scope = phtvUpperCaseExcludeScope(appList, bundleIdentifier: bundleIdentifier)
+        PHTVManager.setUpperCaseExcludeScope(PHTVUpperCaseExclusion.runtimeValue(for: scope))
 
-        if isExcluded {
-            NSLog("[UpperCaseExcludedApp] App '%@' is excluded from uppercase first char", bundleIdentifier)
+        if let scope {
+            NSLog("[UpperCaseExcludedApp] App '%@' excluded from auto-capitalize (scope: %@)",
+                  bundleIdentifier, scope.displayName)
         }
     }
 

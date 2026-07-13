@@ -375,6 +375,14 @@ final class PHTVEventCallbackService {
         let settings = PHTVEngineRuntimeFacade.eventDispatchSettingsSnapshot()
         let currentLanguage = settings.language
         let safeModeEnabled = settings.safeMode
+        // The auto-capitalize exclusion list is scoped per typing language, so
+        // an app can suppress it for English (an IDE) yet keep it for
+        // Vietnamese, or vice versa (issue #152).
+        let uppercaseExcluded = PHTVUpperCaseExclusion.isExcluded(
+            runtimeValue: settings.upperCaseExcludeScope,
+            typingVietnamese: currentLanguage != 0
+        )
+        let uppercaseExcludedFlag: Int32 = uppercaseExcluded ? 1 : 0
         if currentLanguage != 0 {
             englishUppercaseStateBox.withLock { state in
                 state = .idle
@@ -448,8 +456,7 @@ final class PHTVEventCallbackService {
         }
 
         if type == .keyDown {
-            if settings.upperCaseFirstChar != 0 &&
-               settings.upperCaseExcludedForCurrentApp == 0 {
+            if settings.upperCaseFirstChar != 0 && !uppercaseExcluded {
                 let keyWithCaps = UInt32(eventKeycode) |
                     ((eventFlags.contains(.maskShift) || eventFlags.contains(.maskAlphaShift))
                      ? EngineBitMask.caps : 0)
@@ -462,7 +469,7 @@ final class PHTVEventCallbackService {
                     isNavigationKey: isNavigationKey,
                     safeMode: safeModeEnabled,
                     uppercaseEnabled: settings.upperCaseFirstChar,
-                    uppercaseExcluded: settings.upperCaseExcludedForCurrentApp)
+                    uppercaseExcluded: uppercaseExcludedFlag)
                 if shouldPrime {
                     shouldPrimeUppercaseFromAX = true
                     if currentLanguage != 0 {
@@ -584,7 +591,7 @@ final class PHTVEventCallbackService {
                 let hasShift = eventFlags.contains(.maskShift)
                 let hasCapsLock = eventFlags.contains(.maskAlphaShift)
                 let uppercaseEnabled = settings.upperCaseFirstChar != 0
-                let uppercaseExcluded = settings.upperCaseExcludedForCurrentApp != 0
+
                 let currentUppercaseState = englishUppercaseStateBox.withLock { state in
                     state
                 }

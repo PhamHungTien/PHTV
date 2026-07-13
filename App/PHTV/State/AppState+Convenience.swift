@@ -528,6 +528,10 @@ extension AppState {
         appListsState.removeUpperCaseExcludedApp(app)
     }
 
+    func updateUpperCaseExcludedApp(_ app: ExcludedApp, scope: UpperCaseExcludeScope) {
+        appListsState.updateUpperCaseExcludedApp(app, scope: scope)
+    }
+
     func isAppUpperCaseExcluded(bundleIdentifier: String) -> Bool {
         appListsState.isAppUpperCaseExcluded(bundleIdentifier: bundleIdentifier)
     }

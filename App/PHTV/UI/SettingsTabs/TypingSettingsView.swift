@@ -193,9 +193,10 @@ struct UpperCaseExcludedAppsSection: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Ứng dụng không viết hoa")
                         .font(.headline)
-                    Text("Tắt viết hoa đầu câu khi dùng các ứng dụng này")
+                    Text("Tắt viết hoa đầu câu trong các ứng dụng này — chọn áp dụng cho cả hai ngôn ngữ hoặc chỉ tiếng Anh / chỉ tiếng Việt")
                         .font(.caption)
                         .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
 
                 Spacer()
@@ -229,9 +230,15 @@ struct UpperCaseExcludedAppsSection: View {
                     onPickFromApplications: { showingFilePicker = true }
                 )
             } else {
-                UpperCaseExcludedAppsList(apps: appState.upperCaseExcludedApps) { app in
-                    appState.removeUpperCaseExcludedApp(app)
-                }
+                UpperCaseExcludedAppsList(
+                    apps: appState.upperCaseExcludedApps,
+                    onRemove: { app in
+                        appState.removeUpperCaseExcludedApp(app)
+                    },
+                    onChangeScope: { app, scope in
+                        appState.updateUpperCaseExcludedApp(app, scope: scope)
+                    }
+                )
             }
         }
         .padding(.horizontal, 12)
@@ -328,13 +335,16 @@ private struct UpperCaseEmptyAppsView: View {
 private struct UpperCaseExcludedAppsList: View {
     let apps: [ExcludedApp]
     let onRemove: (ExcludedApp) -> Void
+    let onChangeScope: (ExcludedApp, UpperCaseExcludeScope) -> Void
 
     var body: some View {
         LazyVStack(spacing: 0) {
             ForEach(apps) { app in
-                UpperCaseExcludedAppRow(app: app) {
-                    onRemove(app)
-                }
+                UpperCaseExcludedAppRow(
+                    app: app,
+                    onChangeScope: { onChangeScope(app, $0) },
+                    onRemove: { onRemove(app) }
+                )
 
                 if app.id != apps.last?.id {
                     Divider()
@@ -349,6 +359,7 @@ private struct UpperCaseExcludedAppsList: View {
 
 private struct UpperCaseExcludedAppRow: View {
     let app: ExcludedApp
+    let onChangeScope: (UpperCaseExcludeScope) -> Void
     let onRemove: () -> Void
     @State private var isHovered = false
 
@@ -380,6 +391,23 @@ private struct UpperCaseExcludedAppRow: View {
             }
 
             Spacer()
+
+            // Which typing language the exclusion applies to
+            Picker(
+                "",
+                selection: Binding(
+                    get: { app.upperCaseScope },
+                    set: { onChangeScope($0) }
+                )
+            ) {
+                ForEach(UpperCaseExcludeScope.allCases) { scope in
+                    Text(scope.displayName).tag(scope)
+                }
+            }
+            .labelsHidden()
+            .pickerStyle(.menu)
+            .fixedSize()
+            .help("Chọn khi nào tắt viết hoa đầu câu trong ứng dụng này")
 
             // Remove Button
             Button(action: onRemove) {

@@ -60,7 +60,9 @@ final class PHTVEngineSessionService: NSObject {
             allowUppercasePrime: allowUppercasePrime,
             safeMode: PHTVEngineRuntimeFacade.safeModeEnabled(),
             uppercaseEnabled: PHTVEngineRuntimeFacade.upperCaseFirstChar(),
-            uppercaseExcluded: PHTVEngineRuntimeFacade.upperCaseExcludedForCurrentApp())
+            // Session reset only primes the Vietnamese engine's auto-capitalize,
+            // so resolve the exclusion for the Vietnamese side of the scope.
+            uppercaseExcluded: phtvRuntimeUpperCaseExcludedForVietnamese())
 
         if sessionResetTransition.shouldClearSyncKey {
             PHTVTypingSyncStateService.clearSyncKey()

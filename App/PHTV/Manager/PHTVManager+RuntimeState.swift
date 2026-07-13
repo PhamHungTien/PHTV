@@ -138,9 +138,9 @@ import Foundation
         PHTVEngineRuntimeFacade.setSendKeyStepByStepEnabled(enabled)
     }
 
-    @objc(phtv_setUpperCaseExcludedForCurrentApp:)
-    class func phtv_setUpperCaseExcludedForCurrentApp(_ excluded: Bool) {
-        PHTVEngineRuntimeFacade.setUpperCaseExcludedForCurrentApp(excluded)
+    @objc(phtv_setUpperCaseExcludeScope:)
+    class func phtv_setUpperCaseExcludeScope(_ scope: Int32) {
+        PHTVEngineRuntimeFacade.setUpperCaseExcludeScope(scope)
     }
 
     @objc(phtv_currentSwitchKeyStatus)

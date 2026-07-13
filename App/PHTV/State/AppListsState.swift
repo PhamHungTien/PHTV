@@ -246,6 +246,17 @@ final class AppListsState {
         saveUpperCaseExcludedApps()
     }
 
+    /// Changes which typing language the auto-capitalize exclusion applies to.
+    func updateUpperCaseExcludedApp(_ app: ExcludedApp, scope: UpperCaseExcludeScope) {
+        guard let index = upperCaseExcludedApps.firstIndex(where: {
+            $0.bundleIdentifier == app.bundleIdentifier
+        }), upperCaseExcludedApps[index].upperCaseScope != scope else {
+            return
+        }
+        upperCaseExcludedApps[index].upperCaseScope = scope
+        saveUpperCaseExcludedApps()
+    }
+
     func isAppUpperCaseExcluded(bundleIdentifier: String) -> Bool {
         return upperCaseExcludedApps.contains { $0.bundleIdentifier == bundleIdentifier }
     }

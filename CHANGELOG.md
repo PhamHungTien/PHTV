@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Viết hoa đầu câu: loại trừ linh hoạt theo ngôn ngữ gõ (#152)**
+  - Trước đây, khi đưa một ứng dụng vào danh sách **Ứng dụng không viết hoa**, tính năng viết hoa đầu câu bị tắt cho **cả tiếng Việt lẫn tiếng Anh** — không thể tách riêng.
+  - Nay mỗi ứng dụng trong danh sách có thêm lựa chọn phạm vi: **Cả hai** / **Chỉ khi gõ tiếng Anh** / **Chỉ khi gõ tiếng Việt**.
+  - Ví dụ đúng nhu cầu thực tế: trong IDE, chọn *Chỉ khi gõ tiếng Anh* để không bị viết hoa khi gõ code, nhưng khi chuyển sang gõ tiếng Việt (viết chú thích) thì vẫn tự viết hoa đầu câu bình thường.
+  - **Tương thích ngược hoàn toàn**: các ứng dụng bạn đã thêm từ trước giữ nguyên phạm vi **Cả hai** — cập nhật không làm thay đổi thiết lập sẵn có.
+
 - **Tự động xóa lịch sử Clipboard theo thời gian (#209)**
   - Tuỳ chọn mới trong **Cài đặt > Lịch sử Clipboard**: tự động xóa các mục cũ hơn **3 ngày / 1 tuần / 1 tháng / 3 tháng**, hoặc **Không giới hạn**.
   - **Mặc định là Không giới hạn** — PHTV không tự xóa lịch sử của bạn cho tới khi bạn chủ động chọn một mốc thời gian.

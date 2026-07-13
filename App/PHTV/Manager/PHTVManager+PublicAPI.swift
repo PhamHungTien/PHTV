@@ -205,9 +205,9 @@ import Foundation
         phtv_setSendKeyStepByStepEnabled(enabled)
     }
 
-    @objc(setUpperCaseExcludedForCurrentApp:)
-    class func setUpperCaseExcludedForCurrentApp(_ excluded: Bool) {
-        phtv_setUpperCaseExcludedForCurrentApp(excluded)
+    @objc(setUpperCaseExcludeScope:)
+    class func setUpperCaseExcludeScope(_ scope: Int32) {
+        phtv_setUpperCaseExcludeScope(scope)
     }
 
     @objc(runtimeSettingsSnapshot)
