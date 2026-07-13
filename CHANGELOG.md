@@ -7,11 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
+## [3.3.5] - 2026-07-13
+
+### Tổng quan
+PHTV 3.3.5 là bản bổ sung tính năng theo đề xuất của cộng đồng: viết hoa đầu câu nay có thể loại trừ **linh hoạt theo ngôn ngữ gõ** cho từng ứng dụng, và lịch sử Clipboard có thể **tự động xóa theo thời gian**. Cả hai đều được thiết kế để không làm thay đổi bất kỳ thiết lập nào bạn đang dùng.
+
+### Điểm nổi bật
 - **Viết hoa đầu câu: loại trừ linh hoạt theo ngôn ngữ gõ (#152)**
   - Trước đây, khi đưa một ứng dụng vào danh sách **Ứng dụng không viết hoa**, tính năng viết hoa đầu câu bị tắt cho **cả tiếng Việt lẫn tiếng Anh** — không thể tách riêng.
   - Nay mỗi ứng dụng trong danh sách có thêm lựa chọn phạm vi: **Cả hai** / **Chỉ khi gõ tiếng Anh** / **Chỉ khi gõ tiếng Việt**.
-  - Ví dụ đúng nhu cầu thực tế: trong IDE, chọn *Chỉ khi gõ tiếng Anh* để không bị viết hoa khi gõ code, nhưng khi chuyển sang gõ tiếng Việt (viết chú thích) thì vẫn tự viết hoa đầu câu bình thường.
+  - Ví dụ đúng nhu cầu thực tế: trong IDE, chọn *Chỉ khi gõ tiếng Anh* để không bị viết hoa khi gõ code, nhưng khi chuyển sang gõ tiếng Việt (viết chú thích) thì vẫn tự viết hoa đầu câu bình thường. Ứng dụng văn phòng như Word không nằm trong danh sách thì vẫn viết hoa bình thường ở cả hai ngôn ngữ.
   - **Tương thích ngược hoàn toàn**: các ứng dụng bạn đã thêm từ trước giữ nguyên phạm vi **Cả hai** — cập nhật không làm thay đổi thiết lập sẵn có.
 
 - **Tự động xóa lịch sử Clipboard theo thời gian (#209)**
@@ -20,6 +25,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Mục hết hạn được dọn ngay khi: mở bảng lịch sử, sao chép nội dung mới, đổi cài đặt, khởi động ứng dụng, và tự quét lại mỗi giờ (mục vẫn cũ đi kể cả khi bạn không sao chép gì thêm).
   - Ảnh và file đính kèm của mục bị xóa cũng được dọn khỏi ổ đĩa, không để lại rác.
   - Giới hạn theo thời gian hoạt động song song với **Số mục tối đa** đã có: mục hết hạn bị xóa trước, sau đó mới áp giới hạn số lượng.
+
+### Fixed and Improved
+- Cơ chế loại trừ viết hoa được tách đúng theo hai đường xử lý riêng biệt của PHTV (viết hoa tiếng Việt nằm trong engine, viết hoa tiếng Anh nằm trong lớp xử lý sự kiện phím), nên phạm vi ngôn ngữ được áp dụng chính xác ở mọi tình huống — kể cả khi chuyển đổi ngôn ngữ giữa chừng.
+- Thiết lập hỏng hoặc giá trị lạ không bao giờ âm thầm tắt viết hoa đầu câu, và mục clipboard có ngày ở tương lai (đổi giờ hệ thống, khôi phục backup) không bao giờ bị xóa nhầm.
+- Bổ sung 18 test hồi quy cho hai tính năng, gồm cả kiểm chứng tương thích ngược của dữ liệu đã lưu. Toàn bộ test suite đạt **358/358 tests**.
+
+### Ghi chú nâng cấp
+- Không cần thao tác gì sau khi cập nhật: cả hai tính năng đều giữ nguyên hành vi cũ cho tới khi bạn chủ động thay đổi.
+- Muốn dùng ngay: mở **Cài đặt > Gõ tiếng Việt** để chọn phạm vi ngôn ngữ cho từng ứng dụng không viết hoa, và **Cài đặt > Lịch sử Clipboard** để đặt thời gian tự động xóa.
 
 ## [3.3.4] - 2026-07-11
 
