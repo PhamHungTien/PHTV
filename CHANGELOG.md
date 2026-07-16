@@ -10,21 +10,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [3.3.6] - 2026-07-16
 
 ### Tổng quan
-PHTV 3.3.6 là bản sửa lỗi tập trung vào Microsoft Outlook: sau khi cập nhật, gõ tiếng Việt trong Outlook bị mất dấu kiểu "Cũng lam ra ngo ra khoai phet" — chữ đầu đúng, các chữ sau rơi dấu. Lỗi có hai nguyên nhân chồng nhau và cả hai đều được sửa triệt để trong bản này.
+PHTV 3.3.6 là bản sửa lỗi tập trung vào Microsoft Outlook: sau khi cập nhật, gõ tiếng Việt trong Outlook bị mất dấu kiểu "Cũng lam ra ngo ra khoai phet" — chữ đầu đúng, các chữ sau rơi dấu. Bản sửa không thêm bất kỳ độ trễ nào vào đường gõ phím, cảm giác gõ giữ nguyên.
 
 ### Điểm nổi bật
 - **Sửa lỗi mất dấu tiếng Việt trong Microsoft Outlook**
-  - **Nguyên nhân 1 — kết quả nhận diện code block của Notion "rò" sang ứng dụng khác.** Bộ nhớ đệm nhận diện code block giữ kết quả sống lâu hơn dự kiến: mỗi lần gõ lại tự làm mới hạn cache, nên khi gõ liên tục kết quả cũ không bao giờ hết hạn. Nếu bạn chuyển từ code block Notion sang Outlook đủ nhanh, PHTV áp nhầm chiến lược xuất ký tự dành riêng cho Notion (chọn vùng qua Accessibility rồi gõ đè) vào Outlook — trình soạn thảo của Outlook nuốt mất phần văn bản thay thế, làm rơi dấu ở mọi từ tiếp theo. Nay kết quả nhận diện code block **không bao giờ được dùng lại bên ngoài ngữ cảnh Notion**: rời Notion là cache bị xóa ngay lập tức.
-  - **Nguyên nhân 2 — Outlook mới là trình soạn thảo nền web.** Giống trình soạn code của Notion, editor này xử lý phím qua renderer bất đồng bộ và âm thầm bỏ qua chuỗi sự kiện gõ gửi dồn trong cùng một khung hình — phím dấu được nhận nhưng văn bản thay thế không được ghi vào, nên từ bị trơ lại không dấu. PHTV nay **giãn nhịp (~20ms) chuỗi xoá/ghi ký tự** cho nhóm ứng dụng soạn thảo nền web, dùng đúng cơ chế đã kiểm chứng ổn định với Notion từ 3.3.2.
+  - Nguyên nhân: kết quả nhận diện code block của Notion "rò" sang ứng dụng khác. Bộ nhớ đệm nhận diện code block giữ kết quả sống lâu hơn dự kiến — mỗi lần gõ lại tự làm mới hạn cache, nên khi gõ liên tục kết quả cũ không bao giờ hết hạn. Nếu bạn chuyển từ code block Notion sang Outlook đủ nhanh, PHTV áp nhầm chiến lược xuất ký tự dành riêng cho Notion (chọn vùng qua Accessibility rồi gõ đè) vào Outlook — trình soạn thảo của Outlook nuốt mất phần văn bản thay thế, làm rơi dấu ở mọi từ tiếp theo.
+  - Nay kết quả nhận diện code block **không bao giờ được dùng lại bên ngoài ngữ cảnh Notion**: rời Notion là cache bị xóa ngay lập tức, và các ứng dụng thông thường không còn tốn bất kỳ thao tác Accessibility nào cho việc nhận diện này trên đường gõ phím.
 
 ### Fixed and Improved
-- Logic nhận diện code block Notion được tách thành policy thuần (không phụ thuộc trạng thái hệ thống) kèm 7 test hồi quy khoá chặt bất biến "kết quả nhận diện không bao giờ sống ra ngoài Notion"; thêm cổng chặn rẻ theo bundle id để các ứng dụng thông thường không tốn thao tác Accessibility nào trên đường gõ phím.
-- Bổ sung nhóm tương thích mới cho các trình soạn thảo nền web cần giãn nhịp sự kiện, dễ mở rộng khi phát hiện ứng dụng tương tự.
+- Logic nhận diện code block Notion được tách thành policy thuần (không phụ thuộc trạng thái hệ thống) kèm 7 test hồi quy khoá chặt bất biến "kết quả nhận diện không bao giờ sống ra ngoài Notion"; thêm cổng chặn rẻ theo bundle id trước khi chạm vào Accessibility.
 - Đã xác minh thực tế bằng cách gõ Telex qua đường phím thật vào cửa sổ soạn thư Outlook — "cũng làm ra ngô ra khoai phết" ra đúng hoàn toàn; kiểm chứng thêm Notion code block không bị ảnh hưởng. Toàn bộ test suite đạt **365/365 tests**.
 
 ### Ghi chú nâng cấp
 - Người dùng Microsoft Outlook nên cập nhật ngay. Không cần thao tác gì thêm sau khi cập nhật.
-- Nếu từng gặp lỗi mất dấu ở ứng dụng khác ngoài Outlook với biểu hiện tương tự, hãy phản hồi cho chúng tôi — cơ chế giãn nhịp mới có thể áp dụng thêm cho ứng dụng đó.
+- Nếu sau khi cập nhật vẫn gặp mất dấu ở một ứng dụng nào đó, hãy mở issue kèm tên ứng dụng và ví dụ cụ thể để chúng tôi xử lý riêng cho ứng dụng đó.
 
 ## [3.3.5] - 2026-07-13
 
