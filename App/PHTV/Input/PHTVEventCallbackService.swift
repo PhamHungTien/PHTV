@@ -39,6 +39,10 @@ final class PHTVEventCallbackService {
     /// CodeMirror applies input per render frame (~16ms); deletions arriving
     /// within one frame get dropped, so pace comfortably above a frame.
     private static let kNotionCodeBlockKeyDelayUs: UInt32 = 40000
+    /// Settle delay for web-backed editors (new Outlook). One render frame is
+    /// ~16ms; clearing that boundary is enough for the edit to be applied
+    /// without making typing feel sluggish.
+    private static let kPacedSyntheticOutputDelayUs: UInt32 = 20000
     private static let keyEventKeyboard: Int32 = Int32(PHTV_ENGINE_EVENT_KEYBOARD)
     private static let keyEventStateKeyDown: Int32 = Int32(PHTV_ENGINE_EVENT_STATE_KEY_DOWN)
     private final class EnglishUppercaseStateBox: @unchecked Sendable {
@@ -902,6 +906,13 @@ final class PHTVEventCallbackService {
                 maxBuffer: EngineSignalCode.maxBuffer,
                 safetyLimit: 15)
 
+            // Web-backed editors (new Outlook) commit input through an async
+            // renderer and silently drop synthetic events that arrive inside a
+            // single frame: the tone key is consumed but its replacement never
+            // lands, leaving words without diacritics. Pace their output.
+            let needsPacedOutput =
+                PHTVAppDetectionService.needsPacedSyntheticOutput(effectiveBundleId)
+
             let adjustmentAction = Int(resolvedBackspacePlan.adjustmentAction)
             if adjustmentAction == PHTVBackspaceAdjustmentAction.sendShiftLeftThenBackspace.rawValue {
                 PHTVKeyEventSenderService.sendShiftAndLeftArrow()
@@ -913,6 +924,9 @@ final class PHTVEventCallbackService {
                 }
                 #endif
                 PHTVKeyEventSenderService.sendEmptyCharacter()
+                if needsPacedOutput {
+                    usleep(kPacedSyntheticOutputDelayUs)
+                }
             }
 
             let adjustedBackspaceCount = resolvedBackspacePlan.sanitizedBackspaceCount
@@ -1034,6 +1048,13 @@ final class PHTVEventCallbackService {
                     #endif
                     PHTVKeyEventSenderService.sendPacedBackspaceSequence(
                         bsCount, interDelayUs: kNotionCodeBlockKeyDelayUs)
+                } else if needsPacedOutput {
+                    #if DEBUG
+                    NSLog("[PacedOutput] %@: paced backspace x%d",
+                          effectiveBundleId ?? "?", bsCount)
+                    #endif
+                    PHTVKeyEventSenderService.sendPacedBackspaceSequence(
+                        bsCount, interDelayUs: kPacedSyntheticOutputDelayUs)
                 } else {
                     PHTVKeyEventSenderService.sendBackspaceSequenceWithDelay(bsCount)
                 }

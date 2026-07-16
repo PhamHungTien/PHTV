@@ -11,6 +11,45 @@ import AppKit
 @preconcurrency import ApplicationServices
 import Darwin
 
+/// Decides whether the focused element is a Notion code block.
+///
+/// The Notion code-block fix swaps in a very different output strategy (AX
+/// select + type-over instead of backspaces). Applying it anywhere else
+/// corrupts typing, so a stale `true` must never survive a context change —
+/// it leaked into Outlook and swallowed the diacritics of every word.
+enum PHTVNotionCodeBlockPolicy {
+    /// Age below which a cached answer may still stand in for a transient
+    /// accessibility failure *inside* Notion.
+    static let staleFallbackMs: UInt64 = 500
+
+    /// - Parameters:
+    ///   - inNotionContext: whether the focused app is Notion (or a browser on Notion).
+    ///   - axDetected: accessibility verdict, or `nil` when it could not be read.
+    ///   - cachedResult: previous answer.
+    ///   - cacheAgeMs: age of `cachedResult`, or `nil` when there is no cache.
+    static func resolve(
+        inNotionContext: Bool,
+        axDetected: Bool?,
+        cachedResult: Bool,
+        cacheAgeMs: UInt64?
+    ) -> Bool {
+        // Never carry a code-block verdict outside Notion.
+        guard inNotionContext else { return false }
+
+        if let axDetected {
+            return axDetected
+        }
+
+        // Still inside Notion but accessibility failed to answer: keep the last
+        // known verdict briefly rather than flip-flopping mid-word.
+        if let cacheAgeMs, cacheAgeMs < staleFallbackMs {
+            return cachedResult
+        }
+
+        return false
+    }
+}
+
 @objcMembers
 final class PHTVAccessibilityService: NSObject {
     private struct AccessibilityCacheState {
@@ -769,8 +808,28 @@ final class PHTVAccessibilityService: NSObject {
         return isAddressBar
     }
 
+    /// Only Notion itself, or a browser that could be showing Notion, can ever
+    /// host a Notion code block. Resolved from the cached frontmost bundle id,
+    /// so this costs nothing on the per-keystroke path.
+    private class func isNotionCapableApp() -> Bool {
+        let bundleId = focusedAppBundleId()
+        return PHTVAppDetectionService.isNotionApp(bundleId)
+            || PHTVAppDetectionService.isBrowserApp(bundleId)
+    }
+
     @objc class func isNotionCodeBlock() -> Bool {
         let now = mach_absolute_time()
+
+        // Outside a Notion-capable app the answer is always false, and any
+        // cached `true` is dropped immediately. Reusing it across apps applied
+        // Notion's code-block output strategy (AX select + type-over) inside
+        // unrelated editors such as Outlook, which swallowed the replacement
+        // text and left words without their diacritics.
+        guard isNotionCapableApp() else {
+            writeNotionCodeBlockCache(result: false, checkTime: now)
+            return false
+        }
+
         let cache = readNotionCodeBlockCache()
         let elapsedMs = PHTVTimingService.machTimeToMs(now - cache.checkTime)
 
@@ -779,7 +838,6 @@ final class PHTVAccessibilityService: NSObject {
             return cache.result
         }
 
-        var isCodeBlock = false
         let attributes: [String] = [
             kAXRoleDescriptionAttribute,
             kAXDescriptionAttribute,
@@ -788,24 +846,33 @@ final class PHTVAccessibilityService: NSObject {
             "AXIdentifier"
         ]
 
-        if isNotionWorkspaceContext(), let focused = focusedElement() {
+        let inNotionContext = isNotionWorkspaceContext()
+        var axDetected: Bool?
+
+        if inNotionContext, let focused = focusedElement() {
+            var detected = false
             var current: AXUIElement? = focused
             var depth = 0
-            while let element = current, depth < 6, !isCodeBlock {
+            while let element = current, depth < 6, !detected {
                 for attr in attributes {
                     if let value = stringAttribute(element, attr),
                        value.range(of: "code", options: String.CompareOptions.caseInsensitive) != nil {
-                        isCodeBlock = true
+                        detected = true
                         break
                     }
                 }
                 current = elementAttribute(element, kAXParentAttribute)
                 depth += 1
             }
-        } else if cache.checkTime > 0 && elapsedMs < 500 {
-            // AX can fail transiently while focus changes; keep recent stable result.
-            isCodeBlock = cache.result
+            axDetected = detected
         }
+
+        let isCodeBlock = PHTVNotionCodeBlockPolicy.resolve(
+            inNotionContext: inNotionContext,
+            axDetected: axDetected,
+            cachedResult: cache.result,
+            cacheAgeMs: cache.checkTime > 0 ? elapsedMs : nil
+        )
 
         writeNotionCodeBlockCache(result: isCodeBlock, checkTime: now)
         return isCodeBlock
