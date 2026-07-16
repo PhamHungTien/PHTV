@@ -7,10 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.3.7] - 2026-07-16
+
+### Tổng quan
+PHTV 3.3.7 hoàn thiện bản sửa lỗi Outlook của 3.3.6: gỡ bỏ lớp giãn nhịp phòng hờ (~20ms) đã thêm cho nhóm trình soạn thảo nền web, trả lại cảm giác gõ tức thì như trước. Thực tế kiểm chứng cho thấy bản sửa gốc trong 3.3.6 (chặn cache nhận diện code block rò sang ứng dụng khác) một mình đã đủ — lớp giãn nhịp là thừa và làm thao tác bỏ dấu trong Outlook có cảm giác trễ nhẹ.
+
+### Điểm nổi bật
+- **Trả lại cảm giác gõ tức thì trong Outlook và các trình soạn thảo nền web**
+  - Trong 3.3.6, ngoài bản sửa gốc, PHTV còn thêm một lớp phòng hờ: giãn nhịp (~20ms) chuỗi xoá/ghi ký tự cho nhóm ứng dụng soạn thảo nền web để tránh trường hợp editor bỏ sót sự kiện gửi dồn.
+  - Sau khi kiểm chứng kỹ trên máy thật, nguyên nhân gốc đã được xử lý triệt để bằng bản sửa cache — lớp giãn nhịp không còn tác dụng bảo vệ nào thêm, trong khi mỗi lần bỏ dấu/sửa từ phải chờ thêm vài chục mili-giây, ảnh hưởng cảm giác gõ.
+  - 3.3.7 gỡ bỏ hoàn toàn lớp giãn nhịp này. Đường xuất ký tự trở lại đúng như trước 3.3.6, không thêm bất kỳ độ trễ nào.
+
+### Fixed and Improved
+- Gỡ nhóm tương thích "giãn nhịp sự kiện cho trình soạn thảo nền web" cùng toàn bộ logic liên quan trên đường gõ phím (-33 dòng), giữ nguyên cơ chế giãn nhịp riêng của Notion code block vốn đã ổn định từ 3.3.2.
+- Đã kiểm chứng lại bằng gõ thật trong Outlook sau khi gỡ: tiếng Việt ra đúng hoàn toàn, không tái hiện lỗi mất dấu. Toàn bộ test suite đạt **365/365 tests**.
+
+### Ghi chú nâng cấp
+- Người dùng đã cài 3.3.6 nên cập nhật để có cảm giác gõ mượt hơn trong Outlook; bản sửa lỗi mất dấu vẫn giữ nguyên hiệu lực.
+- Không cần thao tác gì sau khi cập nhật.
+
 ## [3.3.6] - 2026-07-16
 
 ### Tổng quan
-PHTV 3.3.6 là bản sửa lỗi tập trung vào Microsoft Outlook: sau khi cập nhật, gõ tiếng Việt trong Outlook bị mất dấu kiểu "Cũng lam ra ngo ra khoai phet" — chữ đầu đúng, các chữ sau rơi dấu. Bản sửa không thêm bất kỳ độ trễ nào vào đường gõ phím, cảm giác gõ giữ nguyên.
+PHTV 3.3.6 là bản sửa lỗi tập trung vào Microsoft Outlook: sau khi cập nhật, gõ tiếng Việt trong Outlook bị mất dấu kiểu "Cũng lam ra ngo ra khoai phet" — chữ đầu đúng, các chữ sau rơi dấu. Bản này sửa nguyên nhân gốc và kèm thêm một lớp giãn nhịp phòng hờ cho trình soạn thảo nền web (lớp này được gỡ trong 3.3.7 vì không cần thiết).
 
 ### Điểm nổi bật
 - **Sửa lỗi mất dấu tiếng Việt trong Microsoft Outlook**
