@@ -266,14 +266,6 @@ final class PHTVAppDetectionService: NSObject {
         "com.microsoft.Outlook"
     ])
 
-    // Web-backed editors apply input through an asynchronous renderer, so a
-    // burst of synthetic key events sent within one frame is silently dropped:
-    // the tone key is consumed but its replacement text never lands, leaving
-    // words stripped of their diacritics. Pace the output for these apps.
-    private static let pacedSyntheticOutputApps = BundlePatternSet([
-        "com.microsoft.Outlook"
-    ])
-
     // Coc Coc's Chromium UI can expose suggestion/search inputs as plain text fields.
     // Use stricter address-bar detection there to avoid applying omnibox fixes to
     // unrelated browser search/history fields.
@@ -379,10 +371,6 @@ final class PHTVAppDetectionService: NSObject {
 
     @objc class func needsLegacySpaceCommitFix(_ bundleId: String?) -> Bool {
         legacySpaceCommitFixApps.contains(bundleId)
-    }
-
-    @objc class func needsPacedSyntheticOutput(_ bundleId: String?) -> Bool {
-        pacedSyntheticOutputApps.contains(bundleId)
     }
 
     @objc class func needsStrictAddressBarDetection(_ bundleId: String?) -> Bool {
