@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **Sửa lỗi mất dấu tiếng Việt trong Outlook sau khi cập nhật** — gõ ra kiểu "Cũng lam ra ngo ra khoai phet": chữ đầu đúng, các chữ sau mất dấu.
+  - **Nguyên nhân 1 — cache Notion rò sang ứng dụng khác**: bộ nhớ đệm nhận diện code block của Notion giữ kết quả `true` sống vô hạn khi gõ liên tục (mỗi lần gõ lại làm mới hạn cache), nên nếu chuyển từ code block Notion sang Outlook đủ nhanh, PHTV áp nhầm chiến lược xuất ký tự của Notion (chọn vùng qua Accessibility + gõ đè) vào Outlook — trình soạn thảo của Outlook nuốt mất phần văn bản thay thế, làm rơi dấu. Nay kết quả nhận diện code block **không bao giờ** được dùng lại bên ngoài ngữ cảnh Notion; logic được tách thành policy thuần kèm 7 test hồi quy.
+  - **Nguyên nhân 2 — Outlook mới là trình soạn thảo nền web**: giống CodeMirror của Notion, editor này xử lý phím qua renderer bất đồng bộ và âm thầm bỏ qua chuỗi sự kiện tổng hợp gửi dồn trong một khung hình — phím dấu được nhận nhưng văn bản thay thế không được ghi vào. PHTV nay giãn nhịp (~20ms) các sự kiện xuất ký tự cho nhóm ứng dụng này, cùng cơ chế đã kiểm chứng với Notion.
+  - Đã xác minh thực tế bằng cách gõ Telex qua đường phím HID thật vào cửa sổ soạn thư Outlook: "cũng làm ra ngô ra khoai phết" ra đúng 100%; Notion code block không bị hồi quy. Toàn bộ test suite đạt **365/365 tests**.
+
 ## [3.3.5] - 2026-07-13
 
 ### Tổng quan
