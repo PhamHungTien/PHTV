@@ -26,10 +26,17 @@ enum ClipboardHistoryStoragePolicy {
         return clampedMaxItems(rawValue)
     }
 
+    /// The item-count limit applies to unpinned items only; pinned items are
+    /// always kept and never consume the budget of regular history.
     static func trimmed(_ items: [ClipboardHistoryItem], maxItems: Int) -> [ClipboardHistoryItem] {
         let limit = clampedMaxItems(maxItems)
-        guard items.count > limit else { return items }
-        return Array(items.prefix(limit))
+        var unpinnedKept = 0
+        return items.filter { item in
+            if item.isPinned { return true }
+            guard unpinnedKept < limit else { return false }
+            unpinnedKept += 1
+            return true
+        }
     }
 
     static func retention(from defaults: UserDefaults = .standard) -> ClipboardHistoryRetention {
@@ -41,16 +48,16 @@ enum ClipboardHistoryStoragePolicy {
         )
     }
 
-    /// Drops items older than the retention window. Items dated in the future
-    /// (clock changes, restored backups) are kept — expiry must never be
-    /// triggered by a clock going backwards.
+    /// Drops items older than the retention window. Pinned items never expire.
+    /// Items dated in the future (clock changes, restored backups) are kept —
+    /// expiry must never be triggered by a clock going backwards.
     static func retained(
         _ items: [ClipboardHistoryItem],
         retention: ClipboardHistoryRetention,
         now: Date = Date()
     ) -> [ClipboardHistoryItem] {
         guard let maxAge = retention.maxAge else { return items }
-        return items.filter { now.timeIntervalSince($0.timestamp) <= maxAge }
+        return items.filter { $0.isPinned || now.timeIntervalSince($0.timestamp) <= maxAge }
     }
 
     /// Single place that applies both limits: age first, then item count.
@@ -150,14 +157,18 @@ final class ClipboardHistoryManager {
     // MARK: - Data Management
 
     func addItem(_ item: ClipboardHistoryItem) {
-        // Remove duplicate if exists
+        // Remove duplicate if exists. Re-copying pinned content must not cost
+        // the item its pin, so the fresh entry inherits it.
         let duplicateItems = items.filter { $0.isDuplicate(of: item) }
         duplicateItems.forEach { ClipboardHistoryFileCache.removeCache(for: $0) }
         let duplicateIDs = Set(duplicateItems.map(\.id))
         items.removeAll { duplicateIDs.contains($0.id) }
 
+        let inheritsPin = duplicateItems.contains(where: \.isPinned)
+        let newItem = inheritsPin ? item.withPinned(true) : item
+
         // Insert at beginning
-        items.insert(item, at: 0)
+        items.insert(newItem, at: 0)
         let keptItems = ClipboardHistoryStoragePolicy.enforced(
             items,
             retention: ClipboardHistoryStoragePolicy.retention(),
@@ -186,9 +197,18 @@ final class ClipboardHistoryManager {
             filePaths: existing.filePaths,
             fileReferences: existing.fileReferences,
             sourceApp: existing.sourceApp,
-            imageFilePath: existing.imageFilePath
+            imageFilePath: existing.imageFilePath,
+            isPinned: existing.isPinned
         )
         items.insert(promoted, at: 0)
+        saveHistory()
+    }
+
+    /// Pin/unpin an item. Pinned items stay until unpinned or deleted: they
+    /// survive the retention window, the item-count limit and "Clear all".
+    func togglePin(_ item: ClipboardHistoryItem) {
+        guard let index = items.firstIndex(where: { $0.id == item.id }) else { return }
+        items[index] = items[index].withPinned(!items[index].isPinned)
         saveHistory()
     }
 
@@ -198,9 +218,17 @@ final class ClipboardHistoryManager {
         saveHistory()
     }
 
+    /// Clears the history but keeps pinned items — those only leave via an
+    /// explicit unpin or per-item delete.
     func clearAll() {
-        items.removeAll()
-        ClipboardHistoryFileCache.removeAll()
+        let keptItems = items.filter(\.isPinned)
+        if keptItems.isEmpty {
+            items.removeAll()
+            ClipboardHistoryFileCache.removeAll()
+        } else {
+            cleanupCaches(forRemovedItemsFrom: items, keeping: keptItems)
+            items = keptItems
+        }
         saveHistory()
     }
 

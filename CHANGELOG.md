@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Ghim mục trong Lịch sử Clipboard** (theo góp ý của người dùng): di chuột lên mục và bấm biểu tượng ghim (hoặc chọn mục rồi nhấn **⌘P**). Mục đã ghim hiện ở khu **Đã ghim** trên đầu danh sách và được giữ **vĩnh viễn cho đến khi bỏ ghim hoặc xoá** — không bị ảnh hưởng bởi giới hạn số mục, thời gian tự xoá, hay nút "Xoá tất cả". Sao chép lại nội dung trùng với mục đã ghim sẽ giữ nguyên trạng thái ghim. Tương thích ngược hoàn toàn với lịch sử đã lưu.
+- Gọn giao diện: bỏ thanh đếm số mục và dòng hướng dẫn phím ở đáy cửa sổ clipboard.
+
 ## [3.3.7] - 2026-07-16
 
 ### Tổng quan

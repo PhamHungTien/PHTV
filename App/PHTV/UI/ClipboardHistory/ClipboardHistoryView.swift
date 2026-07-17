@@ -28,6 +28,7 @@ private enum ClipboardHistoryListCommand {
     case movePrevious
     case activateSelection
     case deleteSelection
+    case togglePinSelection
     case close
 }
 
@@ -44,7 +45,23 @@ struct ClipboardHistoryView: View {
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @Environment(\.colorScheme) private var colorScheme
 
+    /// Pinned items first, then the regular history — one flat array so the
+    /// existing selection/keyboard logic works across both sections.
     private var filteredItems: [ClipboardHistoryItem] {
+        let matches = searchMatches
+        guard matches.contains(where: \.isPinned) else { return matches }
+        return matches.filter(\.isPinned) + matches.filter { !$0.isPinned }
+    }
+
+    private var pinnedItems: [ClipboardHistoryItem] {
+        filteredItems.filter(\.isPinned)
+    }
+
+    private var recentItems: [ClipboardHistoryItem] {
+        filteredItems.filter { !$0.isPinned }
+    }
+
+    private var searchMatches: [ClipboardHistoryItem] {
         if searchText.isEmpty { return manager.items }
         return manager.items.filter { item in
             if let text = item.textContent,
@@ -92,20 +109,6 @@ struct ClipboardHistoryView: View {
             } else {
                 itemList
             }
-
-            Divider()
-                .opacity(0.5)
-            HStack {
-                Text("\(manager.items.count) mục")
-                    .font(.system(size: 11))
-                    .foregroundStyle(.tertiary)
-                Spacer()
-                Text("Mũi tên / Tab để chọn • Enter để dán • Delete để xoá • Esc để đóng")
-                    .font(.system(size: 11))
-                    .foregroundStyle(.tertiary)
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 8)
         }
         .frame(width: 380, height: 480)
         .background {
@@ -171,6 +174,7 @@ struct ClipboardHistoryView: View {
                         }
                 }
                 .buttonStyle(.plain)
+                .help("Xoá tất cả (mục đã ghim được giữ lại)")
             }
 
             GlassCloseButton {
@@ -225,19 +229,29 @@ struct ClipboardHistoryView: View {
             ScrollView {
                 LazyVStack(spacing: 0) {
                     ForEach(filteredItems) { item in
+                        if !pinnedItems.isEmpty {
+                            if item.id == pinnedItems.first?.id {
+                                sectionHeader("Đã ghim", systemImage: "pin.fill")
+                            } else if item.id == recentItems.first?.id {
+                                sectionHeader("Gần đây", systemImage: "clock")
+                            }
+                        }
+
                         ClipboardItemRow(
                             item: item,
                             isHovered: hoveredItemId == item.id,
                             isSelected: selectedItemId == item.id,
                             colorScheme: colorScheme,
                             onSelect: { select(item) },
+                            onTogglePin: { togglePin(item) },
                             onDelete: { delete(item) }
                         )
                         .onHover { isHovered in
                             hoveredItemId = isHovered ? item.id : nil
                         }
 
-                        if item.id != filteredItems.last?.id {
+                        // No divider after the last row of each section.
+                        if item.id != filteredItems.last?.id && item.id != pinnedItems.last?.id {
                             Divider()
                                 .opacity(0.4)
                                 .padding(.leading, 54)
@@ -264,6 +278,21 @@ struct ClipboardHistoryView: View {
                 }
             }
         }
+    }
+
+    @ViewBuilder
+    private func sectionHeader(_ title: String, systemImage: String) -> some View {
+        HStack(spacing: 5) {
+            Image(systemName: systemImage)
+                .font(.system(size: 9, weight: .semibold))
+            Text(title)
+                .font(.system(size: 10, weight: .semibold))
+            Spacer()
+        }
+        .foregroundStyle(.tertiary)
+        .padding(.horizontal, 16)
+        .padding(.top, 8)
+        .padding(.bottom, 3)
     }
 
     // MARK: - Background
@@ -411,6 +440,10 @@ struct ClipboardHistoryView: View {
             guard let selectedItem else { return }
             delete(selectedItem)
 
+        case .togglePinSelection:
+            guard let selectedItem else { return }
+            togglePin(selectedItem)
+
         case .close:
             onClose()
         }
@@ -426,6 +459,14 @@ struct ClipboardHistoryView: View {
         selectedItemId = item.id
         keyboardFocus = .list
         onItemSelected(item)
+    }
+
+    private func togglePin(_ item: ClipboardHistoryItem) {
+        withAnimation(.easeInOut(duration: 0.15)) {
+            manager.togglePin(item)
+        }
+        // The item moves between sections but keeps its id, so selection follows it.
+        selectedItemId = item.id
     }
 
     private func delete(_ item: ClipboardHistoryItem) {
@@ -460,6 +501,7 @@ private struct ClipboardItemRow: View {
     let isSelected: Bool
     let colorScheme: ColorScheme
     let onSelect: () -> Void
+    let onTogglePin: () -> Void
     let onDelete: () -> Void
 
     @State private var loadedImage: NSImage?
@@ -486,13 +528,29 @@ private struct ClipboardItemRow: View {
                 Spacer()
 
                 if isHovered {
-                    Button(action: onDelete) {
-                        Image(systemName: "xmark.circle.fill")
-                            .foregroundStyle(.secondary)
-                            .imageScale(.small)
+                    HStack(spacing: 6) {
+                        Button(action: onTogglePin) {
+                            Image(systemName: item.isPinned ? "pin.slash.fill" : "pin.fill")
+                                .foregroundStyle(item.isPinned ? AnyShapeStyle(.secondary) : AnyShapeStyle(Color.accentColor))
+                                .imageScale(.small)
+                        }
+                        .buttonStyle(.plain)
+                        .help(item.isPinned ? "Bỏ ghim" : "Ghim — giữ vĩnh viễn cho đến khi xoá (⌘P)")
+
+                        Button(action: onDelete) {
+                            Image(systemName: "xmark.circle.fill")
+                                .foregroundStyle(.secondary)
+                                .imageScale(.small)
+                        }
+                        .buttonStyle(.plain)
+                        .help("Xoá")
                     }
-                    .buttonStyle(.plain)
                     .transition(.opacity)
+                } else if item.isPinned {
+                    Image(systemName: "pin.fill")
+                        .font(.system(size: 9))
+                        .foregroundStyle(Color.accentColor.opacity(0.75))
+                        .transition(.opacity)
                 }
             }
             .padding(.horizontal, 12)
@@ -715,6 +773,11 @@ private final class ClipboardHistoryListKeyCaptureView: NSView {
 
     private func handleNavigation(_ event: NSEvent) -> Bool {
         let normalizedFlags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+
+        if Int(event.keyCode) == kVK_ANSI_P, normalizedFlags == .command {
+            onCommand?(.togglePinSelection)
+            return true
+        }
 
         switch Int(event.keyCode) {
         case kVK_Tab:

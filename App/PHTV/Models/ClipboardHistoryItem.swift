@@ -84,6 +84,9 @@ struct ClipboardHistoryItem: Identifiable, Codable, Equatable, Sendable {
     let filePaths: [String]?
     let fileReferences: [ClipboardHistoryFileReference]?
     let sourceApp: String?
+    /// Pinned items are kept until the user unpins or deletes them: they are
+    /// exempt from the retention window, the item-count limit, and "Clear all".
+    let isPinned: Bool
 
     // Non-Codable: only populated for freshly captured items before first save.
     // After decoding from disk this is always nil; use imageFilePath instead.
@@ -97,7 +100,8 @@ struct ClipboardHistoryItem: Identifiable, Codable, Equatable, Sendable {
         filePaths: [String]?,
         fileReferences: [ClipboardHistoryFileReference]? = nil,
         sourceApp: String?,
-        imageFilePath: String? = nil
+        imageFilePath: String? = nil,
+        isPinned: Bool = false
     ) {
         self.id = id
         self.timestamp = timestamp
@@ -107,12 +111,28 @@ struct ClipboardHistoryItem: Identifiable, Codable, Equatable, Sendable {
         self.filePaths = filePaths
         self.fileReferences = fileReferences
         self.sourceApp = sourceApp
+        self.isPinned = isPinned
+    }
+
+    /// Same item with a different pinned state (all fields are immutable).
+    func withPinned(_ pinned: Bool) -> ClipboardHistoryItem {
+        ClipboardHistoryItem(
+            id: id,
+            timestamp: timestamp,
+            textContent: textContent,
+            imageData: imageData,
+            filePaths: filePaths,
+            fileReferences: fileReferences,
+            sourceApp: sourceApp,
+            imageFilePath: imageFilePath,
+            isPinned: pinned
+        )
     }
 
     // MARK: - Codable
 
     private enum CodingKeys: String, CodingKey {
-        case id, timestamp, textContent, imageFilePath, filePaths, fileReferences, sourceApp
+        case id, timestamp, textContent, imageFilePath, filePaths, fileReferences, sourceApp, isPinned
         // Legacy key for migration only — not written on encode
         case legacyImageData = "imageData"
     }
@@ -125,6 +145,8 @@ struct ClipboardHistoryItem: Identifiable, Codable, Equatable, Sendable {
         filePaths = try c.decodeIfPresent([String].self, forKey: .filePaths)
         fileReferences = try c.decodeIfPresent([ClipboardHistoryFileReference].self, forKey: .fileReferences)
         sourceApp = try c.decodeIfPresent(String.self, forKey: .sourceApp)
+        // Histories written before the pin feature have no key: default to unpinned.
+        isPinned = try c.decodeIfPresent(Bool.self, forKey: .isPinned) ?? false
 
         if let existingPath = try c.decodeIfPresent(String.self, forKey: .imageFilePath) {
             // New format: image already on disk
@@ -150,6 +172,9 @@ struct ClipboardHistoryItem: Identifiable, Codable, Equatable, Sendable {
         try c.encodeIfPresent(filePaths, forKey: .filePaths)
         try c.encodeIfPresent(fileReferences, forKey: .fileReferences)
         try c.encodeIfPresent(sourceApp, forKey: .sourceApp)
+        if isPinned {
+            try c.encode(isPinned, forKey: .isPinned)
+        }
         // imageData is intentionally excluded — it lives on disk only
     }
 

@@ -19,10 +19,10 @@ struct ClipboardHotkeyConfigView: View {
     private var retentionFootnote: String {
         switch appState.clipboardHistoryRetention {
         case .forever:
-            return "Lịch sử chỉ bị giới hạn bởi số mục tối đa ở trên."
+            return "Lịch sử chỉ bị giới hạn bởi số mục tối đa ở trên. Mục đã ghim được giữ vĩnh viễn và không tính vào giới hạn."
         default:
             let window = appState.clipboardHistoryRetention.displayName.lowercased()
-            return "Mục được sao chép quá \(window) sẽ tự động bị xóa."
+            return "Mục được sao chép quá \(window) sẽ tự động bị xóa. Mục đã ghim được giữ vĩnh viễn cho đến khi bạn bỏ ghim hoặc xoá."
         }
     }
 
