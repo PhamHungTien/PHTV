@@ -7,9 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
-- **Ghim mục trong Lịch sử Clipboard** (theo góp ý của người dùng): di chuột lên mục và bấm biểu tượng ghim (hoặc chọn mục rồi nhấn **⌘P**). Mục đã ghim hiện ở khu **Đã ghim** trên đầu danh sách và được giữ **vĩnh viễn cho đến khi bỏ ghim hoặc xoá** — không bị ảnh hưởng bởi giới hạn số mục, thời gian tự xoá, hay nút "Xoá tất cả". Sao chép lại nội dung trùng với mục đã ghim sẽ giữ nguyên trạng thái ghim. Tương thích ngược hoàn toàn với lịch sử đã lưu.
-- Gọn giao diện: bỏ thanh đếm số mục và dòng hướng dẫn phím ở đáy cửa sổ clipboard.
+## [3.3.8] - 2026-07-17
+
+### Tổng quan
+PHTV 3.3.8 bổ sung tính năng được cộng đồng góp ý: **ghim mục trong Lịch sử Clipboard**. Nội dung quan trọng — địa chỉ, số tài khoản, câu trả lời mẫu — nay có thể ghim lại để luôn nằm trên đầu danh sách và được giữ vĩnh viễn cho đến khi bạn chủ động bỏ ghim hoặc xoá.
+
+### Điểm nổi bật
+- **Ghim mục trong Lịch sử Clipboard**
+  - Di chuột lên một mục và bấm biểu tượng ghim, hoặc chọn mục bằng bàn phím rồi nhấn **⌘P**. Bấm lần nữa để bỏ ghim.
+  - Mục đã ghim hiện ở khu **Đã ghim** trên đầu danh sách (chỉ xuất hiện khi có mục ghim), phần lịch sử thường nằm dưới khu **Gần đây**. Tìm kiếm hoạt động trên cả hai khu.
+  - Mục đã ghim được giữ **vĩnh viễn cho đến khi bỏ ghim hoặc xoá** — miễn trừ khỏi cả ba cơ chế dọn dẹp: giới hạn số mục tối đa (và không chiếm suất của mục thường), tự động xóa theo thời gian, và nút **Xoá tất cả** (chỉ xoá mục thường, mục ghim ở lại).
+  - Sao chép lại nội dung trùng với một mục đã ghim sẽ giữ nguyên trạng thái ghim; dán mục ghim cũng vậy.
+  - **Tương thích ngược hoàn toàn**: lịch sử clipboard đã lưu từ các bản trước đọc lên bình thường, không cần chuyển đổi gì.
+
+### Fixed and Improved
+- Gọn giao diện cửa sổ clipboard: bỏ thanh đếm số mục và dòng hướng dẫn phím ở đáy cửa sổ.
+- Ghi chú trong **Cài đặt > Lịch sử Clipboard** nêu rõ mục đã ghim không bao giờ bị tự xoá.
+- Bổ sung 7 test hồi quy cho tính năng ghim (miễn trừ giới hạn thời gian/số lượng, tương thích dữ liệu cũ, giữ nguyên mọi trường khi ghim/bỏ ghim). Toàn bộ test suite đạt **372/372 tests**.
+
+### Ghi chú nâng cấp
+- Không cần thao tác gì sau khi cập nhật. Muốn dùng ngay: mở cửa sổ Lịch sử Clipboard, di chuột lên mục muốn giữ và bấm biểu tượng ghim.
 
 ## [3.3.7] - 2026-07-16
 
