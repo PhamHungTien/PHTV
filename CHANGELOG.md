@@ -7,26 +7,60 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Changed
-- Mở rộng **“Tiếng Anh theo ứng dụng”** với hai hành vi riêng cho từng ứng
-  dụng: **“Tự chuyển”** để vào ứng dụng bằng tiếng Anh nhưng vẫn cho phép bật
-  lại tiếng Việt, và **“Khóa tiếng Anh”** để chặn mọi cách bật tiếng Việt cho
-  đến khi rời ứng dụng. Menu bar luôn hiển thị `E` và ghi rõ khi khóa cứng đang
-  có hiệu lực; các mục đã lưu trước đây tiếp tục dùng “Tự chuyển” (#166).
-- Thu gọn giao diện **“Tiếng Anh theo ứng dụng”** trong Cài đặt > Ứng dụng:
-  mỗi hàng có bộ chọn hành vi riêng nhưng vẫn giữ chiều cao gọn, loại bỏ
-  mô tả và thao tác bị lặp, làm rõ hai lựa chọn ngay trên tiêu đề phụ, đồng thời
-  giữ trạng thái trống ngắn gọn. Nhóm **“Gửi từng phím”** nay gộp tùy chọn
-  toàn cục và danh sách theo ứng dụng vào cùng một khu vực; menu thêm ứng dụng,
-  hộp chọn, hiệu ứng chuyển trạng thái và thao tác chuột phải đều dùng hành vi
-  native của macOS, có hỗ trợ Reduce Motion và tương thích từ macOS 14.
+## [3.4.0] - 2026-07-19
 
-### Fixed
-- Hiển thị biểu tượng của nguồn nhập macOS đang dùng khi chuyển sang bàn phím
-  không Latin (Trung, Nhật, Hàn và các ngôn ngữ tương tự), thay vì đổi sang
-  `E` hoặc giữ `V`. Nếu macOS không cung cấp icon hợp lệ, PHTV dùng `E` làm
-  biểu tượng dự phòng. PHTV vẫn ghi nhớ chế độ Việt/Anh để khôi phục khi quay
-  lại bàn phím Latin (#210).
+### Tổng quan
+PHTV 3.4.0 hoàn thiện hệ thống quy tắc tiếng Anh theo ứng dụng. Mỗi ứng dụng
+nay có thể chỉ tự chuyển sang tiếng Anh khi được mở, hoặc khóa cứng ở tiếng Anh
+cho đến khi người dùng rời ứng dụng. Giao diện Cài đặt > Ứng dụng cũng được
+thiết kế lại để gọn, rõ và gần với trải nghiệm native của macOS hơn.
+
+### Điểm nổi bật
+- **Tự chuyển hoặc khóa tiếng Anh theo từng ứng dụng (#166)**
+  - **“Tự chuyển”** đưa PHTV về tiếng Anh khi vào ứng dụng, nhưng người dùng
+    vẫn có thể bật lại tiếng Việt trong lúc làm việc.
+  - **“Khóa tiếng Anh”** luôn giữ ứng dụng ở chế độ tiếng Anh và chặn mọi yêu
+    cầu bật tiếng Việt cho đến khi rời ứng dụng.
+  - Có thể chọn hành vi riêng trên từng dòng ứng dụng; thay đổi có hiệu lực
+    ngay cả khi ứng dụng đó đang được sử dụng.
+  - Các quy tắc lưu từ phiên bản cũ được giữ nguyên và mặc định dùng
+    **“Tự chuyển”**, nên việc nâng cấp không làm thay đổi thói quen hiện tại.
+
+- **Biểu tượng menu bar đồng bộ với trạng thái thực tế (#210)**
+  - Khi **“Khóa tiếng Anh”** có hiệu lực, biểu tượng menu bar luôn hiển thị
+    `E`, thống nhất với trạng thái gõ đang được cưỡng chế.
+  - Khi chuyển sang nguồn nhập không Latin như Trung, Nhật hoặc Hàn, PHTV ưu
+    tiên hiển thị biểu tượng do macOS cung cấp.
+  - Nếu macOS không cung cấp icon hợp lệ, PHTV dùng `E` làm biểu tượng dự
+    phòng; chế độ Việt/Anh trước đó vẫn được khôi phục khi quay lại nguồn nhập
+    Latin.
+
+- **Thiết kế lại Cài đặt > Ứng dụng**
+  - Rút gọn từ năm nhóm xuống bốn nhóm; thiết lập **“Gửi từng phím”** toàn cục
+    và danh sách tự động theo ứng dụng nay nằm trong cùng một khu vực.
+  - Thống nhất menu thêm ứng dụng từ ứng dụng đang chạy, thư mục Applications
+    hoặc Bundle ID; trạng thái trống được thu gọn và không còn lặp thao tác.
+  - Mỗi dòng hỗ trợ menu chuột phải để đổi hành vi hoặc xóa nhanh.
+  - Hiệu ứng chuyển trạng thái nhẹ, tôn trọng Reduce Motion và tương thích từ
+    macOS 14.
+  - Khi nhập Bundle ID thủ công, PHTV dùng `NSWorkspace` để tìm đúng tên,
+    đường dẫn và icon ứng dụng nếu ứng dụng đã được cài trên máy.
+
+### Fixed and Improved
+- Thay sáu trạng thái trình bày rời rạc bằng một luồng chọn ứng dụng duy nhất
+  cho mỗi danh sách, tránh sheet hoặc file picker mở chồng nhau.
+- Bổ sung nhãn trợ năng, giá trị trạng thái và trợ giúp cho menu hành vi, nút
+  xóa cùng các ghi chú có điều kiện.
+- Bổ sung test hồi quy cho khóa tiếng Anh ở tầng runtime, tương thích dữ liệu
+  cũ, lưu/đọc hành vi mới, tên quy tắc và chính sách biểu tượng menu bar.
+  Toàn bộ test suite đạt **396/396 tests**.
+
+### Ghi chú nâng cấp
+- Không cần thiết lập lại hoặc cấp thêm quyền sau khi cập nhật.
+- Các ứng dụng đã cấu hình trước đây tiếp tục dùng **“Tự chuyển”**.
+- Để một ứng dụng không bao giờ bật tiếng Việt, mở **Cài đặt > Ứng dụng >
+  Tiếng Anh theo ứng dụng**, thêm hoặc tìm ứng dụng rồi chọn
+  **“Khóa tiếng Anh”**.
 
 ## [3.3.9] - 2026-07-19
 

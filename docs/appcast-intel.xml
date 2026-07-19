@@ -12,6 +12,20 @@
             <sparkle:version>306</sparkle:version>
             <sparkle:shortVersionString>3.4.0</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[
+                <h2>PHTV 3.4.0</h2>
+                <p>Bản cập nhật này bổ sung quy tắc tiếng Anh linh hoạt cho từng ứng dụng, đồng thời thiết kế lại phần Cài đặt &gt; Ứng dụng theo hướng gọn, rõ và native hơn trên macOS.</p>
+                <h3>Điểm nổi bật</h3>
+                <ul>
+                    <li><strong>Hai cách dùng tiếng Anh theo ứng dụng</strong>: Chọn <strong>“Tự chuyển”</strong> để vào ứng dụng bằng tiếng Anh nhưng vẫn có thể bật lại tiếng Việt, hoặc <strong>“Khóa tiếng Anh”</strong> để luôn giữ tiếng Anh cho đến khi rời ứng dụng.</li>
+                    <li><strong>Khóa tiếng Anh đồng bộ</strong>: Khi khóa đang có hiệu lực, mọi yêu cầu bật tiếng Việt đều được giữ ở tiếng Anh và biểu tượng menu bar luôn hiển thị <strong>E</strong>.</li>
+                    <li><strong>Biểu tượng nguồn nhập chính xác hơn</strong>: Với bàn phím Trung, Nhật, Hàn hoặc nguồn nhập không Latin, PHTV ưu tiên biểu tượng do macOS cung cấp; nếu không có icon phù hợp, PHTV dùng <strong>E</strong> làm dự phòng.</li>
+                    <li><strong>Cài đặt ứng dụng gọn và dễ hiểu hơn</strong>: Gộp thiết lập gửi từng phím toàn cục và theo ứng dụng, rút gọn trạng thái trống, thống nhất menu thêm ứng dụng và bổ sung thao tác chuột phải.</li>
+                    <li><strong>Trải nghiệm native hơn</strong>: Hiệu ứng chuyển trạng thái nhẹ, hỗ trợ Reduce Motion, và tự tìm đúng tên cùng icon khi thêm ứng dụng bằng Bundle ID.</li>
+                </ul>
+                <h3>Sau khi cập nhật</h3>
+                <p>Không cần thiết lập lại hoặc cấp thêm quyền. Các quy tắc ứng dụng đã lưu tiếp tục dùng chế độ <strong>“Tự chuyển”</strong>; bạn có thể đổi từng ứng dụng sang <strong>“Khóa tiếng Anh”</strong> trong Cài đặt &gt; Ứng dụng.</p>
+            ]]></description>
             <enclosure url="https://github.com/PhamHungTien/PHTV/releases/download/v3.4.0/PHTV-3.4.0-intel.dmg" length="9277172" type="application/octet-stream" sparkle:edSignature="U71bVjVbnMbqQXAbncCbNUMz12zI82sN8m6CmDhFWSF9eogDQJYObRWvIsK4SlDfVxJKiCjp/9Sjea9P3+unCg=="/>
         </item>
         <item>
