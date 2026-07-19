@@ -10,6 +10,23 @@ import XCTest
 @testable import PHTV
 
 final class CompatibilityStrategyTests: XCTestCase {
+    func testDaVinciResolveVariantsPreferLowLatencyEventContext() {
+        for bundleId in [
+            "com.blackmagic-design.DaVinciResolve",
+            "com.blackmagic-design.DaVinciResolveStudio",
+            "com.blackmagic-design.DaVinciResolveLite",
+            "com.blackmagic-design.DaVinciResolveAppStore"
+        ] {
+            XCTAssertTrue(
+                PHTVAppDetectionService.prefersLowLatencyEventContext(bundleId),
+                bundleId
+            )
+        }
+
+        XCTAssertFalse(
+            PHTVAppDetectionService.prefersLowLatencyEventContext("com.apple.TextEdit")
+        )
+    }
 
     func testOutlookNeedsLegacySpaceCommitFix() {
         XCTAssertTrue(PHTVAppDetectionService.needsLegacySpaceCommitFix("com.microsoft.Outlook"))

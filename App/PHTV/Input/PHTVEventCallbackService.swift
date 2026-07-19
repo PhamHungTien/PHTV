@@ -375,6 +375,15 @@ final class PHTVEventCallbackService {
         let settings = PHTVEngineRuntimeFacade.eventDispatchSettingsSnapshot()
         let currentLanguage = settings.language
         let safeModeEnabled = settings.safeMode
+        let eventTargetPID = Int32(event.getIntegerValueField(.eventTargetUnixProcessID))
+        let preliminaryTargetBundleId =
+            (eventTargetPID > 0
+                ? PHTVAppContextService.bundleId(fromPID: eventTargetPID, safeMode: true)
+                : nil)
+            ?? PHTVAppContextService.currentFrontmostBundleId()
+        let contextSafeMode =
+            safeModeEnabled ||
+            PHTVAppDetectionService.prefersLowLatencyEventContext(preliminaryTargetBundleId)
         // The auto-capitalize exclusion list is scoped per typing language, so
         // an app can suppress it for English (an IDE) yet keep it for
         // Vietnamese, or vice versa (issue #152).
@@ -467,7 +476,7 @@ final class PHTVEventCallbackService {
                     keyCode: eventKeycode,
                     keyCharacter: keyCharacter,
                     isNavigationKey: isNavigationKey,
-                    safeMode: safeModeEnabled,
+                    safeMode: contextSafeMode,
                     uppercaseEnabled: settings.upperCaseFirstChar,
                     uppercaseExcluded: uppercaseExcludedFlag)
                 if shouldPrime {
@@ -656,7 +665,7 @@ final class PHTVEventCallbackService {
                 if PHTVEngineRuntimeFacade.engineDataCode() == EngineSignalCode.replaceMacro {
                     _ = PHTVEventContextBridgeService.prepareTargetContextAndConfigureRuntime(
                         forEvent: event,
-                        safeMode: safeModeEnabled,
+                        safeMode: contextSafeMode,
                         spotlightCacheDurationMs: kSpotlightCacheDurationMs,
                         appCharacteristicsMaxAgeMs: kAppCharacteristicsCacheMaxAgeMs)
                     if PHTVCharacterOutputService.handleMacro(
@@ -691,7 +700,8 @@ final class PHTVEventCallbackService {
                                  event: event,
                                  eventKeycode: eventKeycode,
                                  eventFlags: eventFlags,
-                                 settings: settings)
+                                 settings: settings,
+                                 contextSafeMode: contextSafeMode)
         }
 
         return Unmanaged.passRetained(event)
@@ -703,8 +713,9 @@ final class PHTVEventCallbackService {
                                       event: CGEvent,
                                       eventKeycode: CGKeyCode,
                                       eventFlags: CGEventFlags,
-                                      settings: PHTVEventDispatchSettings) -> Unmanaged<CGEvent>? {
-        let safeModeEnabled = settings.safeMode
+                                      settings: PHTVEventDispatchSettings,
+                                      contextSafeMode: Bool) -> Unmanaged<CGEvent>? {
+        let safeModeEnabled = contextSafeMode
         let targetContext = PHTVEventContextBridgeService.prepareTargetContextAndConfigureRuntime(
             forEvent: event,
             safeMode: safeModeEnabled,
