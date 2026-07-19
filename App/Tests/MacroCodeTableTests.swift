@@ -13,6 +13,47 @@ import XCTest
 @testable import PHTV
 
 final class MacroCodeTableTests: XCTestCase {
+    func testMacroStringDecodesUnicodeAndSupplementaryScalarsForWholeTextInsertion() {
+        let macroData: [UInt32] = [
+            UInt32(0x0111) | EngineBitMask.charCode,
+            UInt32(0x1F642) | EngineBitMask.pureCharacter
+        ]
+
+        XCTAssertEqual(
+            PHTVEngineDataBridge.macroString(
+                fromMacroData: macroData,
+                codeTable: Int32(CodeTable.unicode.toIndex())
+            ),
+            "đ🙂"
+        )
+    }
+
+    func testMacroStringPreservesUnicodeCompoundOutput() {
+        let acuteA = UInt32((1 << 13) | 0x0061) | EngineBitMask.charCode
+
+        XCTAssertEqual(
+            PHTVEngineDataBridge.macroString(
+                fromMacroData: [acuteA],
+                codeTable: Int32(CodeTable.unicodeComposite.toIndex())
+            ),
+            "a\u{0301}"
+        )
+    }
+
+    func testLongUnicodeMacroPayloadSurvivesEngineRoundTripWithoutTruncation() {
+        let expansion = String(repeating: "Nội dung thử nghiệm dài. ", count: 80)
+        XCTAssertGreaterThan(expansion.count, 1_564)
+        loadMacros([MacroItem(shortcut: "zz", expansion: expansion)])
+
+        XCTAssertTrue(typedTokenTriggersMacro("zz"))
+        XCTAssertEqual(
+            PHTVEngineDataBridge.macroString(
+                fromMacroData: PHTVEngineRuntimeFacade.engineDataMacroSnapshot(),
+                codeTable: Int32(CodeTable.unicode.toIndex())
+            ),
+            expansion
+        )
+    }
 
     private let eventKeyboard: Int32 = 0
     private let stateKeyDown: Int32 = 0

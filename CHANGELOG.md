@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **Text Replacements trong Zalo Chat (#211):** PHTV tự mở rộng các mục nhập từ macOS Text Replacements trong Zalo và trình duyệt, thay vì nhường cho cơ chế native vốn không hoạt động nhất quán giữa ô tìm kiếm và ô chat.
+- **Macro dài bị cắt trong Zalo (#197):** macro Unicode dài được chèn thành một giao dịch dán nguyên khối để Zalo không làm rơi chuỗi sự kiện; clipboard được khôi phục đầy đủ sau đó và nội dung người dùng vừa sao chép luôn được ưu tiên.
+
 ## [3.3.8] - 2026-07-17
 
 ### Tổng quan

@@ -127,34 +127,54 @@ final class PHTVEngineDataBridge: NSObject {
             return ""
         }
 
-        let capsMask = EngineBitMask.caps
         let charCodeMask = EngineBitMask.charCode
         let pureCharacterMask = EngineBitMask.pureCharacter
 
-        var resultScalars = String.UnicodeScalarView()
+        var result = String()
         for data in macroData {
-            var character: UInt16 = 0
-
             if (data & pureCharacterMask) != 0 {
-                character = UInt16(truncatingIfNeeded: data & ~capsMask)
-            } else if (data & charCodeMask) == 0 {
-                character = EngineMacroKeyMap.character(for: data)
-                if character == 0 {
-                    continue
+                let scalarValue = data & ~pureCharacterMask
+                if let scalar = UnicodeScalar(scalarValue) {
+                    result.unicodeScalars.append(scalar)
                 }
-            } else if codeTable == 0 {
-                character = UInt16(truncatingIfNeeded: data & 0xFFFF)
-            } else {
-                character = EnginePackedData.lowByte(data)
-            }
-
-            guard character != 0, let scalar = UnicodeScalar(Int(character)) else {
                 continue
             }
-            resultScalars.append(scalar)
+
+            if (data & charCodeMask) == 0 {
+                let character = EngineMacroKeyMap.character(for: data)
+                if character != 0 {
+                    result.append(String(decoding: [character], as: UTF16.self))
+                }
+                continue
+            }
+
+            switch codeTable {
+            case Int32(CodeTable.unicode.toIndex()):
+                result.append(String(decoding: [UInt16(truncatingIfNeeded: data)], as: UTF16.self))
+            case Int32(CodeTable.tcvn.toIndex()),
+                 Int32(CodeTable.vniWindows.toIndex()),
+                 Int32(CodeTable.cp1258.toIndex()):
+                let low = EnginePackedData.lowByte(data)
+                let high = EnginePackedData.highByte(data)
+                result.append(String(decoding: [low], as: UTF16.self))
+                if high > 32 {
+                    result.append(String(decoding: [high], as: UTF16.self))
+                }
+            case Int32(CodeTable.unicodeComposite.toIndex()):
+                var character = UInt16(truncatingIfNeeded: data)
+                let markIndex = character >> 13
+                character &= 0x1FFF
+                result.append(String(decoding: [character], as: UTF16.self))
+                if markIndex > 0 {
+                    let mark = EnginePackedData.unicodeCompoundMark(at: Int32(markIndex) - 1)
+                    result.append(String(decoding: [mark], as: UTF16.self))
+                }
+            default:
+                continue
+            }
         }
 
-        return String(resultScalars)
+        return result
     }
 
     class func replaceSpotlightLikeMacroIfNeeded(

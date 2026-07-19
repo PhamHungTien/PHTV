@@ -65,6 +65,17 @@ final class PHTVEventContextBridgeService: NSObject {
         return PHTVAccessibilityService.isNotionCodeBlock()
     }
 
+    @objc(isZaloContextForBundleId:safeMode:)
+    class func isZaloContext(forBundleId bundleId: String?, safeMode: Bool) -> Bool {
+        if PHTVAppDetectionService.isZaloApp(bundleId) {
+            return true
+        }
+        guard !safeMode else {
+            return false
+        }
+        return PHTVAccessibilityService.isZaloContext(forBundleId: bundleId)
+    }
+
     @objc(handleSpotlightCacheInvalidationForType:keycode:flags:)
     class func handleSpotlightCacheInvalidation(forType type: CGEventType,
                                                 keycode: UInt16,

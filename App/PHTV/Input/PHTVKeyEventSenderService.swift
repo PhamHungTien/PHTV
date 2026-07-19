@@ -115,6 +115,37 @@ class PHTVKeyEventSenderService: NSObject {
         postSyntheticEvent(up)
     }
 
+    @objc class func sendPasteShortcut() -> Bool {
+        guard let source = eventSource,
+              let commandDown = CGEvent(
+                keyboardEventSource: source,
+                virtualKey: CGKeyCode(KeyCode.leftCommand),
+                keyDown: true),
+              let pasteDown = CGEvent(
+                keyboardEventSource: source,
+                virtualKey: CGKeyCode(KeyCode.vKey),
+                keyDown: true),
+              let pasteUp = CGEvent(
+                keyboardEventSource: source,
+                virtualKey: CGKeyCode(KeyCode.vKey),
+                keyDown: false),
+              let commandUp = CGEvent(
+                keyboardEventSource: source,
+                virtualKey: CGKeyCode(KeyCode.leftCommand),
+                keyDown: false) else {
+            return false
+        }
+
+        commandDown.flags = .maskCommand
+        pasteDown.flags = .maskCommand
+        pasteUp.flags = .maskCommand
+        commandUp.flags = []
+        for event in [commandDown, pasteDown, pasteUp, commandUp] {
+            postSyntheticEvent(event)
+        }
+        return true
+    }
+
     @objc class func sendShiftAndLeftArrow() {
         guard let source = eventSource else { return }
         guard let down = CGEvent(keyboardEventSource: source, virtualKey: CGKeyCode(KeyCode.leftArrow), keyDown: true),

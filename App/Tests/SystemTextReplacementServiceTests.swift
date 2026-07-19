@@ -174,15 +174,20 @@ final class SystemTextReplacementServiceTests: XCTestCase {
         )
     }
 
-    func testNativeTextReplacementDeferralUsesGuiDefaultAndToolingFallback() {
-        XCTAssertTrue(
+    func testNativeTextReplacementDeferralUsesStableGuiFieldsOnly() {
+        XCTAssertFalse(
             PHTVSystemTextReplacementService.shouldDeferToNativeTextReplacement(
                 forBundleId: "com.google.Chrome"
             )
         )
-        XCTAssertTrue(
+        XCTAssertFalse(
             PHTVSystemTextReplacementService.shouldDeferToNativeTextReplacement(
                 forBundleId: "com.tinyspeck.slackmacgap"
+            )
+        )
+        XCTAssertFalse(
+            PHTVSystemTextReplacementService.shouldDeferToNativeTextReplacement(
+                forBundleId: "com.vng.zalo"
             )
         )
         XCTAssertTrue(

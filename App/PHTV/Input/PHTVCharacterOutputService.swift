@@ -167,6 +167,10 @@ final class PHTVCharacterOutputService: NSObject {
         }
 
         let originalBackspaceCount = PHTVEngineRuntimeFacade.engineDataBackspaceCount()
+        let safeModeEnabled = PHTVEngineRuntimeFacade.safeModeEnabled()
+        let isZaloContext = PHTVEventContextBridgeService.isZaloContext(
+            forBundleId: effectiveTarget,
+            safeMode: safeModeEnabled)
         let macroPlan = PHTVInputStrategyService.macroPlan(
             forPostToHIDTap: PHTVEventRuntimeContextService.postToHIDTapEnabled(),
             appIsSpotlightLike: PHTVEventRuntimeContextService.appIsSpotlightLike(),
@@ -180,6 +184,12 @@ final class PHTVCharacterOutputService: NSObject {
         let isSpotlightLike = macroPlan.isSpotlightLikeTarget
         // Capture macro output once; avoids re-locking the engine per item.
         let macroData = PHTVEngineRuntimeFacade.engineDataMacroSnapshot()
+        let codeTable = PHTVEngineRuntimeFacade.currentCodeTable()
+        let shouldUseReliableWholeTextInsertion =
+            PHTVInputStrategyService.shouldUseReliableWholeTextInsertion(
+                forZaloContext: isZaloContext,
+                macroItemCount: Int32(macroData.count),
+                codeTable: codeTable)
 
         #if DEBUG
         NSLog("[Macro] handleMacro: target='%@', isSpotlight=%d (postToHID=%d), backspaceCount=%d, macroSize=%d",
@@ -195,8 +205,8 @@ final class PHTVCharacterOutputService: NSObject {
                 isSpotlightLike ? 1 : 0,
                 backspaceCount: originalBackspaceCount,
                 macroData: macroData,
-                codeTable: Int32(PHTVEngineRuntimeFacade.currentCodeTable()),
-                safeMode: PHTVEngineRuntimeFacade.safeModeEnabled())
+                codeTable: codeTable,
+                safeMode: safeModeEnabled)
             if replacedByAX {
                 #if DEBUG
                 NSLog("[Macro] Spotlight: AX API succeeded")
@@ -219,7 +229,21 @@ final class PHTVCharacterOutputService: NSObject {
             PHTVKeyEventSenderService.sendBackspaceSequenceWithDelay(effectiveBackspaceCount)
         }
 
-        if !macroPlan.useStepByStepSend {
+        var insertedAsWholeText = false
+        if shouldUseReliableWholeTextInsertion {
+            let macroText = PHTVEngineDataBridge.macroString(
+                fromMacroData: macroData,
+                codeTable: codeTable)
+            insertedAsWholeText = PHTVTransientTextInsertionService.insert(macroText)
+            #if DEBUG
+            NSLog("[Macro] Zalo reliable whole-text insertion: %@", insertedAsWholeText ? "success" : "fallback")
+            #endif
+        }
+
+        if insertedAsWholeText {
+            // Nothing else to send: the paste shortcut inserted the complete
+            // expansion as one editor transaction.
+        } else if !macroPlan.useStepByStepSend {
             sendNewCharString(dataFromMacro: true, offset: 0, keycode: keycode, flags: flags)
         } else {
             let pureCharMask = EngineBitMask.pureCharacter

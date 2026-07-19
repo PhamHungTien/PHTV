@@ -151,6 +151,8 @@ final class PHTVProcessSignalPlanBox: NSObject {
 
 @objcMembers
 final class PHTVInputStrategyService: NSObject {
+    static let reliableWholeTextInsertionThreshold = 128
+
     @objc(shouldOwnCliPrintableKeyForCliTarget:printableKey:otherControlKey:navigationKey:)
     class func shouldOwnCliPrintableKey(
         forCliTarget isCliTarget: Bool,
@@ -401,6 +403,17 @@ final class PHTVInputStrategyService: NSObject {
             useStepByStepSend: useStepByStepSend,
             shouldSendTriggerKey: !isSpotlightLikeTarget
         )
+    }
+
+    @objc(shouldUseReliableWholeTextInsertionForZaloContext:macroItemCount:codeTable:)
+    class func shouldUseReliableWholeTextInsertion(
+        forZaloContext isZaloContext: Bool,
+        macroItemCount: Int32,
+        codeTable: Int32
+    ) -> Bool {
+        isZaloContext &&
+            codeTable == Int32(CodeTable.unicode.toIndex()) &&
+            macroItemCount >= Int32(reliableWholeTextInsertionThreshold)
     }
 
     @objc(syncKeyActionForCodeTable:extCode:hasSyncKey:syncKeyBackValue:containsUnicodeCompound:)

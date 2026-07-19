@@ -62,6 +62,55 @@ final class CompatibilityStrategyTests: XCTestCase {
         XCTAssertFalse(PHTVAppDetectionService.needsStrictAddressBarDetection("com.google.Chrome"))
     }
 
+    func testZaloContextDetectionCoversDesktopAndWebWithoutFalseAppMatches() {
+        XCTAssertTrue(PHTVAppDetectionService.isZaloApp("com.vng.Zalo"))
+        XCTAssertTrue(PHTVAppDetectionService.isZaloContext(
+            bundleId: "com.google.Chrome",
+            document: "https://chat.zalo.me/",
+            windowTitle: nil
+        ))
+        XCTAssertTrue(PHTVAppDetectionService.isZaloContext(
+            bundleId: "com.apple.Safari",
+            document: nil,
+            windowTitle: "Zalo Web"
+        ))
+        XCTAssertFalse(PHTVAppDetectionService.isZaloContext(
+            bundleId: "com.google.Chrome",
+            document: "https://example.com/",
+            windowTitle: "Example"
+        ))
+        XCTAssertFalse(PHTVAppDetectionService.isZaloContext(
+            bundleId: "com.apple.TextEdit",
+            document: nil,
+            windowTitle: "Zalo"
+        ))
+    }
+
+    func testLongZaloMacroUsesReliableWholeTextInsertionOnlyForUnicode() {
+        let threshold = Int32(PHTVInputStrategyService.reliableWholeTextInsertionThreshold)
+
+        XCTAssertTrue(PHTVInputStrategyService.shouldUseReliableWholeTextInsertion(
+            forZaloContext: true,
+            macroItemCount: threshold,
+            codeTable: Int32(CodeTable.unicode.toIndex())
+        ))
+        XCTAssertFalse(PHTVInputStrategyService.shouldUseReliableWholeTextInsertion(
+            forZaloContext: true,
+            macroItemCount: threshold - 1,
+            codeTable: Int32(CodeTable.unicode.toIndex())
+        ))
+        XCTAssertFalse(PHTVInputStrategyService.shouldUseReliableWholeTextInsertion(
+            forZaloContext: false,
+            macroItemCount: threshold,
+            codeTable: Int32(CodeTable.unicode.toIndex())
+        ))
+        XCTAssertFalse(PHTVInputStrategyService.shouldUseReliableWholeTextInsertion(
+            forZaloContext: true,
+            macroItemCount: threshold,
+            codeTable: Int32(CodeTable.vniWindows.toIndex())
+        ))
+    }
+
     func testAtlasUsesStandardBrowserAccentCorrectionPath() {
         let bundleId = "com.openai.atlas"
         let plan = PHTVInputStrategyService.processSignalPlan(

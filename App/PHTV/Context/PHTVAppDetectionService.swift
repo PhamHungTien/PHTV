@@ -248,6 +248,10 @@ final class PHTVAppDetectionService: NSObject {
         "notion.id"
     ])
 
+    private static let zaloApps = BundlePatternSet([
+        "com.vng.zalo"
+    ])
+
     private static let stepByStepApps = BundlePatternSet([
         "com.apple.loginwindow",
         "com.apple.SecurityAgent",
@@ -369,6 +373,32 @@ final class PHTVAppDetectionService: NSObject {
         stepByStepApps.contains(bundleId)
     }
 
+    @objc class func isZaloApp(_ bundleId: String?) -> Bool {
+        zaloApps.contains(bundleId)
+    }
+
+    static func isZaloContext(
+        bundleId: String?,
+        document: String?,
+        windowTitle: String?
+    ) -> Bool {
+        if isZaloApp(bundleId) {
+            return true
+        }
+
+        guard isBrowserApp(bundleId) else {
+            return false
+        }
+
+        if let document,
+           let host = URL(string: document)?.host?.lowercased(),
+           host == "zalo.me" || host.hasSuffix(".zalo.me") {
+            return true
+        }
+
+        return normalizedSearchTokens(from: windowTitle).contains("zalo")
+    }
+
     @objc class func needsLegacySpaceCommitFix(_ bundleId: String?) -> Bool {
         legacySpaceCommitFixApps.contains(bundleId)
     }
@@ -377,15 +407,20 @@ final class PHTVAppDetectionService: NSObject {
         strictAddressBarDetectionApps.contains(bundleId)
     }
 
-    // Default to macOS-native Text Replacements for regular GUI apps and only
-    // keep PHTV fallback handling for environments that commonly bypass the
-    // system text stack (terminal/IDE/Spotlight-like contexts).
+    // Native Text Replacements are inconsistent in browser content-editable
+    // fields and in Zalo chat (even when another field in the same app works).
+    // PHTV owns imported replacements there so behavior does not vary by field
+    // or website and the consumed trigger cannot expand twice.
     @objc class func supportsNativeSystemTextReplacements(_ bundleId: String?) -> Bool {
         guard let normalized = normalizeBundleId(bundleId) else {
             return false
         }
 
-        if isTerminalApp(normalized) || isIDEApp(normalized) || isSpotlightLikeApp(normalized) {
+        if isBrowserApp(normalized) ||
+           isZaloApp(normalized) ||
+           isTerminalApp(normalized) ||
+           isIDEApp(normalized) ||
+           isSpotlightLikeApp(normalized) {
             return false
         }
 

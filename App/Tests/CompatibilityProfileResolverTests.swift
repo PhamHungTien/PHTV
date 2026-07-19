@@ -14,7 +14,7 @@ final class CompatibilityProfileResolverTests: XCTestCase {
 
         XCTAssertEqual(profile.kind, .browser)
         XCTAssertTrue(profile.isBrowser)
-        XCTAssertTrue(profile.supportsNativeSystemTextReplacements)
+        XCTAssertFalse(profile.supportsNativeSystemTextReplacements)
         XCTAssertFalse(profile.shouldPostToHIDTap)
     }
 
@@ -25,7 +25,7 @@ final class CompatibilityProfileResolverTests: XCTestCase {
             XCTAssertEqual(profile.kind, .browser, bundleId)
             XCTAssertTrue(profile.isBrowser, bundleId)
             XCTAssertTrue(profile.containsUnicodeCompound, bundleId)
-            XCTAssertTrue(profile.supportsNativeSystemTextReplacements, bundleId)
+            XCTAssertFalse(profile.supportsNativeSystemTextReplacements, bundleId)
             XCTAssertFalse(profile.shouldPostToHIDTap, bundleId)
         }
     }
@@ -43,6 +43,15 @@ final class CompatibilityProfileResolverTests: XCTestCase {
 
         XCTAssertEqual(profile.kind, .chat)
         XCTAssertTrue(profile.isChatApp)
+        XCTAssertFalse(profile.supportsNativeSystemTextReplacements)
+    }
+
+    func testZaloChatProfileUsesPHTVTextReplacementFallback() {
+        let profile = PHTVCompatibilityProfileResolver.resolve(forBundleId: "com.vng.zalo")
+
+        XCTAssertEqual(profile.kind, .chat)
+        XCTAssertTrue(profile.isChatApp)
+        XCTAssertFalse(profile.supportsNativeSystemTextReplacements)
     }
 
     func testOfficeProfileForOutlookCarriesLegacySpaceCommitFix() {

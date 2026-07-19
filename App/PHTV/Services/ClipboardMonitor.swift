@@ -134,7 +134,10 @@ final class ClipboardMonitor {
         lastChangeCount = currentCount
 
         // Don't capture items that we just pasted from clipboard history
-        if ClipboardHistoryManager.shared.isPasting { return }
+        if ClipboardHistoryManager.shared.isPasting ||
+           PHTVTransientTextInsertionService.isPasteboardMutationActive {
+            return
+        }
 
         let sourceApp = PHTVAppContextService.currentFrontmostBundleId()
         guard ClipboardHistoryPrivacyPolicy.shouldCaptureContent(from: sourceApp) else {

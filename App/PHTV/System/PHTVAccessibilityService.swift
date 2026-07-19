@@ -641,6 +641,15 @@ final class PHTVAccessibilityService: NSObject {
         return false
     }
 
+    @objc(isZaloContextForBundleId:)
+    class func isZaloContext(forBundleId bundleId: String?) -> Bool {
+        PHTVAppDetectionService.isZaloContext(
+            bundleId: bundleId,
+            document: focusedWindowDocumentForFrontmostApp(),
+            windowTitle: focusedWindowTitleForFrontmostApp()
+        )
+    }
+
     private class func containsAddressBarKeyword(_ value: String?, bundleId: String?) -> Bool {
         guard let value else {
             return false
