@@ -225,6 +225,7 @@ final class PHTVInputStrategyService: NSObject {
     private class func backspaceAdjustment(
         forBrowserAddressBarFix shouldTryBrowserAddressBarFix: Bool,
         addressBarDetected isAddressBarDetected: Bool,
+        googleSheetsContext: Bool,
         legacyNonBrowserFix shouldTryLegacyNonBrowserFix: Bool,
         containsUnicodeCompound: Bool,
         notionCodeBlockDetected isNotionCodeBlockDetected: Bool,
@@ -234,6 +235,17 @@ final class PHTVInputStrategyService: NSObject {
             return PHTVBackspaceAdjustment(
                 action: PHTVBackspaceAdjustmentAction.none.rawValue,
                 adjustedBackspaceCount: max(0, backspaceCount)
+            )
+        }
+
+        if googleSheetsContext {
+            // Sheets may represent autocomplete as a selected suffix or only
+            // draw it on its canvas. A placeholder normalizes both states:
+            // it replaces/dismisses the suggestion, then +1 deletes it before
+            // the engine's original replacement backspaces run.
+            return PHTVBackspaceAdjustment(
+                action: PHTVBackspaceAdjustmentAction.sendEmptyCharacter.rawValue,
+                adjustedBackspaceCount: backspaceCount + 1
             )
         }
 
@@ -333,10 +345,11 @@ final class PHTVInputStrategyService: NSObject {
         return count
     }
 
-    @objc(resolvedBackspacePlanForBrowserAddressBarFix:addressBarDetected:legacyNonBrowserFix:containsUnicodeCompound:notionCodeBlockDetected:backspaceCount:maxBuffer:safetyLimit:)
+    @objc(resolvedBackspacePlanForBrowserAddressBarFix:addressBarDetected:googleSheetsContext:legacyNonBrowserFix:containsUnicodeCompound:notionCodeBlockDetected:backspaceCount:maxBuffer:safetyLimit:)
     class func resolvedBackspacePlan(
         forBrowserAddressBarFix shouldTryBrowserAddressBarFix: Bool,
         addressBarDetected isAddressBarDetected: Bool,
+        googleSheetsContext: Bool,
         legacyNonBrowserFix shouldTryLegacyNonBrowserFix: Bool,
         containsUnicodeCompound: Bool,
         notionCodeBlockDetected isNotionCodeBlockDetected: Bool,
@@ -347,6 +360,7 @@ final class PHTVInputStrategyService: NSObject {
         let adjustment = backspaceAdjustment(
             forBrowserAddressBarFix: shouldTryBrowserAddressBarFix,
             addressBarDetected: isAddressBarDetected,
+            googleSheetsContext: googleSheetsContext,
             legacyNonBrowserFix: shouldTryLegacyNonBrowserFix,
             containsUnicodeCompound: containsUnicodeCompound,
             notionCodeBlockDetected: isNotionCodeBlockDetected,

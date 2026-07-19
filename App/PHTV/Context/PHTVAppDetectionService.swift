@@ -399,6 +399,29 @@ final class PHTVAppDetectionService: NSObject {
         return normalizedSearchTokens(from: windowTitle).contains("zalo")
     }
 
+    static func isGoogleSheetsContext(
+        bundleId: String?,
+        document: String?,
+        windowTitle: String?
+    ) -> Bool {
+        guard isBrowserApp(bundleId) else {
+            return false
+        }
+
+        if let document = document?.lowercased(),
+           document.contains("docs.google.com/spreadsheets") {
+            return true
+        }
+
+        if let windowTitle = windowTitle?.lowercased(),
+           windowTitle.contains("google sheets") ||
+           windowTitle.contains("google trang tính") {
+            return true
+        }
+
+        return false
+    }
+
     @objc class func needsLegacySpaceCommitFix(_ bundleId: String?) -> Bool {
         legacySpaceCommitFixApps.contains(bundleId)
     }

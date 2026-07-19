@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **Google Sheets autocomplete (#193):** khi Sheets chọn phần gợi ý ở cuối ô
+  (ví dụ `ược` sau ký tự `d`), PHTV dùng ký tự đệm để hủy gợi ý rồi xóa đúng
+  ký tự cần thay, tránh kết quả Telex bị nhân đôi thành `dđ`.
 - **Text Replacements trong Zalo Chat (#211):** PHTV tự mở rộng các mục nhập từ macOS Text Replacements trong Zalo và trình duyệt, thay vì nhường cho cơ chế native vốn không hoạt động nhất quán giữa ô tìm kiếm và ô chat.
 - **Macro dài bị cắt trong Zalo (#197):** macro Unicode dài được chèn thành một giao dịch dán nguyên khối để Zalo không làm rơi chuỗi sự kiện; clipboard được khôi phục đầy đủ sau đó và nội dung người dùng vừa sao chép luôn được ưu tiên.
 

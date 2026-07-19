@@ -76,6 +76,17 @@ final class PHTVEventContextBridgeService: NSObject {
         return PHTVAccessibilityService.isZaloContext(forBundleId: bundleId)
     }
 
+    @objc(isGoogleSheetsContextForBundleId:safeMode:)
+    class func isGoogleSheetsContext(
+        forBundleId bundleId: String?,
+        safeMode: Bool
+    ) -> Bool {
+        guard !safeMode else {
+            return false
+        }
+        return PHTVAccessibilityService.isGoogleSheetsContext(forBundleId: bundleId)
+    }
+
     @objc(handleSpotlightCacheInvalidationForType:keycode:flags:)
     class func handleSpotlightCacheInvalidation(forType type: CGEventType,
                                                 keycode: UInt16,

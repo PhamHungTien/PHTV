@@ -650,6 +650,15 @@ final class PHTVAccessibilityService: NSObject {
         )
     }
 
+    @objc(isGoogleSheetsContextForBundleId:)
+    class func isGoogleSheetsContext(forBundleId bundleId: String?) -> Bool {
+        PHTVAppDetectionService.isGoogleSheetsContext(
+            bundleId: bundleId,
+            document: focusedWindowDocumentForFrontmostApp(),
+            windowTitle: focusedWindowTitleForFrontmostApp()
+        )
+    }
+
     private class func containsAddressBarKeyword(_ value: String?, bundleId: String?) -> Bool {
         guard let value else {
             return false

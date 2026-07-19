@@ -873,6 +873,19 @@ final class PHTVEventCallbackService {
                 #endif
             }
 
+            let isGoogleSheetsContext =
+                processSignalPlan.shouldTryBrowserAddressBarFix &&
+                hookData.backspaceCount > 0 &&
+                PHTVEventContextBridgeService.isGoogleSheetsContext(
+                    forBundleId: effectiveBundleId,
+                    safeMode: safeModeEnabled
+                )
+            #if DEBUG
+            if isGoogleSheetsContext {
+                NSLog("[GoogleSheets] Applying autocomplete placeholder backspace fix")
+            }
+            #endif
+
             let shouldInspectNotionCodeBlock =
                 hookData.backspaceCount > 0 &&
                 hookData.extCode != 4 &&
@@ -895,6 +908,7 @@ final class PHTVEventCallbackService {
             let resolvedBackspacePlan = PHTVInputStrategyService.resolvedBackspacePlan(
                 forBrowserAddressBarFix: processSignalPlan.shouldTryBrowserAddressBarFix,
                 addressBarDetected: isAddrBar,
+                googleSheetsContext: isGoogleSheetsContext,
                 legacyNonBrowserFix: shouldApplyLegacyBackspaceFix,
                 containsUnicodeCompound: appChars.containsUnicodeCompound,
                 notionCodeBlockDetected: isNotionCodeBlockDetected,

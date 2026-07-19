@@ -86,6 +86,29 @@ final class CompatibilityStrategyTests: XCTestCase {
         ))
     }
 
+    func testGoogleSheetsContextDetectionRequiresBrowserAndSheetsPage() {
+        XCTAssertTrue(PHTVAppDetectionService.isGoogleSheetsContext(
+            bundleId: "com.google.Chrome",
+            document: "https://docs.google.com/spreadsheets/d/abc/edit",
+            windowTitle: nil
+        ))
+        XCTAssertTrue(PHTVAppDetectionService.isGoogleSheetsContext(
+            bundleId: "com.apple.Safari",
+            document: nil,
+            windowTitle: "Bảng theo dõi - Google Trang tính"
+        ))
+        XCTAssertFalse(PHTVAppDetectionService.isGoogleSheetsContext(
+            bundleId: "com.google.Chrome",
+            document: "https://docs.google.com/document/d/abc/edit",
+            windowTitle: "Tài liệu - Google Docs"
+        ))
+        XCTAssertFalse(PHTVAppDetectionService.isGoogleSheetsContext(
+            bundleId: "com.apple.TextEdit",
+            document: "https://docs.google.com/spreadsheets/d/abc/edit",
+            windowTitle: "Google Sheets"
+        ))
+    }
+
     func testLongZaloMacroUsesReliableWholeTextInsertionOnlyForUnicode() {
         let threshold = Int32(PHTVInputStrategyService.reliableWholeTextInsertionThreshold)
 
@@ -210,6 +233,7 @@ final class CompatibilityStrategyTests: XCTestCase {
         let plan = PHTVInputStrategyService.resolvedBackspacePlan(
             forBrowserAddressBarFix: false,
             addressBarDetected: false,
+            googleSheetsContext: false,
             legacyNonBrowserFix: true,
             containsUnicodeCompound: true,
             notionCodeBlockDetected: false,
@@ -224,6 +248,27 @@ final class CompatibilityStrategyTests: XCTestCase {
         )
         XCTAssertEqual(plan.adjustedBackspaceCount, 3)
         XCTAssertEqual(plan.sanitizedBackspaceCount, 3)
+    }
+
+    func testGoogleSheetsUsesPlaceholderAndExtraDeletionForAutocomplete() {
+        let plan = PHTVInputStrategyService.resolvedBackspacePlan(
+            forBrowserAddressBarFix: true,
+            addressBarDetected: false,
+            googleSheetsContext: true,
+            legacyNonBrowserFix: false,
+            containsUnicodeCompound: false,
+            notionCodeBlockDetected: false,
+            backspaceCount: 1,
+            maxBuffer: 20,
+            safetyLimit: 15
+        )
+
+        XCTAssertEqual(
+            plan.adjustmentAction,
+            PHTVBackspaceAdjustmentAction.sendEmptyCharacter.rawValue
+        )
+        XCTAssertEqual(plan.adjustedBackspaceCount, 2)
+        XCTAssertEqual(plan.sanitizedBackspaceCount, 2)
     }
 
     // Notion is a precomposedBatched app (isSpecialApp=true), but the legacy fix
@@ -259,6 +304,7 @@ final class CompatibilityStrategyTests: XCTestCase {
         let plan = PHTVInputStrategyService.resolvedBackspacePlan(
             forBrowserAddressBarFix: false,
             addressBarDetected: false,
+            googleSheetsContext: false,
             legacyNonBrowserFix: true,
             containsUnicodeCompound: false,
             notionCodeBlockDetected: true,
