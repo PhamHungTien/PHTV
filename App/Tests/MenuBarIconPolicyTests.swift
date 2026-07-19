@@ -35,10 +35,9 @@ final class MenuBarIconPolicyTests: XCTestCase {
         XCTAssertEqual(
             presentation(
                 isVietnameseEnabled: false,
-                isUsingNonLatinInputSource: true,
-                languageBeforeNonLatinInputSource: 1
+                isUsingNonLatinInputSource: true
             ),
-            .currentInputSource(fallbackAssetName: "menubar_vietnamese")
+            .currentInputSource(fallbackAssetName: "menubar_english")
         )
     }
 
@@ -46,8 +45,7 @@ final class MenuBarIconPolicyTests: XCTestCase {
         XCTAssertEqual(
             presentation(
                 isVietnameseEnabled: false,
-                isUsingNonLatinInputSource: true,
-                languageBeforeNonLatinInputSource: 0
+                isUsingNonLatinInputSource: true
             ),
             .currentInputSource(fallbackAssetName: "menubar_english")
         )
@@ -57,10 +55,20 @@ final class MenuBarIconPolicyTests: XCTestCase {
         XCTAssertEqual(
             presentation(
                 isVietnameseEnabled: true,
-                isUsingNonLatinInputSource: true,
-                languageBeforeNonLatinInputSource: 1
+                isUsingNonLatinInputSource: true
             ),
-            .currentInputSource(fallbackAssetName: "menubar_vietnamese")
+            .currentInputSource(fallbackAssetName: "menubar_english")
+        )
+    }
+
+    func testEnglishAppLockOverridesCurrentSystemInputSourceIcon() {
+        XCTAssertEqual(
+            presentation(
+                isVietnameseEnabled: true,
+                isUsingNonLatinInputSource: true,
+                isEnglishLocked: true
+            ),
+            .bundledAsset("menubar_english")
         )
     }
 
@@ -68,8 +76,7 @@ final class MenuBarIconPolicyTests: XCTestCase {
         XCTAssertEqual(
             presentation(
                 isVietnameseEnabled: false,
-                isUsingNonLatinInputSource: false,
-                languageBeforeNonLatinInputSource: 1
+                isUsingNonLatinInputSource: false
             ),
             .bundledAsset("menubar_english")
         )
@@ -79,13 +86,13 @@ final class MenuBarIconPolicyTests: XCTestCase {
         isVietnameseEnabled: Bool,
         useVietnameseIcon: Bool = true,
         isUsingNonLatinInputSource: Bool = false,
-        languageBeforeNonLatinInputSource: Int = 0
+        isEnglishLocked: Bool = false
     ) -> PHTVMenuBarIconPresentation {
         PHTVMenuBarIconPolicy.presentation(
             isVietnameseEnabled: isVietnameseEnabled,
             useVietnameseIcon: useVietnameseIcon,
             isUsingNonLatinInputSource: isUsingNonLatinInputSource,
-            languageBeforeNonLatinInputSource: languageBeforeNonLatinInputSource
+            isEnglishLocked: isEnglishLocked
         )
     }
 }

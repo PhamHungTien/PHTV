@@ -129,9 +129,10 @@ struct SettingsItem: Identifiable {
             title: "Nhớ bảng mã theo ứng dụng", iconName: "memorychip.fill", tab: .apps,
             keywords: ["remember code", "bảng mã", "lưu", "nhớ", "ứng dụng"]),
         SettingsItem(
-            title: "Luôn dùng tiếng Anh", iconName: "e.circle.fill", tab: .apps,
+            title: "Chỉ dùng tiếng Anh", iconName: "lock.fill", tab: .apps,
             keywords: [
-                "English", "tiếng Anh", "không gõ tiếng Việt", "tắt tiếng Việt",
+                "English", "tiếng Anh", "luôn dùng tiếng Anh", "không gõ tiếng Việt",
+                "tắt tiếng Việt", "khóa tiếng Việt", "khóa cứng",
                 "ứng dụng", "app", "loại trừ", "exclude", "blacklist"
             ]),
         SettingsItem(

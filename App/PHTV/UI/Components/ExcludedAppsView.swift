@@ -25,9 +25,9 @@ struct AlwaysEnglishAppsView: View {
 
             if appState.excludedApps.isEmpty {
                 AppSelectionEmptyStateView(
-                    iconName: "e.circle",
+                    iconName: "lock.circle",
                     title: "Chưa chọn ứng dụng",
-                    subtitle: "Bấm “Thêm ứng dụng” để bắt đầu",
+                    subtitle: "Thêm ứng dụng cần khóa ở chế độ tiếng Anh",
                     showsQuickActions: false,
                     onPickRunningApps: { showingRunningApps = true },
                     onPickFromApplications: { showingFilePicker = true }
@@ -71,7 +71,7 @@ struct AlwaysEnglishAppsView: View {
                 .foregroundStyle(.tertiary)
                 .accessibilityHidden(true)
 
-            Text("Ưu tiên hơn “Ghi nhớ chế độ theo ứng dụng”.")
+            Text("Khóa mọi cách bật tiếng Việt và ưu tiên hơn “Ghi nhớ chế độ theo ứng dụng”.")
                 .font(.system(size: 11))
                 .foregroundStyle(.tertiary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -106,10 +106,10 @@ struct AlwaysEnglishAppsView: View {
     private var header: some View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
-                Text("Luôn dùng tiếng Anh")
+                Text("Chỉ dùng tiếng Anh")
                     .font(.headline)
                 
-                Text("Tự chuyển sang tiếng Anh và khôi phục chế độ khi rời ứng dụng")
+                Text("Khóa tiếng Việt và khôi phục chế độ khi rời ứng dụng")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

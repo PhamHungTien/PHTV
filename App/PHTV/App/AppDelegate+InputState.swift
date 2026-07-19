@@ -42,6 +42,15 @@ private nonisolated func phtvNotifyTableCodeChangedInBackground() async {
         }
 
         let newLanguage = language.int32Value
+        if newLanguage != 0, PHTVManager.isEnglishLanguageLocked() {
+            NSLog("[EnglishAppLock] Ignored request to enable Vietnamese from SwiftUI")
+            fillData()
+            NotificationCenter.default.post(
+                name: NotificationName.languageChangedFromExcludedApp,
+                object: NSNumber(value: 0)
+            )
+            return
+        }
         rememberExplicitLanguageChoiceDuringNonLatinInput(newLanguage)
 
         let currentLanguage = PHTVManager.currentLanguage()
@@ -60,10 +69,6 @@ private nonisolated func phtvNotifyTableCodeChangedInBackground() async {
         defer { isUpdatingLanguage = false }
 
         PHTVManager.setCurrentLanguage(newLanguage)
-
-        if isInExcludedApp {
-            savedLanguageBeforeExclusion = Int(newLanguage)
-        }
 
         UserDefaults.standard.set(Int(newLanguage), forKey: phtvInputStateDefaultsKeyInputMethod)
         PHTVManager.requestNewSession()
@@ -143,6 +148,15 @@ private nonisolated func phtvNotifyTableCodeChangedInBackground() async {
 
         let currentLanguage = PHTVManager.currentLanguage()
         let targetLanguage: Int32 = (currentLanguage == 0) ? 1 : 0
+        if targetLanguage != 0, PHTVManager.isEnglishLanguageLocked() {
+            NSLog("[EnglishAppLock] Ignored hotkey request to enable Vietnamese")
+            fillData()
+            NotificationCenter.default.post(
+                name: NotificationName.languageChangedFromExcludedApp,
+                object: NSNumber(value: 0)
+            )
+            return
+        }
         rememberExplicitLanguageChoiceDuringNonLatinInput(targetLanguage)
 
         if currentLanguage == targetLanguage {
@@ -163,10 +177,6 @@ private nonisolated func phtvNotifyTableCodeChangedInBackground() async {
         defer { isUpdatingLanguage = false }
 
         PHTVManager.setCurrentLanguage(targetLanguage)
-
-        if isInExcludedApp {
-            savedLanguageBeforeExclusion = Int(targetLanguage)
-        }
 
         UserDefaults.standard.set(Int(targetLanguage), forKey: phtvInputStateDefaultsKeyInputMethod)
         PHTVManager.requestNewSession()

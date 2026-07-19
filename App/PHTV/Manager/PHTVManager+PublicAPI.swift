@@ -150,6 +150,16 @@ import Foundation
         phtv_setCurrentLanguage(language)
     }
 
+    @objc(isEnglishLanguageLocked)
+    class func isEnglishLanguageLocked() -> Bool {
+        PHTVEngineRuntimeFacade.isEnglishLanguageLocked()
+    }
+
+    @objc(setEnglishLanguageLocked:)
+    class func setEnglishLanguageLocked(_ isLocked: Bool) {
+        PHTVEngineRuntimeFacade.setEnglishLanguageLocked(isLocked)
+    }
+
     @objc(otherLanguageMode)
     class func otherLanguageMode() -> Int32 {
         phtv_otherLanguageMode()

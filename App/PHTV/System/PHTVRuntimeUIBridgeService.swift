@@ -36,15 +36,21 @@ final class PHTVRuntimeUIBridgeService: NSObject {
 
     private class func forceToggleLanguageFromHotkey() {
         let currentLanguage = PHTVManager.currentLanguage()
-        let targetLanguage: Int32 = (currentLanguage == 0) ? 1 : 0
+        let requestedLanguage: Int32 = (currentLanguage == 0) ? 1 : 0
+        let isEnglishLocked = PHTVManager.isEnglishLanguageLocked()
 
-        PHTVManager.setCurrentLanguage(targetLanguage)
-        UserDefaults.standard.set(Int(targetLanguage), forKey: inputMethodDefaultsKey)
+        PHTVManager.setCurrentLanguage(requestedLanguage)
+        let effectiveLanguage = PHTVManager.currentLanguage()
+        UserDefaults.standard.set(Int(effectiveLanguage), forKey: inputMethodDefaultsKey)
         PHTVManager.requestNewSession()
 
         resolveAppDelegate()?.fillData()
-        NotificationCenter.default.post(name: languageChangedNotification,
-                                        object: NSNumber(value: targetLanguage))
+        NotificationCenter.default.post(
+            name: isEnglishLocked
+                ? NotificationName.languageChangedFromExcludedApp
+                : languageChangedNotification,
+            object: NSNumber(value: effectiveLanguage)
+        )
 
         if PHTVManager.isSmartSwitchKeyEnabled() {
             // Call synchronously so the focused bundle ID is captured NOW, before
@@ -53,7 +59,7 @@ final class PHTVRuntimeUIBridgeService: NSObject {
         }
 
 #if DEBUG
-        NSLog("[Hotkey] Fallback language toggle applied: %d -> %d", currentLanguage, targetLanguage)
+        NSLog("[Hotkey] Fallback language toggle applied: %d -> %d", currentLanguage, effectiveLanguage)
 #endif
     }
 
@@ -65,7 +71,7 @@ final class PHTVRuntimeUIBridgeService: NSObject {
         let before = PHTVManager.currentLanguage()
         delegate.onImputMethodChanged(true)
         let after = PHTVManager.currentLanguage()
-        if after == before {
+        if after == before, !PHTVManager.isEnglishLanguageLocked() {
             forceToggleLanguageFromHotkey()
         }
     }

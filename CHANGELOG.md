@@ -8,15 +8,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
-- Thu gọn giao diện **“Luôn dùng tiếng Anh”** trong Cài đặt > Ứng dụng: loại bỏ
+- Đổi quy tắc ứng dụng thành **“Chỉ dùng tiếng Anh”** và áp dụng khóa cứng:
+  mọi thao tác bật tiếng Việt bằng phím tắt, menu bar, giao diện hoặc Smart
+  Switch đều bị chặn trong ứng dụng đã chọn; chế độ trước đó được khôi phục khi
+  rời ứng dụng. Menu bar luôn hiển thị `E` và ghi rõ trạng thái đang khóa (#166).
+- Thu gọn giao diện **“Chỉ dùng tiếng Anh”** trong Cài đặt > Ứng dụng: loại bỏ
   mô tả và thao tác bị lặp, đưa hành vi chuyển/khôi phục chế độ lên tiêu đề phụ,
   giữ chú thích ưu tiên ở chân thẻ và làm trạng thái trống gọn hơn.
 
 ### Fixed
 - Hiển thị biểu tượng của nguồn nhập macOS đang dùng khi chuyển sang bàn phím
   không Latin (Trung, Nhật, Hàn và các ngôn ngữ tương tự), thay vì đổi sang
-  `E` hoặc giữ `V`. PHTV vẫn ghi nhớ chế độ Việt/Anh để khôi phục khi quay lại
-  bàn phím Latin (#210).
+  `E` hoặc giữ `V`. Nếu macOS không cung cấp icon hợp lệ, PHTV dùng `E` làm
+  biểu tượng dự phòng. PHTV vẫn ghi nhớ chế độ Việt/Anh để khôi phục khi quay
+  lại bàn phím Latin (#210).
 
 ## [3.3.9] - 2026-07-19
 

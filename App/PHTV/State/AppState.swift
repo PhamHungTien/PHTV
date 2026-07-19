@@ -43,6 +43,10 @@ final class AppState {
     var isEnabled: Bool = true {
         didSet {
             guard isEnabled != oldValue, !isLoadingSettings else { return }
+            if isEnabled, PHTVManager.isEnglishLanguageLocked() {
+                isEnabled = false
+                return
+            }
             let defaults = UserDefaults.standard
             let language = isEnabled ? 1 : 0
             defaults.set(language, forKey: UserDefaultsKey.inputMethod)
@@ -239,7 +243,7 @@ final class AppState {
         guard let language = notification.object as? NSNumber else { return }
 
         isLoadingSettings = true
-        isEnabled = language.intValue == 1
+        isEnabled = language.intValue == 1 && !PHTVManager.isEnglishLanguageLocked()
         isLoadingSettings = false
 
         if playBeep && uiState.beepOnModeSwitch && uiState.beepVolume > 0.0 {
@@ -266,7 +270,7 @@ final class AppState {
         // Reload global isEnabled state
         let defaults = UserDefaults.standard
         let inputMethodSaved = defaults.integer(forKey: UserDefaultsKey.inputMethod, default: 1)
-        let newIsEnabled = (inputMethodSaved == 1)
+        let newIsEnabled = inputMethodSaved == 1 && !PHTVManager.isEnglishLanguageLocked()
         if newIsEnabled != isEnabled {
             isEnabled = newIsEnabled
         }

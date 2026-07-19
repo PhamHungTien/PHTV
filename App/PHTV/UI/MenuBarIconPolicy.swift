@@ -16,13 +16,14 @@ enum PHTVMenuBarIconPolicy {
         isVietnameseEnabled: Bool,
         useVietnameseIcon: Bool,
         isUsingNonLatinInputSource: Bool,
-        languageBeforeNonLatinInputSource: Int
+        isEnglishLocked: Bool = false
     ) -> PHTVMenuBarIconPresentation {
+        if isEnglishLocked {
+            return .bundledAsset("menubar_english")
+        }
+
         if isUsingNonLatinInputSource {
-            let fallbackAssetName = languageBeforeNonLatinInputSource != 0
-                ? vietnameseAssetName(useVietnameseIcon: useVietnameseIcon)
-                : "menubar_english"
-            return .currentInputSource(fallbackAssetName: fallbackAssetName)
+            return .currentInputSource(fallbackAssetName: "menubar_english")
         }
 
         guard isVietnameseEnabled else {

@@ -27,6 +27,7 @@ private let phtvNotificationExcludedAppsChanged = NotificationName.excludedAppsC
 private let phtvNotificationSendKeyStepByStepAppsChanged = NotificationName.sendKeyStepByStepAppsChanged
 private let phtvNotificationUpperCaseExcludedAppsChanged = NotificationName.upperCaseExcludedAppsChanged
 private let phtvNotificationLanguageChangedFromExcludedApp = NotificationName.languageChangedFromExcludedApp
+private let phtvNotificationEnglishAppLockChanged = NotificationName.englishAppLockChanged
 private let phtvNotificationTCCDatabaseChanged = NotificationName.tccDatabaseChanged
 private let phtvNotificationApplicationDidBecomeActive = NSApplication.didBecomeActiveNotification
 private let phtvSpotlightInvalidationDedupMs: UInt64 = 30
@@ -322,38 +323,52 @@ private func phtvListContainsBundleIdentifier(_ appList: [[String: Any]]?, bundl
         if isExcluded && !isInExcludedApp {
             savedLanguageBeforeExclusion = currentLanguage
             isInExcludedApp = true
+            PHTVManager.setEnglishLanguageLocked(true)
 
-            if currentLanguage == 1 {
-                PHTVManager.setCurrentLanguage(0)
+            if currentLanguage != 0 {
                 UserDefaults.standard.set(0, forKey: phtvDefaultsKeyInputMethod)
                 PHTVManager.requestNewSession()
                 fillData()
 
-                NSLog("[ExcludedApp] Entered excluded app '%@' - switched to English (saved state: Vietnamese)", bundleIdentifier)
+                NSLog("[EnglishAppLock] Entered '%@' - locked to English (saved state: Vietnamese)", bundleIdentifier)
 
                 NotificationCenter.default.post(name: phtvNotificationLanguageChangedFromExcludedApp,
                                                 object: NSNumber(value: 0))
             } else {
-                NSLog("[ExcludedApp] Entered excluded app '%@' - already in English (saved state: English)", bundleIdentifier)
+                NSLog("[EnglishAppLock] Entered '%@' - locked to English (saved state: English)", bundleIdentifier)
             }
+
+            NotificationCenter.default.post(
+                name: phtvNotificationEnglishAppLockChanged,
+                object: NSNumber(value: true)
+            )
         } else if !isExcluded && isInExcludedApp {
             isInExcludedApp = false
+            PHTVManager.setEnglishLanguageLocked(false)
 
-            if savedLanguageBeforeExclusion == 1 && currentLanguage == 0 {
+            if savedLanguageBeforeExclusion == 1,
+               currentLanguage == 0,
+               !isInNonLatinInputSource {
                 PHTVManager.setCurrentLanguage(1)
                 UserDefaults.standard.set(1, forKey: phtvDefaultsKeyInputMethod)
                 PHTVManager.requestNewSession()
                 fillData()
 
-                NSLog("[ExcludedApp] Left excluded app, switched to '%@' - restored Vietnamese mode", bundleIdentifier)
+                NSLog("[EnglishAppLock] Left locked app for '%@' - restored Vietnamese mode", bundleIdentifier)
 
                 NotificationCenter.default.post(name: phtvNotificationLanguageChangedFromExcludedApp,
                                                 object: NSNumber(value: 1))
             } else {
-                NSLog("[ExcludedApp] Left excluded app, switched to '%@' - staying in English", bundleIdentifier)
+                NSLog("[EnglishAppLock] Left locked app for '%@' - staying in English", bundleIdentifier)
             }
+
+            NotificationCenter.default.post(
+                name: phtvNotificationEnglishAppLockChanged,
+                object: NSNumber(value: false)
+            )
         } else if isExcluded && isInExcludedApp {
-            NSLog("[ExcludedApp] Moved from excluded app to another excluded app '%@' - staying in English", bundleIdentifier)
+            PHTVManager.setEnglishLanguageLocked(true)
+            NSLog("[EnglishAppLock] Moved to another locked app '%@' - staying in English", bundleIdentifier)
         }
 
         previousBundleIdentifier = bundleIdentifier

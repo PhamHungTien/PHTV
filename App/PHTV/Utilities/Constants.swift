@@ -153,6 +153,7 @@ enum NotificationName {
     static let languageChangedFromExcludedApp = NSNotification.Name("LanguageChangedFromExcludedApp")
     static let languageChangedFromSmartSwitch = NSNotification.Name("LanguageChangedFromSmartSwitch")
     static let languageChangedFromObjC = NSNotification.Name("LanguageChangedFromObjC")
+    static let englishAppLockChanged = NSNotification.Name("EnglishAppLockChanged")
 
     // MARK: - Settings Changes
     static let phtvSettingsChanged = NSNotification.Name("PHTVSettingsChanged")

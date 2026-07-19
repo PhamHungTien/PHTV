@@ -43,10 +43,11 @@ final class PHTVSmartSwitchBridgeService: NSObject {
         let targetLanguage = PHTVSmartSwitchRuntimeService.decodedLanguage(fromState: state)
         if targetLanguage != currentLanguage {
             PHTVEngineRuntimeFacade.setCurrentLanguage(targetLanguage)
-            PHTVSmartSwitchPersistenceService.saveInputMethod(targetLanguage)
+            let effectiveLanguage = PHTVEngineRuntimeFacade.currentLanguage()
+            PHTVSmartSwitchPersistenceService.saveInputMethod(effectiveLanguage)
             PHTVManager.requestNewSession()
             Task { @MainActor in
-                PHTVRuntimeUIBridgeService.refreshAfterSmartSwitchLanguageChange(targetLanguage)
+                PHTVRuntimeUIBridgeService.refreshAfterSmartSwitchLanguageChange(effectiveLanguage)
             }
         }
 

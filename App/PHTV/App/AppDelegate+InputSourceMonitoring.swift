@@ -129,12 +129,13 @@ private func phtvInputSourceProperty(_ inputSource: TISInputSource, _ key: CFStr
 
     private func applyInputMethodLanguage(_ language: Int) {
         PHTVManager.setCurrentLanguage(Int32(language))
-        UserDefaults.standard.set(language, forKey: phtvDefaultsKeyInputMethod)
+        let effectiveLanguage = Int(PHTVManager.currentLanguage())
+        UserDefaults.standard.set(effectiveLanguage, forKey: phtvDefaultsKeyInputMethod)
         PHTVManager.requestNewSession()
         fillData()
 
         NotificationCenter.default.post(name: phtvNotificationLanguageChangedFromObjC,
-                                        object: NSNumber(value: language))
+                                        object: NSNumber(value: effectiveLanguage))
     }
 
     private func notifyInputSourcePresentationChanged() {

@@ -51,6 +51,7 @@ private final class RuntimeSettingsStateBox: @unchecked Sendable {
     var inputType: Int32 = 0
     var codeTable: Int32 = 0
     var language: Int32 = 1
+    var isEnglishLanguageLocked = false
     var switchKeyStatus: Int32 = Int32(Defaults.defaultSwitchKeyStatus)
     var fixRecommendBrowser: Int32 = Defaults.fixRecommendBrowser ? 1 : 0
     var useMacro: Int32 = 1
@@ -891,7 +892,25 @@ final class PHTVEngineRuntimeFacade: NSObject {
     }
 
     class func setCurrentLanguage(_ language: Int32) {
-        runtimeLanguage = language
+        withRuntimeSettings { state in
+            state.language = PHTVLanguageLockPolicy.resolvedLanguage(
+                requestedLanguage: language,
+                isEnglishLocked: state.isEnglishLanguageLocked
+            )
+        }
+    }
+
+    class func isEnglishLanguageLocked() -> Bool {
+        withRuntimeSettings { $0.isEnglishLanguageLocked }
+    }
+
+    class func setEnglishLanguageLocked(_ isLocked: Bool) {
+        withRuntimeSettings { state in
+            state.isEnglishLanguageLocked = isLocked
+            if isLocked {
+                state.language = 0
+            }
+        }
     }
 
     class func otherLanguageMode() -> Int32 {

@@ -51,9 +51,9 @@ struct AppsSettingsView: View {
 
                 // Always-English Apps
                 SettingsCard(
-                    title: "Luôn dùng tiếng Anh",
-                    subtitle: "Tự chuyển sang tiếng Anh và khôi phục chế độ khi rời ứng dụng",
-                    icon: "e.circle.fill",
+                    title: "Chỉ dùng tiếng Anh",
+                    subtitle: "Khóa tiếng Việt và khôi phục chế độ khi rời ứng dụng",
+                    icon: "lock.fill",
                     displaysSubtitle: true,
                     trailing: {
                         Menu {

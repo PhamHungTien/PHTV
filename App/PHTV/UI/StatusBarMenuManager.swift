@@ -58,6 +58,7 @@ final class StatusBarMenuManager: NSObject, NSMenuDelegate {
             NotificationName.languageChangedFromObjC
         ]
         let names = languageChangeNames + [
+            NotificationName.englishAppLockChanged,
             NotificationName.menuBarIconPreferenceChanged,
             NotificationName.menuBarIconSizeChanged,
             NotificationName.inputSourceChanged
@@ -100,7 +101,7 @@ final class StatusBarMenuManager: NSObject, NSMenuDelegate {
             isVietnameseEnabled: languageOverride.map { $0 != 0 } ?? appState.isEnabled,
             useVietnameseIcon: appState.useVietnameseMenubarIcon,
             isUsingNonLatinInputSource: appDelegate?.isInNonLatinInputSource ?? false,
-            languageBeforeNonLatinInputSource: appDelegate?.savedLanguageBeforeNonLatin ?? 0
+            isEnglishLocked: PHTVManager.isEnglishLanguageLocked()
         )
     }
 
@@ -126,12 +127,10 @@ final class StatusBarMenuManager: NSObject, NSMenuDelegate {
             ?? "unknown"
         let iconURL =
             inputSourceProperty(inputSource, kTISPropertyIconImageURL) as? URL
-        let baseImage = iconURL.flatMap(NSImage.init(contentsOf:))
-            ?? NSImage(
-                systemSymbolName: "character",
-                accessibilityDescription: "Bộ gõ hệ thống"
-            )
-        guard let baseImage else { return nil }
+        guard let iconURL,
+              let baseImage = NSImage(contentsOf: iconURL) else {
+            return nil
+        }
 
         return renderedTemplateIcon(
             baseImage,
@@ -214,6 +213,7 @@ final class StatusBarMenuManager: NSObject, NSMenuDelegate {
     }
 
     private func addLanguagePicker(to menu: NSMenu) {
+        let isEnglishLocked = PHTVManager.isEnglishLanguageLocked()
         let hotkey = HotkeyFormatter.switchHotkeyString(
             control: appState.switchKeyControl,
             option: appState.switchKeyOption,
@@ -227,8 +227,33 @@ final class StatusBarMenuManager: NSObject, NSMenuDelegate {
         header.isEnabled = false
         menu.addItem(header)
 
-        menu.addItem(radioItem("Tiếng Việt", image: "v.circle", on: appState.isEnabled, sel: #selector(setVietnamese)))
-        menu.addItem(radioItem("Tiếng Anh", image: "e.circle", on: !appState.isEnabled, sel: #selector(setEnglish)))
+        if isEnglishLocked {
+            let lockItem = NSMenuItem(
+                title: "Đang khóa tiếng Anh trong ứng dụng này",
+                action: nil,
+                keyEquivalent: ""
+            )
+            lockItem.image = sfImage("lock.fill")
+            lockItem.isEnabled = false
+            menu.addItem(lockItem)
+        }
+
+        let vietnameseItem = radioItem(
+            "Tiếng Việt",
+            image: "v.circle",
+            on: !isEnglishLocked && appState.isEnabled,
+            sel: #selector(setVietnamese)
+        )
+        vietnameseItem.isEnabled = !isEnglishLocked
+        menu.addItem(vietnameseItem)
+        menu.addItem(
+            radioItem(
+                "Tiếng Anh",
+                image: "e.circle",
+                on: isEnglishLocked || !appState.isEnabled,
+                sel: #selector(setEnglish)
+            )
+        )
     }
 
     // MARK: - Submenu Builders
@@ -466,6 +491,10 @@ final class StatusBarMenuManager: NSObject, NSMenuDelegate {
     // MARK: - Actions
 
     @objc private func setVietnamese() {
+        guard !PHTVManager.isEnglishLanguageLocked() else {
+            updateIcon(languageOverride: 0)
+            return
+        }
         AppDelegate.current()?.rememberExplicitLanguageChoiceDuringNonLatinInput(1)
         AppState.shared.isEnabled = true
         updateIcon(languageOverride: 1)
