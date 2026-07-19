@@ -7,6 +7,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.4.1] - 2026-07-20
+
+### Tổng quan
+PHTV 3.4.1 tập trung cải thiện khả năng tương thích với Microsoft Teams và
+DaVinci Resolve. Text Replacements của macOS nay hoạt động trong ô chat Teams,
+đồng thời phím Space phản hồi nhanh hơn khi điều khiển playback trong DaVinci
+Resolve mà không làm mất khả năng gõ tiếng Việt trong các vùng nhập văn bản.
+
+### Fixed and Improved
+- **Text Replacements trong Microsoft Teams (#187)**
+  - PHTV tự xử lý các mục được nhập từ macOS Text Replacements trong cả Teams
+    mới (`com.microsoft.teams2`) và Teams cũ (`com.microsoft.teams`).
+  - Khắc phục tình trạng PHTV nhường cho cơ chế thay thế văn bản native nhưng
+    ô chat Teams không bung nội dung.
+  - Các ứng dụng có hỗ trợ Text Replacements native ổn định vẫn giữ nguyên
+    hành vi hiện tại.
+
+- **Phím Space phản hồi nhanh hơn trong DaVinci Resolve**
+  - Loại bỏ các truy vấn Accessibility và Spotlight đồng bộ không cần thiết
+    khỏi đường xử lý phím của các biến thể DaVinci Resolve.
+  - Cải thiện thao tác dừng playback bằng Space khi đang bật chế độ gõ tiếng
+    Việt, tránh tình trạng phải nhấn nhiều lần.
+  - Telex và macro vẫn hoạt động trong ô tiêu đề, phụ đề cùng các vùng nhập
+    văn bản; PHTV không tự khóa toàn bộ DaVinci Resolve sang tiếng Anh.
+
+### Chất lượng
+- Bổ sung test hồi quy cho Teams mới, Teams cũ và các biến thể bundle ID của
+  DaVinci Resolve.
+- Toàn bộ test suite đạt **398/398 tests** trên macOS 27 beta.
+
+### Ghi chú nâng cấp
+- Không cần thiết lập lại hoặc cấp thêm quyền sau khi cập nhật.
+- Thiết lập, macro và quy tắc theo ứng dụng hiện có được giữ nguyên.
+
 ## [3.4.0] - 2026-07-19
 
 ### Tổng quan

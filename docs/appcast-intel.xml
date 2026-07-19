@@ -12,6 +12,19 @@
             <sparkle:version>307</sparkle:version>
             <sparkle:shortVersionString>3.4.1</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[
+                <h2>PHTV 3.4.1</h2>
+                <p>Bản cập nhật này cải thiện khả năng tương thích với <strong>Microsoft Teams</strong> và độ phản hồi của phím Space trong <strong>DaVinci Resolve</strong>.</p>
+                <h3>Đã sửa và cải thiện</h3>
+                <ul>
+                    <li><strong>Text Replacements trong Teams</strong>: Các mục thay thế văn bản nhập từ macOS nay hoạt động trong ô chat của cả Teams mới và Teams cũ.</li>
+                    <li><strong>DaVinci Resolve</strong>: Phím Space phản hồi nhanh hơn khi dừng playback trong lúc đang bật chế độ gõ tiếng Việt, tránh phải nhấn nhiều lần.</li>
+                    <li><strong>Vẫn gõ tiếng Việt bình thường</strong>: Telex và macro tiếp tục hoạt động trong ô tiêu đề, phụ đề cùng các vùng nhập văn bản của DaVinci Resolve.</li>
+                    <li><strong>Ổn định hơn</strong>: Giảm các truy vấn Accessibility và Spotlight không cần thiết trên đường xử lý phím của DaVinci Resolve.</li>
+                </ul>
+                <h3>Sau khi cập nhật</h3>
+                <p>Không cần thiết lập lại hoặc cấp thêm quyền. Thiết lập, macro và quy tắc theo ứng dụng hiện có được giữ nguyên.</p>
+            ]]></description>
             <enclosure url="https://github.com/PhamHungTien/PHTV/releases/download/v3.4.1/PHTV-3.4.1-intel.dmg" length="9277332" type="application/octet-stream" sparkle:edSignature="1uhAxrD2E4kMOIgAF+zCHn2kcP42XSb1MUws878ryrD1K9V6wgnjlcFoJuLI327mpkxkspRk2uSH7DsP1wFdDw=="/>
         </item>
         <item>
