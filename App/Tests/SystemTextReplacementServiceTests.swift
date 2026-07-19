@@ -190,6 +190,14 @@ final class SystemTextReplacementServiceTests: XCTestCase {
                 forBundleId: "com.vng.zalo"
             )
         )
+        for bundleId in ["com.microsoft.teams2", "com.microsoft.teams"] {
+            XCTAssertFalse(
+                PHTVSystemTextReplacementService.shouldDeferToNativeTextReplacement(
+                    forBundleId: bundleId
+                ),
+                bundleId
+            )
+        }
         XCTAssertTrue(
             PHTVSystemTextReplacementService.shouldDeferToNativeTextReplacement(
                 forBundleId: "com.apple.TextEdit"

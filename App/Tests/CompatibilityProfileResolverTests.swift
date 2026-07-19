@@ -54,6 +54,16 @@ final class CompatibilityProfileResolverTests: XCTestCase {
         XCTAssertFalse(profile.supportsNativeSystemTextReplacements)
     }
 
+    func testMicrosoftTeamsProfilesUsePHTVTextReplacementFallback() {
+        for bundleId in ["com.microsoft.teams2", "com.microsoft.teams"] {
+            let profile = PHTVCompatibilityProfileResolver.resolve(forBundleId: bundleId)
+
+            XCTAssertEqual(profile.kind, .chat, bundleId)
+            XCTAssertTrue(profile.isChatApp, bundleId)
+            XCTAssertFalse(profile.supportsNativeSystemTextReplacements, bundleId)
+        }
+    }
+
     func testOfficeProfileForOutlookCarriesLegacySpaceCommitFix() {
         let profile = PHTVCompatibilityProfileResolver.resolve(forBundleId: "com.microsoft.Outlook")
 

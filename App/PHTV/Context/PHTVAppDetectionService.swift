@@ -252,6 +252,11 @@ final class PHTVAppDetectionService: NSObject {
         "com.vng.zalo"
     ])
 
+    private static let microsoftTeamsApps = BundlePatternSet([
+        "com.microsoft.teams2",
+        "com.microsoft.teams"
+    ])
+
     private static let stepByStepApps = BundlePatternSet([
         "com.apple.loginwindow",
         "com.apple.SecurityAgent",
@@ -377,6 +382,10 @@ final class PHTVAppDetectionService: NSObject {
         zaloApps.contains(bundleId)
     }
 
+    @objc class func isMicrosoftTeamsApp(_ bundleId: String?) -> Bool {
+        microsoftTeamsApps.contains(bundleId)
+    }
+
     static func isZaloContext(
         bundleId: String?,
         document: String?,
@@ -431,9 +440,9 @@ final class PHTVAppDetectionService: NSObject {
     }
 
     // Native Text Replacements are inconsistent in browser content-editable
-    // fields and in Zalo chat (even when another field in the same app works).
-    // PHTV owns imported replacements there so behavior does not vary by field
-    // or website and the consumed trigger cannot expand twice.
+    // fields and chat editors such as Zalo and Microsoft Teams. PHTV owns
+    // imported replacements there so behavior does not vary by field or
+    // website and the consumed trigger cannot expand twice.
     @objc class func supportsNativeSystemTextReplacements(_ bundleId: String?) -> Bool {
         guard let normalized = normalizeBundleId(bundleId) else {
             return false
@@ -441,6 +450,7 @@ final class PHTVAppDetectionService: NSObject {
 
         if isBrowserApp(normalized) ||
            isZaloApp(normalized) ||
+           isMicrosoftTeamsApp(normalized) ||
            isTerminalApp(normalized) ||
            isIDEApp(normalized) ||
            isSpotlightLikeApp(normalized) {
