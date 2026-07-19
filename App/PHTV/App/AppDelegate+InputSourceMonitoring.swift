@@ -54,6 +54,7 @@ private func phtvInputSourceProperty(_ inputSource: TISInputSource, _ key: CFStr
         _ = notification
         PHTVManager.invalidateLayoutCache()
         syncCurrentInputSourceState(reason: "changed")
+        notifyInputSourcePresentationChanged()
     }
 
     private func syncCurrentInputSourceState(reason: String) {
@@ -109,6 +110,7 @@ private func phtvInputSourceProperty(_ inputSource: TISInputSource, _ key: CFStr
         }
 
         syncCurrentInputSourceState(reason: "monitoring-start")
+        notifyInputSourcePresentationChanged()
     }
 
     @objc func stopInputSourceMonitoring() {
@@ -133,5 +135,9 @@ private func phtvInputSourceProperty(_ inputSource: TISInputSource, _ key: CFStr
 
         NotificationCenter.default.post(name: phtvNotificationLanguageChangedFromObjC,
                                         object: NSNumber(value: language))
+    }
+
+    private func notifyInputSourcePresentationChanged() {
+        NotificationCenter.default.post(name: NotificationName.inputSourceChanged, object: nil)
     }
 }

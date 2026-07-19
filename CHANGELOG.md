@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Thu gọn giao diện **“Luôn dùng tiếng Anh”** trong Cài đặt > Ứng dụng: loại bỏ
+  mô tả và thao tác bị lặp, đưa hành vi chuyển/khôi phục chế độ lên tiêu đề phụ,
+  giữ chú thích ưu tiên ở chân thẻ và làm trạng thái trống gọn hơn.
+
+### Fixed
+- Hiển thị biểu tượng của nguồn nhập macOS đang dùng khi chuyển sang bàn phím
+  không Latin (Trung, Nhật, Hàn và các ngôn ngữ tương tự), thay vì đổi sang
+  `E` hoặc giữ `V`. PHTV vẫn ghi nhớ chế độ Việt/Anh để khôi phục khi quay lại
+  bàn phím Latin (#210).
+
 ## [3.3.9] - 2026-07-19
 
 ### Tổng quan

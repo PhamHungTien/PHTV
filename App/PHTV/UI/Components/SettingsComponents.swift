@@ -44,6 +44,7 @@ extension View {
 struct SettingsCard<Content: View, Trailing: View>: View {
     let title: String
     let subtitle: String?
+    let displaysSubtitle: Bool
     let trailing: Trailing
     let content: Content
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
@@ -52,12 +53,14 @@ struct SettingsCard<Content: View, Trailing: View>: View {
         title: String,
         subtitle: String? = nil,
         icon: String,
+        displaysSubtitle: Bool = false,
         @ViewBuilder trailing: () -> Trailing = { EmptyView() },
         @ViewBuilder content: () -> Content
     ) {
         _ = icon
         self.title = title
         self.subtitle = subtitle
+        self.displaysSubtitle = displaysSubtitle
         self.trailing = trailing()
         self.content = content()
     }
@@ -75,19 +78,45 @@ struct SettingsCard<Content: View, Trailing: View>: View {
         .frame(maxWidth: SettingsLayout.contentMaxWidth, alignment: .leading)
     }
 
+    @ViewBuilder
     private var cardHeader: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 8) {
-            Text(title)
-                .font(.headline)
-                .foregroundStyle(.primary)
-                .lineLimit(1)
+        if displaysSubtitle, let subtitle {
+            HStack(alignment: .top, spacing: 8) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                        .font(.headline)
+                        .foregroundStyle(.primary)
+                        .lineLimit(1)
 
-            Spacer(minLength: 12)
+                    Text(subtitle)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .layoutPriority(1)
 
-            trailing
+                Spacer(minLength: 12)
+
+                trailing
+                    .padding(.top, 1)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 2)
+        } else {
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Text(title)
+                    .font(.headline)
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+
+                Spacer(minLength: 12)
+
+                trailing
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 2)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 2)
     }
 }
 

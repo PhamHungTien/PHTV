@@ -14,24 +14,21 @@ struct AlwaysEnglishAppsView: View {
     @Binding var showingFilePicker: Bool
     @Binding var showingRunningApps: Bool
     @Binding var showingBundleIdInput: Bool
-    @State private var manualBundleId = ""
     var showHeader: Bool = true
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 0) {
             if showHeader {
                 header
+                    .padding(.bottom, 12)
             }
-
-            behaviorSummary
-
-            SettingsDivider()
 
             if appState.excludedApps.isEmpty {
                 AppSelectionEmptyStateView(
                     iconName: "e.circle",
                     title: "Chưa chọn ứng dụng",
-                    subtitle: "Thêm ứng dụng mà bạn không cần gõ tiếng Việt",
+                    subtitle: "Bấm “Thêm ứng dụng” để bắt đầu",
+                    showsQuickActions: false,
                     onPickRunningApps: { showingRunningApps = true },
                     onPickFromApplications: { showingFilePicker = true }
                 )
@@ -40,6 +37,9 @@ struct AlwaysEnglishAppsView: View {
                     appState.removeExcludedApp(app)
                 }
             }
+
+            SettingsDivider()
+            priorityNote
         }
         .fileImporter(
             isPresented: $showingFilePicker,
@@ -64,35 +64,22 @@ struct AlwaysEnglishAppsView: View {
         }
     }
 
-    private var behaviorSummary: some View {
-        HStack(alignment: .top, spacing: 12) {
-            Image(systemName: "e.circle.fill")
-                .font(.system(size: 20, weight: .medium))
-                .symbolRenderingMode(.hierarchical)
-                .foregroundStyle(Color.accentColor)
-                .frame(width: 24)
+    private var priorityNote: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 7) {
+            Image(systemName: "info.circle")
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(.tertiary)
                 .accessibilityHidden(true)
 
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Cố định chế độ gõ tiếng Anh")
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(.primary)
-
-                Text("PHTV tự chuyển sang tiếng Anh trong các ứng dụng này và khôi phục chế độ trước đó khi bạn rời đi.")
-                    .font(.system(size: 11))
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-
-                Text("Quy tắc này được ưu tiên hơn “Ghi nhớ chế độ theo ứng dụng”.")
-                    .font(.system(size: 11))
-                    .foregroundStyle(.tertiary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
+            Text("Ưu tiên hơn “Ghi nhớ chế độ theo ứng dụng”.")
+                .font(.system(size: 11))
+                .foregroundStyle(.tertiary)
+                .fixedSize(horizontal: false, vertical: true)
 
             Spacer(minLength: 0)
         }
         .padding(.horizontal, 12)
-        .padding(.vertical, 6)
+        .padding(.vertical, 8)
         .accessibilityElement(children: .combine)
     }
 
@@ -122,7 +109,7 @@ struct AlwaysEnglishAppsView: View {
                 Text("Luôn dùng tiếng Anh")
                     .font(.headline)
                 
-                Text("Cố định chế độ gõ tiếng Anh cho các ứng dụng đã chọn")
+                Text("Tự chuyển sang tiếng Anh và khôi phục chế độ khi rời ứng dụng")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -141,7 +128,6 @@ struct AlwaysEnglishAppsView: View {
                 Divider()
 
                 Button(action: {
-                    manualBundleId = ""
                     showingBundleIdInput = true
                 }) {
                     Label("Nhập Bundle ID thủ công", systemImage: "keyboard")
@@ -161,8 +147,25 @@ struct AppSelectionEmptyStateView: View {
     let iconName: String
     let title: String
     let subtitle: String
+    let showsQuickActions: Bool
     let onPickRunningApps: () -> Void
     let onPickFromApplications: () -> Void
+
+    init(
+        iconName: String,
+        title: String,
+        subtitle: String,
+        showsQuickActions: Bool = true,
+        onPickRunningApps: @escaping () -> Void,
+        onPickFromApplications: @escaping () -> Void
+    ) {
+        self.iconName = iconName
+        self.title = title
+        self.subtitle = subtitle
+        self.showsQuickActions = showsQuickActions
+        self.onPickRunningApps = onPickRunningApps
+        self.onPickFromApplications = onPickFromApplications
+    }
 
     var body: some View {
         HStack(spacing: 12) {
@@ -180,24 +183,26 @@ struct AppSelectionEmptyStateView: View {
                     .foregroundStyle(.tertiary)
                     .fixedSize(horizontal: false, vertical: true)
 
-                HStack(spacing: 6) {
-                    Button("Đang chạy") {
-                        onPickRunningApps()
-                    }
-                    .buttonStyle(.plain)
-                    .font(.system(size: 11))
-                    .foregroundStyle(Color.accentColor)
-
-                    Text("•")
+                if showsQuickActions {
+                    HStack(spacing: 6) {
+                        Button("Đang chạy") {
+                            onPickRunningApps()
+                        }
+                        .buttonStyle(.plain)
                         .font(.system(size: 11))
-                        .foregroundStyle(.tertiary)
+                        .foregroundStyle(Color.accentColor)
 
-                    Button("Applications") {
-                        onPickFromApplications()
+                        Text("•")
+                            .font(.system(size: 11))
+                            .foregroundStyle(.tertiary)
+
+                        Button("Applications") {
+                            onPickFromApplications()
+                        }
+                        .buttonStyle(.plain)
+                        .font(.system(size: 11))
+                        .foregroundStyle(Color.accentColor)
                     }
-                    .buttonStyle(.plain)
-                    .font(.system(size: 11))
-                    .foregroundStyle(Color.accentColor)
                 }
             }
 

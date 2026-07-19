@@ -12,65 +12,76 @@ import XCTest
 final class MenuBarIconPolicyTests: XCTestCase {
     func testVietnameseModeUsesConfiguredVietnameseIcon() {
         XCTAssertEqual(
-            assetName(isVietnameseEnabled: true, useVietnameseIcon: true),
-            "menubar_vietnamese"
+            presentation(isVietnameseEnabled: true, useVietnameseIcon: true),
+            .bundledAsset("menubar_vietnamese")
         )
     }
 
     func testVietnameseModeCanUseDefaultAppIcon() {
         XCTAssertEqual(
-            assetName(isVietnameseEnabled: true, useVietnameseIcon: false),
-            "menubar_icon"
+            presentation(isVietnameseEnabled: true, useVietnameseIcon: false),
+            .bundledAsset("menubar_icon")
         )
     }
 
     func testEnglishModeUsesEnglishIcon() {
         XCTAssertEqual(
-            assetName(isVietnameseEnabled: false),
-            "menubar_english"
+            presentation(isVietnameseEnabled: false),
+            .bundledAsset("menubar_english")
         )
     }
 
-    func testNonLatinInputSourceKeepsVietnameseIconWhileVietnameseIsTemporarilySuspended() {
+    func testNonLatinInputSourceUsesCurrentSystemInputSourceIcon() {
         XCTAssertEqual(
-            assetName(
+            presentation(
                 isVietnameseEnabled: false,
                 isUsingNonLatinInputSource: true,
                 languageBeforeNonLatinInputSource: 1
             ),
-            "menubar_vietnamese"
+            .currentInputSource(fallbackAssetName: "menubar_vietnamese")
         )
     }
 
-    func testNonLatinInputSourceKeepsEnglishIconWhenUserWasAlreadyInEnglishMode() {
+    func testNonLatinInputSourceFallsBackToEnglishWhenUserWasAlreadyInEnglishMode() {
         XCTAssertEqual(
-            assetName(
+            presentation(
                 isVietnameseEnabled: false,
                 isUsingNonLatinInputSource: true,
                 languageBeforeNonLatinInputSource: 0
             ),
-            "menubar_english"
+            .currentInputSource(fallbackAssetName: "menubar_english")
+        )
+    }
+
+    func testNonLatinInputSourceWinsBeforeTemporaryLanguageSuspensionCompletes() {
+        XCTAssertEqual(
+            presentation(
+                isVietnameseEnabled: true,
+                isUsingNonLatinInputSource: true,
+                languageBeforeNonLatinInputSource: 1
+            ),
+            .currentInputSource(fallbackAssetName: "menubar_vietnamese")
         )
     }
 
     func testSavedVietnameseLanguageDoesNotOverrideEnglishAfterLeavingNonLatinInputSource() {
         XCTAssertEqual(
-            assetName(
+            presentation(
                 isVietnameseEnabled: false,
                 isUsingNonLatinInputSource: false,
                 languageBeforeNonLatinInputSource: 1
             ),
-            "menubar_english"
+            .bundledAsset("menubar_english")
         )
     }
 
-    private func assetName(
+    private func presentation(
         isVietnameseEnabled: Bool,
         useVietnameseIcon: Bool = true,
         isUsingNonLatinInputSource: Bool = false,
         languageBeforeNonLatinInputSource: Int = 0
-    ) -> String {
-        PHTVMenuBarIconPolicy.assetName(
+    ) -> PHTVMenuBarIconPresentation {
+        PHTVMenuBarIconPolicy.presentation(
             isVietnameseEnabled: isVietnameseEnabled,
             useVietnameseIcon: useVietnameseIcon,
             isUsingNonLatinInputSource: isUsingNonLatinInputSource,

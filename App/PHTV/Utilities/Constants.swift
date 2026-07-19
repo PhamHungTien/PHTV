@@ -192,6 +192,7 @@ enum NotificationName {
     // MARK: - UI Updates
     static let menuBarIconSizeChanged = NSNotification.Name("MenuBarIconSizeChanged")
     static let menuBarIconPreferenceChanged = NSNotification.Name("MenuBarIconPreferenceChanged")
+    static let inputSourceChanged = NSNotification.Name("PHTVInputSourceChanged")
     static let showAboutTab = NSNotification.Name("ShowAboutTab")
     static let showMacroTab = NSNotification.Name("ShowMacroTab")
     static let showKeyboardCleaningTab = NSNotification.Name("ShowKeyboardCleaningTab")

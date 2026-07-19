@@ -11,6 +11,7 @@
 //
 
 import AppKit
+import Carbon
 
 @MainActor
 final class StatusBarMenuManager: NSObject, NSMenuDelegate {
@@ -58,7 +59,8 @@ final class StatusBarMenuManager: NSObject, NSMenuDelegate {
         ]
         let names = languageChangeNames + [
             NotificationName.menuBarIconPreferenceChanged,
-            NotificationName.menuBarIconSizeChanged
+            NotificationName.menuBarIconSizeChanged,
+            NotificationName.inputSourceChanged
         ]
 
         notificationTasks.forEach { $0.cancel() }
@@ -80,14 +82,21 @@ final class StatusBarMenuManager: NSObject, NSMenuDelegate {
 
     private func updateIcon(languageOverride: Int? = nil) {
         guard let button = statusItem?.button else { return }
-        let name = resolvedIconName(languageOverride: languageOverride)
         let size = resolvedIconSize()
-        button.image = renderedIcon(named: name, size: size)
+        switch resolvedIconPresentation(languageOverride: languageOverride) {
+        case .bundledAsset(let name):
+            button.image = renderedIcon(named: name, size: size)
+        case .currentInputSource(let fallbackAssetName):
+            button.image = renderedCurrentInputSourceIcon(size: size)
+                ?? renderedIcon(named: fallbackAssetName, size: size)
+        }
     }
 
-    private func resolvedIconName(languageOverride: Int? = nil) -> String {
+    private func resolvedIconPresentation(
+        languageOverride: Int? = nil
+    ) -> PHTVMenuBarIconPresentation {
         let appDelegate = AppDelegate.current()
-        return PHTVMenuBarIconPolicy.assetName(
+        return PHTVMenuBarIconPolicy.presentation(
             isVietnameseEnabled: languageOverride.map { $0 != 0 } ?? appState.isEnabled,
             useVietnameseIcon: appState.useVietnameseMenubarIcon,
             isUsingNonLatinInputSource: appDelegate?.isInNonLatinInputSource ?? false,
@@ -103,10 +112,42 @@ final class StatusBarMenuManager: NSObject, NSMenuDelegate {
     }
 
     private func renderedIcon(named name: String, size: CGFloat) -> NSImage? {
-        let key = "\(name)-\(Int((size * 10).rounded()))" as NSString
-        if let cached = iconCache.object(forKey: key) { return cached }
         guard let base = NSImage(named: name)?.copy() as? NSImage else { return nil }
-        base.isTemplate = true
+        return renderedTemplateIcon(base, cacheKey: "asset-\(name)", size: size)
+    }
+
+    private func renderedCurrentInputSourceIcon(size: CGFloat) -> NSImage? {
+        guard let inputSource = TISCopyCurrentKeyboardInputSource()?.takeRetainedValue() else {
+            return nil
+        }
+
+        let sourceID =
+            inputSourceProperty(inputSource, kTISPropertyInputSourceID) as? String
+            ?? "unknown"
+        let iconURL =
+            inputSourceProperty(inputSource, kTISPropertyIconImageURL) as? URL
+        let baseImage = iconURL.flatMap(NSImage.init(contentsOf:))
+            ?? NSImage(
+                systemSymbolName: "character",
+                accessibilityDescription: "Bộ gõ hệ thống"
+            )
+        guard let baseImage else { return nil }
+
+        return renderedTemplateIcon(
+            baseImage,
+            cacheKey: "input-source-\(sourceID)",
+            size: size
+        )
+    }
+
+    private func renderedTemplateIcon(
+        _ base: NSImage,
+        cacheKey: String,
+        size: CGFloat
+    ) -> NSImage {
+        let key = "\(cacheKey)-\(Int((size * 10).rounded()))" as NSString
+        if let cached = iconCache.object(forKey: key) { return cached }
+
         let target = NSSize(width: size, height: size)
         let result = NSImage(size: target)
         result.lockFocus()
@@ -117,6 +158,16 @@ final class StatusBarMenuManager: NSObject, NSMenuDelegate {
         result.isTemplate = true
         iconCache.setObject(result, forKey: key)
         return result
+    }
+
+    private func inputSourceProperty(
+        _ inputSource: TISInputSource,
+        _ key: CFString
+    ) -> AnyObject? {
+        guard let rawValue = TISGetInputSourceProperty(inputSource, key) else {
+            return nil
+        }
+        return Unmanaged<AnyObject>.fromOpaque(rawValue).takeUnretainedValue()
     }
 
     // MARK: - NSMenuDelegate
