@@ -45,18 +45,16 @@ final class MacroCodeTableTests: XCTestCase {
         XCTAssertGreaterThan(expansion.count, 1_564)
         loadMacros([MacroItem(shortcut: "zz", expansion: expansion)])
 
-        XCTAssertTrue(typedTokenTriggersMacro("zz"))
+        let result = macroResult(afterTyping: "zz")
+        XCTAssertTrue(result.didTrigger)
         XCTAssertEqual(
             PHTVEngineDataBridge.macroString(
-                fromMacroData: PHTVEngineRuntimeFacade.engineDataMacroSnapshot(),
+                fromMacroData: result.macroData,
                 codeTable: Int32(CodeTable.unicode.toIndex())
             ),
             expansion
         )
     }
-
-    private let eventKeyboard: Int32 = 0
-    private let stateKeyDown: Int32 = 0
 
     override func setUp() {
         super.setUp()
@@ -102,12 +100,36 @@ final class MacroCodeTableTests: XCTestCase {
     /// Types the token then a space; returns true when the engine signaled a
     /// macro replacement on the space.
     private func typedTokenTriggersMacro(_ token: String) -> Bool {
-        engineStartNewSession()
+        macroResult(afterTyping: token).didTrigger
+    }
+
+    private func macroResult(afterTyping token: String) -> (didTrigger: Bool, macroData: [UInt32]) {
+        // App-hosted tests can schedule unrelated session work against the
+        // process singleton. A local engine keeps this fixture's keystroke
+        // sequence atomic while exercising the same runtime macro map.
+        let engine = PHTVVietnameseEngine()
+        engine.refreshRuntimeLayoutSnapshot()
+        engine.startNewSession()
         for ch in token {
-            engineHandleEvent(eventKeyboard, stateKeyDown, keyCode(for: ch), 0, 0)
+            engine.vKeyHandleEvent(
+                event: .keyboard,
+                state: .keyDown,
+                data: keyCode(for: ch),
+                capsStatus: 0,
+                otherControlKey: false
+            )
         }
-        engineHandleEvent(eventKeyboard, stateKeyDown, UInt16(KEY_SPACE), 0, 0)
-        return engineHookCode() == HookCodeState.replaceMacro.rawValue
+        engine.vKeyHandleEvent(
+            event: .keyboard,
+            state: .keyDown,
+            data: UInt16(KEY_SPACE),
+            capsStatus: 0,
+            otherControlKey: false
+        )
+        return (
+            engine.hCode == HookCodeState.replaceMacro.rawValue,
+            engine.hMacroData
+        )
     }
 
     // MARK: - Baseline
