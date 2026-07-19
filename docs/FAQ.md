@@ -78,7 +78,7 @@ Bạn có thể:
 - Nhấn phím chuyển Việt/Anh, mặc định **Control + Shift**.
 - Giữ phím tạm tắt, mặc định **Option** nếu đã bật trong Settings.
 - Nhấn **ESC** để khôi phục ký tự gốc sau khi vừa gõ dấu.
-- Thêm IDE/Terminal vào **Excluded Apps** nếu muốn app đó luôn dùng tiếng Anh.
+- Thêm IDE/Terminal vào **Luôn dùng tiếng Anh** nếu muốn PHTV cố định chế độ gõ tiếng Anh trong ứng dụng đó.
 
 ---
 

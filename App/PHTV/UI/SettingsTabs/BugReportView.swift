@@ -505,11 +505,10 @@ struct BugReportView: View {
         let appName = frontApp.localizedName ?? "Unknown"
         let bundleId = frontApp.bundleIdentifier ?? "Unknown"
 
-        // Check if it's an excluded app
-        let isExcluded = appState.excludedApps.contains { $0.bundleIdentifier == bundleId }
-        let excludedMark = isExcluded ? " 🚫" : ""
+        let alwaysUsesEnglish = appState.excludedApps.contains { $0.bundleIdentifier == bundleId }
+        let alwaysEnglishMark = alwaysUsesEnglish ? " 🇬🇧" : ""
 
-        return "\(appName) (\(bundleId))\(excludedMark)"
+        return "\(appName) (\(bundleId))\(alwaysEnglishMark)"
     }
 
     private func getExcludedAppsDetails() -> String {
@@ -699,7 +698,7 @@ struct BugReportView: View {
             - **Binary Architecture:** \(PHTVManager.getBinaryArchitectures())
             - **Binary Integrity:** \(PHTVManager.checkBinaryIntegrity() ? "✅ Intact" : "⚠️ Modified (CleanMyMac?)")
             - **Front App:** \(getFrontAppInfo())
-            - **Excluded Apps:** \(appState.excludedApps.isEmpty ? "Không có" : "\(appState.excludedApps.count) app(s)")
+            - **Always-English Apps:** \(appState.excludedApps.isEmpty ? "Không có" : "\(appState.excludedApps.count) app(s)")
             \(getExcludedAppsDetails())
 
             ## 🔧 Advanced Settings
@@ -858,7 +857,9 @@ struct BugReportView: View {
             if !appState.useModernOrthography { unusualSettings.append("Old orthography") }
             if appState.quickTelex { unusualSettings.append("Quick Telex") }
             if appState.sendKeyStepByStep { unusualSettings.append("Send key step-by-step") }
-            if !appState.excludedApps.isEmpty { unusualSettings.append("\(appState.excludedApps.count) excluded apps") }
+            if !appState.excludedApps.isEmpty {
+                unusualSettings.append("\(appState.excludedApps.count) always-English apps")
+            }
 
             if !unusualSettings.isEmpty {
                 report += "**⚙️ Settings:** " + unusualSettings.joined(separator: ", ") + "\n\n"

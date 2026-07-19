@@ -123,14 +123,17 @@ struct SettingsItem: Identifiable {
         // MARK: - Ứng dụng (Apps)
         // ═══════════════════════════════════════════
         SettingsItem(
-            title: "Phím chuyển thông minh", iconName: "arrow.left.arrow.right", tab: .apps,
-            keywords: ["smart switch", "auto switch", "tự động chuyển", "ngữ thông minh"]),
+            title: "Ghi nhớ chế độ theo ứng dụng", iconName: "arrow.left.arrow.right", tab: .apps,
+            keywords: ["smart switch", "auto switch", "tự động chuyển", "ghi nhớ", "Việt Anh"]),
         SettingsItem(
             title: "Nhớ bảng mã theo ứng dụng", iconName: "memorychip.fill", tab: .apps,
             keywords: ["remember code", "bảng mã", "lưu", "nhớ", "ứng dụng"]),
         SettingsItem(
-            title: "Loại trừ ứng dụng", iconName: "app.badge.fill", tab: .apps,
-            keywords: ["exclude", "blacklist", "app", "ứng dụng", "loại trừ", "không gõ"]),
+            title: "Luôn dùng tiếng Anh", iconName: "e.circle.fill", tab: .apps,
+            keywords: [
+                "English", "tiếng Anh", "không gõ tiếng Việt", "tắt tiếng Việt",
+                "ứng dụng", "app", "loại trừ", "exclude", "blacklist"
+            ]),
         SettingsItem(
             title: "Gửi từng phím", iconName: "keyboard.badge.ellipsis", tab: .apps,
             keywords: ["send key step by step", "từng ký tự", "ổn định", "chậm"]),

@@ -104,7 +104,7 @@ PHTV xử lý dữ liệu gõ **offline trên máy**. Ứng dụng không gửi 
 - **Keyboard Layout Compatibility** - Hỗ trợ Dvorak, Colemak và các bố cục bàn phím đặc biệt
 - **Claude Code Support** - Tự nhận diện session Claude Code trong Terminal/IDE và áp timing profile ổn định hơn, không cần patch riêng
 - **Safe Mode** - Tự động khôi phục khi Accessibility API gặp lỗi
-- **Excluded Apps** - Danh sách ứng dụng tự động chuyển sang tiếng Anh
+- **Luôn dùng tiếng Anh** - Cố định chế độ gõ tiếng Anh cho các ứng dụng đã chọn
 - **Send Key Step-by-Step** - Gửi từng phím riêng lẻ cho ứng dụng tương thích kém
 - **Nhớ bảng mã theo ứng dụng** - Tự động chuyển bảng mã phù hợp cho từng app
 
@@ -112,7 +112,7 @@ PHTV xử lý dữ liệu gõ **offline trên máy**. Ứng dụng không gửi 
 - **Phím chuyển ngôn ngữ tùy chỉnh** - Control, Option, Command, Shift hoặc tổ hợp
 - **Tạm tắt tiếng Việt** - Giữ phím để tạm thời gõ tiếng Anh
 - **Khôi phục ký tự gốc** - Nhấn ESC để hoàn tác dấu (VD: "việt" → "viejet")
-- **Smart Switch** - Tự động nhớ ngôn ngữ cho từng ứng dụng
+- **Ghi nhớ chế độ theo ứng dụng** - Khôi phục chế độ Việt/Anh đã dùng gần nhất trong từng ứng dụng
 
 ### Phát hiện bàn phím non-Latin
 - **Tự động chuyển về English** - Khi dùng bàn phím Nhật, Trung, Hàn, A Rập, Thái, Hindi...
@@ -254,8 +254,8 @@ Click biểu tượng **Vi** (Việt) / **En** (Anh) trên menu bar:
 | **Bộ gõ** | Phương pháp gõ, bảng mã, chính tả, Quick Telex, phụ âm nhanh |
 | **Phím tắt** | Phím chuyển ngôn ngữ, tạm tắt tiếng Việt, PHTV Picker hotkey, Lịch sử Clipboard |
 | **Gõ tắt** | Quản lý macro, text snippets, import/export, tự động viết hoa |
-| **Ứng dụng** | Excluded Apps, Send Key Step-by-Step, Keyboard Layout, Safe Mode |
-| **Hệ thống** | Khởi động cùng macOS, Smart Switch, cập nhật, menu bar, phát hiện bàn phím non-Latin |
+| **Ứng dụng** | Ghi nhớ chế độ theo ứng dụng, Luôn dùng tiếng Anh, Send Key Step-by-Step, Keyboard Layout, Safe Mode |
+| **Hệ thống** | Khởi động cùng macOS, cập nhật, menu bar, phát hiện bàn phím non-Latin |
 | **Báo lỗi** | Gửi báo cáo lỗi qua GitHub hoặc Email với crash logs và debug info |
 | **Thông tin** | Phiên bản, giấy phép, ủng hộ phát triển |
 

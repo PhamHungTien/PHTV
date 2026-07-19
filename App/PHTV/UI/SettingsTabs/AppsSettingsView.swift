@@ -11,9 +11,9 @@ import Observation
 
 struct AppsSettingsView: View {
     @Environment(AppState.self) private var appState
-    @State private var showingExcludedFilePicker = false
-    @State private var showingExcludedRunningApps = false
-    @State private var showingExcludedBundleIdInput = false
+    @State private var showingAlwaysEnglishFilePicker = false
+    @State private var showingAlwaysEnglishRunningApps = false
+    @State private var showingAlwaysEnglishBundleIdInput = false
     @State private var showingStepByStepFilePicker = false
     @State private var showingStepByStepRunningApps = false
     @State private var showingStepByStepBundleIdInput = false
@@ -22,18 +22,18 @@ struct AppsSettingsView: View {
     var body: some View {
         ScrollView {
             LazyVStack(spacing: SettingsLayout.sectionSpacing) {
-                // Smart Switch
+                // Remember Per-App State
                 SettingsCard(
-                    title: "Chuyển đổi theo ứng dụng",
-                    subtitle: "Tự chuyển Việt/Anh và ghi nhớ bảng mã",
+                    title: "Ghi nhớ chế độ theo ứng dụng",
+                    subtitle: "Khôi phục chế độ gõ và bảng mã đã dùng gần nhất",
                     icon: "brain.fill"
                 ) {
                     VStack(spacing: 0) {
                         SettingsToggleRow(
                             icon: "arrow.left.arrow.right",
                             iconColor: .accentColor,
-                            title: "Tự chuyển theo ứng dụng",
-                            subtitle: "Tự động chuyển Việt/Anh theo ứng dụng đang dùng",
+                            title: "Ghi nhớ Việt/Anh",
+                            subtitle: "Khôi phục chế độ gõ gần nhất của từng ứng dụng",
                             isOn: bindable.useSmartSwitchKey
                         )
 
@@ -49,38 +49,38 @@ struct AppsSettingsView: View {
                     }
                 }
 
-                // Excluded Apps
+                // Always-English Apps
                 SettingsCard(
-                    title: "Loại trừ ứng dụng",
-                    subtitle: "Tự chuyển sang tiếng Anh khi dùng các ứng dụng này",
-                    icon: "app.badge.fill",
+                    title: "Luôn dùng tiếng Anh",
+                    subtitle: "Cố định chế độ gõ tiếng Anh cho các ứng dụng đã chọn",
+                    icon: "e.circle.fill",
                     trailing: {
                         Menu {
-                            Button(action: { showingExcludedRunningApps = true }) {
+                            Button(action: { showingAlwaysEnglishRunningApps = true }) {
                                 Label("Chọn từ ứng dụng đang chạy", systemImage: "apps.iphone")
                             }
 
-                            Button(action: { showingExcludedFilePicker = true }) {
+                            Button(action: { showingAlwaysEnglishFilePicker = true }) {
                                 Label("Chọn từ thư mục Applications", systemImage: "folder")
                             }
 
                             Divider()
 
-                            Button(action: { showingExcludedBundleIdInput = true }) {
+                            Button(action: { showingAlwaysEnglishBundleIdInput = true }) {
                                 Label("Nhập Bundle ID thủ công", systemImage: "keyboard")
                             }
                         } label: {
-                            Label("Thêm", systemImage: "plus.circle.fill")
+                            Label("Thêm ứng dụng", systemImage: "plus.circle.fill")
                                 .font(.system(size: 13, weight: .medium))
                         }
                         .menuStyle(.borderlessButton)
                         .fixedSize()
                     }
                 ) {
-                    ExcludedAppsView(
-                        showingFilePicker: $showingExcludedFilePicker,
-                        showingRunningApps: $showingExcludedRunningApps,
-                        showingBundleIdInput: $showingExcludedBundleIdInput,
+                    AlwaysEnglishAppsView(
+                        showingFilePicker: $showingAlwaysEnglishFilePicker,
+                        showingRunningApps: $showingAlwaysEnglishRunningApps,
+                        showingBundleIdInput: $showingAlwaysEnglishBundleIdInput,
                         showHeader: false
                     )
                 }

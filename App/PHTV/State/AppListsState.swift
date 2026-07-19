@@ -9,11 +9,12 @@
 import Observation
 import SwiftUI
 
-/// Manages excluded apps and send key step by step apps
+/// Manages per-app behavior rules.
 @Observable
 @MainActor
 final class AppListsState {
-    // Excluded apps - auto switch to English when these apps are active
+    // Always-English apps. The legacy property and storage names are kept so
+    // existing installations and exported settings remain compatible.
     var excludedApps: [ExcludedApp] = [] {
         didSet {
             guard excludedApps != oldValue else { return }
@@ -161,7 +162,7 @@ final class AppListsState {
         }
     }
 
-    // MARK: - Excluded Apps Management
+    // MARK: - Always-English Apps Management
 
     func addExcludedApp(_ app: ExcludedApp) {
         if !excludedApps.contains(where: { $0.bundleIdentifier == app.bundleIdentifier }) {

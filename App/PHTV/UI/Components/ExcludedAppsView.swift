@@ -9,7 +9,7 @@
 import SwiftUI
 import UniformTypeIdentifiers
 
-struct ExcludedAppsView: View {
+struct AlwaysEnglishAppsView: View {
     @Environment(AppState.self) private var appState
     @Binding var showingFilePicker: Bool
     @Binding var showingRunningApps: Bool
@@ -18,17 +18,20 @@ struct ExcludedAppsView: View {
     var showHeader: Bool = true
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: 12) {
             if showHeader {
                 header
             }
-            
-            // Apps List
+
+            behaviorSummary
+
+            SettingsDivider()
+
             if appState.excludedApps.isEmpty {
                 AppSelectionEmptyStateView(
-                    iconName: "app.badge.checkmark",
-                    title: "Chưa có ứng dụng nào",
-                    subtitle: "Tự chuyển sang tiếng Anh khi dùng các ứng dụng này",
+                    iconName: "e.circle",
+                    title: "Chưa chọn ứng dụng",
+                    subtitle: "Thêm ứng dụng mà bạn không cần gõ tiếng Việt",
                     onPickRunningApps: { showingRunningApps = true },
                     onPickFromApplications: { showingFilePicker = true }
                 )
@@ -61,6 +64,38 @@ struct ExcludedAppsView: View {
         }
     }
 
+    private var behaviorSummary: some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: "e.circle.fill")
+                .font(.system(size: 20, weight: .medium))
+                .symbolRenderingMode(.hierarchical)
+                .foregroundStyle(Color.accentColor)
+                .frame(width: 24)
+                .accessibilityHidden(true)
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Cố định chế độ gõ tiếng Anh")
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(.primary)
+
+                Text("PHTV tự chuyển sang tiếng Anh trong các ứng dụng này và khôi phục chế độ trước đó khi bạn rời đi.")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Text("Quy tắc này được ưu tiên hơn “Ghi nhớ chế độ theo ứng dụng”.")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.tertiary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
+        .accessibilityElement(children: .combine)
+    }
+
     private func resolveAppName(for bundleId: String) -> String {
         // Try to find the app name from running applications
         if let runningApp = NSWorkspace.shared.runningApplications.first(where: { $0.bundleIdentifier == bundleId }),
@@ -84,10 +119,10 @@ struct ExcludedAppsView: View {
     private var header: some View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
-                Text("Ứng dụng được loại trừ")
+                Text("Luôn dùng tiếng Anh")
                     .font(.headline)
                 
-                Text("Tự chuyển sang tiếng Anh khi dùng các ứng dụng này")
+                Text("Cố định chế độ gõ tiếng Anh cho các ứng dụng đã chọn")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -112,7 +147,7 @@ struct ExcludedAppsView: View {
                     Label("Nhập Bundle ID thủ công", systemImage: "keyboard")
                 }
             } label: {
-                Label("Thêm", systemImage: "plus.circle.fill")
+                Label("Thêm ứng dụng", systemImage: "plus.circle.fill")
                     .font(.system(size: 13, weight: .medium))
             }
             .menuStyle(.borderlessButton)
@@ -173,7 +208,7 @@ struct AppSelectionEmptyStateView: View {
     }
 }
 
-// MARK: - Excluded Apps List
+// MARK: - App Selection List
 struct AppSelectionList<Item: AppSelectionEntry>: View {
     let apps: [Item]
     let onRemove: (Item) -> Void
@@ -228,6 +263,8 @@ struct AppSelectionRow<Item: AppSelectionEntry>: View {
             }
             .buttonStyle(.plain)
             .opacity(isHovered ? 1 : 0.5)
+            .help("Xóa \(app.name) khỏi danh sách")
+            .accessibilityLabel("Xóa \(app.name)")
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
@@ -496,7 +533,7 @@ struct ManualBundleIdInputView: View {
 }
 
 #Preview {
-    ExcludedAppsView(
+    AlwaysEnglishAppsView(
         showingFilePicker: .constant(false),
         showingRunningApps: .constant(false),
         showingBundleIdInput: .constant(false)
