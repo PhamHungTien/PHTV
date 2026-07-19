@@ -7,12 +7,60 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Fixed
-- **Google Sheets autocomplete (#193):** khi Sheets chọn phần gợi ý ở cuối ô
-  (ví dụ `ược` sau ký tự `d`), PHTV dùng ký tự đệm để hủy gợi ý rồi xóa đúng
-  ký tự cần thay, tránh kết quả Telex bị nhân đôi thành `dđ`.
-- **Text Replacements trong Zalo Chat (#211):** PHTV tự mở rộng các mục nhập từ macOS Text Replacements trong Zalo và trình duyệt, thay vì nhường cho cơ chế native vốn không hoạt động nhất quán giữa ô tìm kiếm và ô chat.
-- **Macro dài bị cắt trong Zalo (#197):** macro Unicode dài được chèn thành một giao dịch dán nguyên khối để Zalo không làm rơi chuỗi sự kiện; clipboard được khôi phục đầy đủ sau đó và nội dung người dùng vừa sao chép luôn được ưu tiên.
+## [3.3.9] - 2026-07-19
+
+### Tổng quan
+PHTV 3.3.9 tập trung cải thiện độ ổn định khi gõ trong Zalo và Google Sheets,
+đồng thời làm rõ cách hoạt động của các quy tắc theo ứng dụng. Text Replacements
+và macro dài trong Zalo nay hoạt động nhất quán hơn; autocomplete của Google
+Sheets không còn làm ký tự Telex bị nhân đôi.
+
+### Điểm nổi bật
+- **Text Replacements hoạt động trong Zalo Chat (#211)**
+  - PHTV tự xử lý các mục được nhập từ macOS Text Replacements trong Zalo
+    Desktop, Zalo Web và các trình duyệt.
+  - Khắc phục tình trạng gõ tắt hoạt động ở ô tìm kiếm nhưng không hoạt động
+    trong ô chat, hoặc bị xử lý hai lần tùy từng trường nhập liệu.
+
+- **Macro dài không còn bị cắt trong Zalo (#197)**
+  - Macro Unicode dài được chèn thành một khối hoàn chỉnh thay vì phát thành
+    chuỗi sự kiện rời mà Zalo có thể bỏ sót.
+  - Clipboard được khôi phục nguyên trạng sau khi chèn; nếu người dùng vừa sao
+    chép nội dung mới trong lúc đó, nội dung mới luôn được giữ lại.
+  - Dữ liệu tạm dùng để chèn macro không xuất hiện trong Lịch sử Clipboard.
+
+- **Sửa xung đột autocomplete trong Google Sheets (#193)**
+  - Khi Sheets tự gợi ý phần còn lại của một từ, PHTV hủy gợi ý và xóa đúng ký
+    tự cần thay trước khi chèn ký tự tiếng Việt.
+  - Khắc phục trường hợp gợi ý “dược”, gõ `dd` để tạo `đ` nhưng kết quả thành
+    `dđ`.
+  - Bản sửa chỉ áp dụng trong Google Sheets, không thay đổi cách gõ ở Google
+    Docs hoặc các trang web khác.
+
+- **Tên quy tắc ứng dụng rõ ràng hơn (#166)**
+  - “Loại trừ ứng dụng” được đổi thành **“Luôn dùng tiếng Anh”**, mô tả đúng
+    kết quả: PHTV tự chuyển sang tiếng Anh trong các ứng dụng đã chọn và khôi
+    phục chế độ trước đó khi rời ứng dụng.
+  - Quy tắc này được phân biệt rõ với **“Ghi nhớ chế độ theo ứng dụng”** để
+    tránh nhầm lẫn khi cấu hình.
+  - Các từ khóa tìm kiếm cũ như “loại trừ” và “exclude” vẫn tìm thấy cài đặt mới.
+
+### Fixed and Improved
+- Biểu tượng menu bar phản ánh đúng trạng thái khi PHTV tạm dừng do người dùng
+  chuyển sang bộ gõ không dùng bảng chữ cái Latin; khi quay lại, biểu tượng và
+  chế độ Việt/Anh được khôi phục chính xác (#210).
+- Cải thiện giải mã macro Unicode, gồm ký tự ngoài BMP và Unicode tổ hợp, để
+  nội dung dài hoặc có emoji không bị sai ký tự.
+- Bổ sung test hồi quy cho Zalo Desktop/Web, Google Sheets, Text Replacements,
+  macro Unicode dài, tên quy tắc ứng dụng và trạng thái biểu tượng menu bar.
+  Toàn bộ test suite đạt **388/388 tests**.
+
+### Ghi chú nâng cấp
+- Không cần thay đổi cài đặt sau khi cập nhật.
+- Danh sách ứng dụng cũ trong “Loại trừ ứng dụng” được giữ nguyên và tự xuất
+  hiện dưới tên mới **“Luôn dùng tiếng Anh”**.
+- Người dùng Zalo và Google Sheets nên cập nhật để nhận các bản sửa tương thích
+  mới nhất.
 
 ## [3.3.8] - 2026-07-17
 
