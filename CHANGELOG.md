@@ -16,7 +16,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Thu gọn giao diện **“Tiếng Anh theo ứng dụng”** trong Cài đặt > Ứng dụng:
   mỗi hàng có bộ chọn hành vi riêng nhưng vẫn giữ chiều cao gọn, loại bỏ
   mô tả và thao tác bị lặp, làm rõ hai lựa chọn ngay trên tiêu đề phụ, đồng thời
-  giữ trạng thái trống ngắn gọn.
+  giữ trạng thái trống ngắn gọn. Nhóm **“Gửi từng phím”** nay gộp tùy chọn
+  toàn cục và danh sách theo ứng dụng vào cùng một khu vực; menu thêm ứng dụng,
+  hộp chọn, hiệu ứng chuyển trạng thái và thao tác chuột phải đều dùng hành vi
+  native của macOS, có hỗ trợ Reduce Motion và tương thích từ macOS 14.
 
 ### Fixed
 - Hiển thị biểu tượng của nguồn nhập macOS đang dùng khi chuyển sang bàn phím

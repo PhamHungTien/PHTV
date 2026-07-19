@@ -123,7 +123,7 @@ struct SettingsItem: Identifiable {
         // MARK: - Ứng dụng (Apps)
         // ═══════════════════════════════════════════
         SettingsItem(
-            title: "Ghi nhớ chế độ theo ứng dụng", iconName: "arrow.left.arrow.right", tab: .apps,
+            title: "Ghi nhớ theo ứng dụng", iconName: "arrow.left.arrow.right", tab: .apps,
             keywords: ["smart switch", "auto switch", "tự động chuyển", "ghi nhớ", "Việt Anh"]),
         SettingsItem(
             title: "Nhớ bảng mã theo ứng dụng", iconName: "memorychip.fill", tab: .apps,
@@ -140,7 +140,7 @@ struct SettingsItem: Identifiable {
             title: "Gửi từng phím", iconName: "keyboard.badge.ellipsis", tab: .apps,
             keywords: ["send key step by step", "từng ký tự", "ổn định", "chậm"]),
         SettingsItem(
-            title: "Ứng dụng gửi từng phím", iconName: "app.badge.fill", tab: .apps,
+            title: "Tự động gửi từng phím theo ứng dụng", iconName: "app.badge.fill", tab: .apps,
             keywords: ["send key apps", "ứng dụng", "từng phím", "app list"]),
         SettingsItem(
             title: "Tương thích bố cục bàn phím", iconName: "keyboard.fill", tab: .apps,

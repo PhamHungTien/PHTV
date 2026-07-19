@@ -15,7 +15,7 @@ final class SettingsAppRuleTerminologyTests: XCTestCase {
             .filter { $0.tab == .apps }
             .map(\.title)
 
-        XCTAssertTrue(appSettingTitles.contains("Ghi nhớ chế độ theo ứng dụng"))
+        XCTAssertTrue(appSettingTitles.contains("Ghi nhớ theo ứng dụng"))
         XCTAssertTrue(appSettingTitles.contains("Tiếng Anh theo ứng dụng"))
         XCTAssertFalse(appSettingTitles.contains("Loại trừ ứng dụng"))
     }

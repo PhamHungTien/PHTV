@@ -7,31 +7,74 @@
 //
 
 import SwiftUI
-import UniformTypeIdentifiers
+
+enum AppSelectionPickerDestination: String, Identifiable {
+    case runningApps
+    case applicationsFolder
+    case bundleIdentifier
+
+    var id: String { rawValue }
+}
+
+struct AppSelectionAddMenu: View {
+    let title: String
+    let onSelect: (AppSelectionPickerDestination) -> Void
+
+    init(
+        title: String = "Thêm",
+        onSelect: @escaping (AppSelectionPickerDestination) -> Void
+    ) {
+        self.title = title
+        self.onSelect = onSelect
+    }
+
+    var body: some View {
+        Menu {
+            Button {
+                onSelect(.runningApps)
+            } label: {
+                Label("Ứng dụng đang chạy", systemImage: "macwindow")
+            }
+
+            Button {
+                onSelect(.applicationsFolder)
+            } label: {
+                Label("Chọn trong Applications…", systemImage: "folder")
+            }
+
+            Divider()
+
+            Button {
+                onSelect(.bundleIdentifier)
+            } label: {
+                Label("Nhập Bundle ID…", systemImage: "number")
+            }
+        } label: {
+            Label(title, systemImage: "plus")
+        }
+        .menuStyle(.borderlessButton)
+        .controlSize(.small)
+        .fixedSize()
+        .accessibilityLabel("\(title) ứng dụng")
+    }
+}
 
 struct AlwaysEnglishAppsView: View {
     @Environment(AppState.self) private var appState
-    @Binding var showingFilePicker: Bool
-    @Binding var showingRunningApps: Bool
-    @Binding var showingBundleIdInput: Bool
-    var showHeader: Bool = true
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            if showHeader {
-                header
-                    .padding(.bottom, 12)
-            }
-
             if appState.excludedApps.isEmpty {
                 AppSelectionEmptyStateView(
                     iconName: "e.circle",
-                    title: "Chưa chọn ứng dụng",
-                    subtitle: "Mỗi ứng dụng có thể tự chuyển hoặc khóa tiếng Anh",
+                    title: "Chưa có quy tắc ứng dụng",
+                    subtitle: "Thêm ứng dụng rồi chọn Tự chuyển hoặc Khóa tiếng Anh",
                     showsQuickActions: false,
-                    onPickRunningApps: { showingRunningApps = true },
-                    onPickFromApplications: { showingFilePicker = true }
+                    onPickRunningApps: {},
+                    onPickFromApplications: {}
                 )
+                .transition(.opacity)
             } else {
                 EnglishAppRulesList(
                     apps: appState.excludedApps,
@@ -42,32 +85,12 @@ struct AlwaysEnglishAppsView: View {
                         appState.removeExcludedApp(app)
                     }
                 )
+                .transition(.opacity)
             }
 
-            SettingsDivider()
             priorityNote
         }
-        .fileImporter(
-            isPresented: $showingFilePicker,
-            allowedContentTypes: [.application],
-            allowsMultipleSelection: true
-        ) { result in
-            handleFilePickerResult(result)
-        }
-        .sheet(isPresented: $showingRunningApps) {
-            RunningAppsPickerView { apps in
-                for app in apps {
-                    appState.addExcludedApp(app)
-                }
-            }
-        }
-        .sheet(isPresented: $showingBundleIdInput) {
-            ManualBundleIdInputView { bundleId in
-                let name = resolveAppName(for: bundleId)
-                let app = ExcludedApp(bundleIdentifier: bundleId, name: name, path: "")
-                appState.addExcludedApp(app)
-            }
-        }
+        .animation(reduceMotion ? nil : .easeInOut(duration: 0.18), value: appState.excludedApps)
     }
 
     private var priorityNote: some View {
@@ -85,66 +108,9 @@ struct AlwaysEnglishAppsView: View {
             Spacer(minLength: 0)
         }
         .padding(.horizontal, 12)
-        .padding(.vertical, 8)
+        .padding(.top, 7)
+        .padding(.bottom, 3)
         .accessibilityElement(children: .combine)
-    }
-
-    private func resolveAppName(for bundleId: String) -> String {
-        // Try to find the app name from running applications
-        if let runningApp = NSWorkspace.shared.runningApplications.first(where: { $0.bundleIdentifier == bundleId }),
-           let name = runningApp.localizedName {
-            return name
-        }
-        // Fallback: use last component of bundle ID as name
-        return bundleId.components(separatedBy: ".").last ?? bundleId
-    }
-
-    private func handleFilePickerResult(_ result: Result<[URL], Error>) {
-        guard case .success(let urls) = result else { return }
-        
-        for url in urls {
-            if let app = ExcludedApp(from: url) {
-                appState.addExcludedApp(app)
-            }
-        }
-    }
-
-    private var header: some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Tiếng Anh theo ứng dụng")
-                    .font(.headline)
-                
-                Text("Chọn tự chuyển hoặc khóa riêng cho từng ứng dụng")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-            
-            Spacer()
-            
-            Menu {
-                Button(action: { showingRunningApps = true }) {
-                    Label("Chọn từ ứng dụng đang chạy", systemImage: "apps.iphone")
-                }
-
-                Button(action: { showingFilePicker = true }) {
-                    Label("Chọn từ thư mục Applications", systemImage: "folder")
-                }
-
-                Divider()
-
-                Button(action: {
-                    showingBundleIdInput = true
-                }) {
-                    Label("Nhập Bundle ID thủ công", systemImage: "keyboard")
-                }
-            } label: {
-                Label("Thêm ứng dụng", systemImage: "plus.circle.fill")
-                    .font(.system(size: 13, weight: .medium))
-            }
-            .menuStyle(.borderlessButton)
-            .fixedSize()
-        }
     }
 }
 
@@ -169,6 +135,7 @@ private struct EnglishAppRulesList: View {
                 }
             }
         }
+        .accessibilityElement(children: .contain)
     }
 }
 
@@ -217,6 +184,7 @@ private struct EnglishAppRuleRow: View {
                 .font(.system(size: 11.5, weight: .medium))
             }
             .menuStyle(.borderlessButton)
+            .controlSize(.small)
             .fixedSize()
             .frame(width: 132, alignment: .trailing)
             .help(app.englishBehavior.helpText)
@@ -225,11 +193,11 @@ private struct EnglishAppRuleRow: View {
 
             Button(action: onRemove) {
                 Image(systemName: "minus.circle.fill")
-                    .foregroundStyle(.red)
+                    .foregroundStyle(isHovered ? Color.red : .secondary)
                     .imageScale(.medium)
             }
             .buttonStyle(.plain)
-            .opacity(isHovered ? 1 : 0.5)
+            .opacity(isHovered ? 1 : 0.65)
             .help("Xóa \(app.name) khỏi danh sách")
             .accessibilityLabel("Xóa \(app.name)")
         }
@@ -237,6 +205,24 @@ private struct EnglishAppRuleRow: View {
         .padding(.vertical, 8)
         .background(isHovered ? Color.primary.opacity(0.05) : Color.clear)
         .onHover { isHovered = $0 }
+        .contextMenu {
+            ForEach(EnglishAppBehavior.allCases) { behavior in
+                Button {
+                    onChangeBehavior(behavior)
+                } label: {
+                    Label(
+                        behavior.displayName,
+                        systemImage: behavior == app.englishBehavior
+                            ? "checkmark"
+                            : behavior.systemImage
+                    )
+                }
+            }
+
+            Divider()
+
+            Button("Xóa khỏi danh sách", role: .destructive, action: onRemove)
+        }
     }
 }
 
@@ -268,8 +254,9 @@ struct AppSelectionEmptyStateView: View {
     var body: some View {
         HStack(spacing: 12) {
             Image(systemName: iconName)
-                .font(.system(size: 24))
+                .font(.system(size: 20))
                 .foregroundStyle(.tertiary)
+                .frame(width: 24)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
@@ -307,7 +294,7 @@ struct AppSelectionEmptyStateView: View {
             Spacer()
         }
         .padding(.horizontal, 12)
-        .padding(.vertical, 10)
+        .padding(.vertical, 8)
     }
 }
 
@@ -315,6 +302,7 @@ struct AppSelectionEmptyStateView: View {
 struct AppSelectionList<Item: AppSelectionEntry>: View {
     let apps: [Item]
     let onRemove: (Item) -> Void
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     
     var body: some View {
         LazyVStack(spacing: 0) {
@@ -329,6 +317,8 @@ struct AppSelectionList<Item: AppSelectionEntry>: View {
                 }
             }
         }
+        .animation(reduceMotion ? nil : .easeInOut(duration: 0.18), value: apps)
+        .accessibilityElement(children: .contain)
     }
 }
 
@@ -361,11 +351,11 @@ struct AppSelectionRow<Item: AppSelectionEntry>: View {
             // Remove Button
             Button(action: onRemove) {
                 Image(systemName: "minus.circle.fill")
-                    .foregroundStyle(.red)
+                    .foregroundStyle(isHovered ? Color.red : .secondary)
                     .imageScale(.medium)
             }
             .buttonStyle(.plain)
-            .opacity(isHovered ? 1 : 0.5)
+            .opacity(isHovered ? 1 : 0.65)
             .help("Xóa \(app.name) khỏi danh sách")
             .accessibilityLabel("Xóa \(app.name)")
         }
@@ -373,6 +363,9 @@ struct AppSelectionRow<Item: AppSelectionEntry>: View {
         .padding(.vertical, 8)
         .background(isHovered ? Color.primary.opacity(0.05) : Color.clear)
         .onHover { isHovered = $0 }
+        .contextMenu {
+            Button("Xóa khỏi danh sách", role: .destructive, action: onRemove)
+        }
     }
 }
 
@@ -636,11 +629,7 @@ struct ManualBundleIdInputView: View {
 }
 
 #Preview {
-    AlwaysEnglishAppsView(
-        showingFilePicker: .constant(false),
-        showingRunningApps: .constant(false),
-        showingBundleIdInput: .constant(false)
-    )
+    AlwaysEnglishAppsView()
         .environment(AppState.shared)
         .frame(width: 400)
         .padding()
