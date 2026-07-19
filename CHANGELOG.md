@@ -8,13 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
-- Đổi quy tắc ứng dụng thành **“Chỉ dùng tiếng Anh”** và áp dụng khóa cứng:
-  mọi thao tác bật tiếng Việt bằng phím tắt, menu bar, giao diện hoặc Smart
-  Switch đều bị chặn trong ứng dụng đã chọn; chế độ trước đó được khôi phục khi
-  rời ứng dụng. Menu bar luôn hiển thị `E` và ghi rõ trạng thái đang khóa (#166).
-- Thu gọn giao diện **“Chỉ dùng tiếng Anh”** trong Cài đặt > Ứng dụng: loại bỏ
-  mô tả và thao tác bị lặp, đưa hành vi chuyển/khôi phục chế độ lên tiêu đề phụ,
-  giữ chú thích ưu tiên ở chân thẻ và làm trạng thái trống gọn hơn.
+- Mở rộng **“Tiếng Anh theo ứng dụng”** với hai hành vi riêng cho từng ứng
+  dụng: **“Tự chuyển”** để vào ứng dụng bằng tiếng Anh nhưng vẫn cho phép bật
+  lại tiếng Việt, và **“Khóa tiếng Anh”** để chặn mọi cách bật tiếng Việt cho
+  đến khi rời ứng dụng. Menu bar luôn hiển thị `E` và ghi rõ khi khóa cứng đang
+  có hiệu lực; các mục đã lưu trước đây tiếp tục dùng “Tự chuyển” (#166).
+- Thu gọn giao diện **“Tiếng Anh theo ứng dụng”** trong Cài đặt > Ứng dụng:
+  mỗi hàng có bộ chọn hành vi riêng nhưng vẫn giữ chiều cao gọn, loại bỏ
+  mô tả và thao tác bị lặp, làm rõ hai lựa chọn ngay trên tiêu đề phụ, đồng thời
+  giữ trạng thái trống ngắn gọn.
 
 ### Fixed
 - Hiển thị biểu tượng của nguồn nhập macOS đang dùng khi chuyển sang bàn phím

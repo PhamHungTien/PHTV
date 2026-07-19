@@ -60,4 +60,30 @@ final class LanguageLockPolicyTests: XCTestCase {
         PHTVEngineRuntimeFacade.setCurrentLanguage(1)
         XCTAssertEqual(PHTVEngineRuntimeFacade.currentLanguage(), 1)
     }
+
+    func testLegacyAppRuleKeepsAutoSwitchBehavior() throws {
+        let legacyJSON = """
+        [{"bundleIdentifier":"com.example.App","name":"App","path":"/Applications/App.app"}]
+        """
+        let data = try XCTUnwrap(legacyJSON.data(using: .utf8))
+
+        let app = try XCTUnwrap(JSONDecoder().decode([ExcludedApp].self, from: data).first)
+
+        XCTAssertEqual(app.englishBehavior, .switchToEnglish)
+    }
+
+    func testHardLockBehaviorSurvivesRoundTrip() throws {
+        let app = ExcludedApp(
+            bundleIdentifier: "com.example.App",
+            name: "App",
+            path: "/Applications/App.app",
+            upperCaseScope: .both,
+            englishBehavior: .lockEnglish
+        )
+
+        let data = try JSONEncoder().encode(app)
+        let decoded = try JSONDecoder().decode(ExcludedApp.self, from: data)
+
+        XCTAssertEqual(decoded.englishBehavior, .lockEnglish)
+    }
 }

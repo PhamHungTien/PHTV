@@ -504,6 +504,10 @@ extension AppState {
         appListsState.removeExcludedApp(app)
     }
 
+    func updateExcludedApp(_ app: ExcludedApp, behavior: EnglishAppBehavior) {
+        appListsState.updateExcludedApp(app, behavior: behavior)
+    }
+
     func isAppExcluded(bundleIdentifier: String) -> Bool {
         appListsState.isAppExcluded(bundleIdentifier: bundleIdentifier)
     }

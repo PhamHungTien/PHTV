@@ -16,18 +16,19 @@ final class SettingsAppRuleTerminologyTests: XCTestCase {
             .map(\.title)
 
         XCTAssertTrue(appSettingTitles.contains("Ghi nhớ chế độ theo ứng dụng"))
-        XCTAssertTrue(appSettingTitles.contains("Chỉ dùng tiếng Anh"))
+        XCTAssertTrue(appSettingTitles.contains("Tiếng Anh theo ứng dụng"))
         XCTAssertFalse(appSettingTitles.contains("Loại trừ ứng dụng"))
     }
 
     func testAlwaysEnglishRuleRemainsDiscoverableByLegacySearchTerms() throws {
         let item = try XCTUnwrap(
-            SettingsItem.allItems.first { $0.title == "Chỉ dùng tiếng Anh" }
+            SettingsItem.allItems.first { $0.title == "Tiếng Anh theo ứng dụng" }
         )
 
         XCTAssertTrue(item.keywords.contains("loại trừ"))
         XCTAssertTrue(item.keywords.contains("exclude"))
         XCTAssertTrue(item.keywords.contains("không gõ tiếng Việt"))
         XCTAssertTrue(item.keywords.contains("luôn dùng tiếng Anh"))
+        XCTAssertTrue(item.keywords.contains("chỉ dùng tiếng Anh"))
     }
 }

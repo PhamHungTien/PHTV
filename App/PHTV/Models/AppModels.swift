@@ -68,6 +68,36 @@ enum PHTVUpperCaseExclusion {
 
 // MARK: - Excluded App Model
 
+enum EnglishAppBehavior: Int, Codable, CaseIterable, Identifiable {
+    case switchToEnglish
+    case lockEnglish
+
+    var id: Int { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .switchToEnglish: return "Tự chuyển"
+        case .lockEnglish: return "Khóa tiếng Anh"
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .switchToEnglish: return "arrow.right.circle"
+        case .lockEnglish: return "lock.fill"
+        }
+    }
+
+    var helpText: String {
+        switch self {
+        case .switchToEnglish:
+            return "Chuyển sang tiếng Anh khi mở ứng dụng, nhưng vẫn cho phép bật lại tiếng Việt."
+        case .lockEnglish:
+            return "Luôn giữ tiếng Anh và chặn mọi cách bật tiếng Việt trong ứng dụng."
+        }
+    }
+}
+
 struct ExcludedApp: Codable, Identifiable, Hashable {
     var id: String { bundleIdentifier }
     let bundleIdentifier: String
@@ -76,6 +106,9 @@ struct ExcludedApp: Codable, Identifiable, Hashable {
     /// Only meaningful for the auto-capitalize exclusion list. Entries saved
     /// before this setting existed decode as `.both`.
     var upperCaseScope: UpperCaseExcludeScope
+    /// Entries written before per-app behavior existed retain the original
+    /// auto-switch behavior.
+    var englishBehavior: EnglishAppBehavior
 
     /// Satisfies `AppSelectionEntry`; new entries start with the historical
     /// "both languages" behaviour.
@@ -84,7 +117,8 @@ struct ExcludedApp: Codable, Identifiable, Hashable {
             bundleIdentifier: bundleIdentifier,
             name: name,
             path: path,
-            upperCaseScope: .both
+            upperCaseScope: .both,
+            englishBehavior: .switchToEnglish
         )
     }
 
@@ -92,12 +126,14 @@ struct ExcludedApp: Codable, Identifiable, Hashable {
         bundleIdentifier: String,
         name: String,
         path: String,
-        upperCaseScope: UpperCaseExcludeScope
+        upperCaseScope: UpperCaseExcludeScope,
+        englishBehavior: EnglishAppBehavior = .switchToEnglish
     ) {
         self.bundleIdentifier = bundleIdentifier
         self.name = name
         self.path = path
         self.upperCaseScope = upperCaseScope
+        self.englishBehavior = englishBehavior
     }
 
     init?(from url: URL) {
@@ -111,10 +147,11 @@ struct ExcludedApp: Codable, Identifiable, Hashable {
         self.name = name
         self.path = url.path
         self.upperCaseScope = .both
+        self.englishBehavior = .switchToEnglish
     }
 
     private enum CodingKeys: String, CodingKey {
-        case bundleIdentifier, name, path, upperCaseScope
+        case bundleIdentifier, name, path, upperCaseScope, englishBehavior
     }
 
     init(from decoder: Decoder) throws {
@@ -125,6 +162,9 @@ struct ExcludedApp: Codable, Identifiable, Hashable {
         upperCaseScope = try container.decodeIfPresent(
             UpperCaseExcludeScope.self, forKey: .upperCaseScope
         ) ?? .both
+        englishBehavior = try container.decodeIfPresent(
+            EnglishAppBehavior.self, forKey: .englishBehavior
+        ) ?? .switchToEnglish
     }
 }
 

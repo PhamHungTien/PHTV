@@ -176,6 +176,17 @@ final class AppListsState {
         saveExcludedApps()
     }
 
+    func updateExcludedApp(_ app: ExcludedApp, behavior: EnglishAppBehavior) {
+        guard let index = excludedApps.firstIndex(where: {
+            $0.bundleIdentifier == app.bundleIdentifier
+        }), excludedApps[index].englishBehavior != behavior else {
+            return
+        }
+
+        excludedApps[index].englishBehavior = behavior
+        saveExcludedApps()
+    }
+
     func isAppExcluded(bundleIdentifier: String) -> Bool {
         return excludedApps.contains { $0.bundleIdentifier == bundleIdentifier }
     }

@@ -25,17 +25,23 @@ struct AlwaysEnglishAppsView: View {
 
             if appState.excludedApps.isEmpty {
                 AppSelectionEmptyStateView(
-                    iconName: "lock.circle",
+                    iconName: "e.circle",
                     title: "Chưa chọn ứng dụng",
-                    subtitle: "Thêm ứng dụng cần khóa ở chế độ tiếng Anh",
+                    subtitle: "Mỗi ứng dụng có thể tự chuyển hoặc khóa tiếng Anh",
                     showsQuickActions: false,
                     onPickRunningApps: { showingRunningApps = true },
                     onPickFromApplications: { showingFilePicker = true }
                 )
             } else {
-                AppSelectionList(apps: appState.excludedApps) { app in
-                    appState.removeExcludedApp(app)
-                }
+                EnglishAppRulesList(
+                    apps: appState.excludedApps,
+                    onChangeBehavior: { app, behavior in
+                        appState.updateExcludedApp(app, behavior: behavior)
+                    },
+                    onRemove: { app in
+                        appState.removeExcludedApp(app)
+                    }
+                )
             }
 
             SettingsDivider()
@@ -71,7 +77,7 @@ struct AlwaysEnglishAppsView: View {
                 .foregroundStyle(.tertiary)
                 .accessibilityHidden(true)
 
-            Text("Khóa mọi cách bật tiếng Việt và ưu tiên hơn “Ghi nhớ chế độ theo ứng dụng”.")
+            Text("“Tự chuyển” vẫn cho phép bật tiếng Việt; “Khóa tiếng Anh” chặn bật tiếng Việt.")
                 .font(.system(size: 11))
                 .foregroundStyle(.tertiary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -106,10 +112,10 @@ struct AlwaysEnglishAppsView: View {
     private var header: some View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
-                Text("Chỉ dùng tiếng Anh")
+                Text("Tiếng Anh theo ứng dụng")
                     .font(.headline)
                 
-                Text("Khóa tiếng Việt và khôi phục chế độ khi rời ứng dụng")
+                Text("Chọn tự chuyển hoặc khóa riêng cho từng ứng dụng")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -139,6 +145,98 @@ struct AlwaysEnglishAppsView: View {
             .menuStyle(.borderlessButton)
             .fixedSize()
         }
+    }
+}
+
+// MARK: - English App Rules
+private struct EnglishAppRulesList: View {
+    let apps: [ExcludedApp]
+    let onChangeBehavior: (ExcludedApp, EnglishAppBehavior) -> Void
+    let onRemove: (ExcludedApp) -> Void
+
+    var body: some View {
+        LazyVStack(spacing: 0) {
+            ForEach(apps) { app in
+                EnglishAppRuleRow(
+                    app: app,
+                    onChangeBehavior: { onChangeBehavior(app, $0) },
+                    onRemove: { onRemove(app) }
+                )
+
+                if app.id != apps.last?.id {
+                    Divider()
+                        .padding(.leading, 52)
+                }
+            }
+        }
+    }
+}
+
+private struct EnglishAppRuleRow: View {
+    let app: ExcludedApp
+    let onChangeBehavior: (EnglishAppBehavior) -> Void
+    let onRemove: () -> Void
+    @State private var isHovered = false
+
+    var body: some View {
+        HStack(spacing: 12) {
+            AppSelectionIconView(path: app.path)
+                .frame(width: 32, height: 32)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(app.name)
+                    .font(.system(size: 13, weight: .medium))
+                    .lineLimit(1)
+
+                Text(app.bundleIdentifier)
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+
+            Spacer(minLength: 12)
+
+            Menu {
+                ForEach(EnglishAppBehavior.allCases) { behavior in
+                    Button {
+                        onChangeBehavior(behavior)
+                    } label: {
+                        Label(
+                            behavior.displayName,
+                            systemImage: behavior == app.englishBehavior
+                                ? "checkmark"
+                                : behavior.systemImage
+                        )
+                    }
+                }
+            } label: {
+                Label(
+                    app.englishBehavior.displayName,
+                    systemImage: app.englishBehavior.systemImage
+                )
+                .font(.system(size: 11.5, weight: .medium))
+            }
+            .menuStyle(.borderlessButton)
+            .fixedSize()
+            .frame(width: 132, alignment: .trailing)
+            .help(app.englishBehavior.helpText)
+            .accessibilityLabel("Cách dùng tiếng Anh trong \(app.name)")
+            .accessibilityValue(app.englishBehavior.displayName)
+
+            Button(action: onRemove) {
+                Image(systemName: "minus.circle.fill")
+                    .foregroundStyle(.red)
+                    .imageScale(.medium)
+            }
+            .buttonStyle(.plain)
+            .opacity(isHovered ? 1 : 0.5)
+            .help("Xóa \(app.name) khỏi danh sách")
+            .accessibilityLabel("Xóa \(app.name)")
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(isHovered ? Color.primary.opacity(0.05) : Color.clear)
+        .onHover { isHovered = $0 }
     }
 }
 

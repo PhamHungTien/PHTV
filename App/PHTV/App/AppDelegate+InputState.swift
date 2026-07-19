@@ -70,6 +70,10 @@ private nonisolated func phtvNotifyTableCodeChangedInBackground() async {
 
         PHTVManager.setCurrentLanguage(newLanguage)
 
+        if isInExcludedApp, activeEnglishAppBehavior == .switchToEnglish {
+            savedLanguageBeforeExclusion = Int(newLanguage)
+        }
+
         UserDefaults.standard.set(Int(newLanguage), forKey: phtvInputStateDefaultsKeyInputMethod)
         PHTVManager.requestNewSession()
         fillData()
@@ -177,6 +181,10 @@ private nonisolated func phtvNotifyTableCodeChangedInBackground() async {
         defer { isUpdatingLanguage = false }
 
         PHTVManager.setCurrentLanguage(targetLanguage)
+
+        if isInExcludedApp, activeEnglishAppBehavior == .switchToEnglish {
+            savedLanguageBeforeExclusion = Int(targetLanguage)
+        }
 
         UserDefaults.standard.set(Int(targetLanguage), forKey: phtvInputStateDefaultsKeyInputMethod)
         PHTVManager.requestNewSession()

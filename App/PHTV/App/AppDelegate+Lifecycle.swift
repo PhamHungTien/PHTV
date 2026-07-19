@@ -60,6 +60,7 @@ func phtvIsRunningUnderXCTest() -> Bool {
         savedLanguageBeforeExclusion = 0
         previousBundleIdentifier = nil
         isInExcludedApp = false
+        activeEnglishAppBehavior = .switchToEnglish
         PHTVManager.setEnglishLanguageLocked(false)
 
         savedSendKeyStepByStepBeforeApp = false

@@ -61,6 +61,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     var savedLanguageBeforeExclusion = 0
     var previousBundleIdentifier: String?
     var isInExcludedApp = false
+    var activeEnglishAppBehavior: EnglishAppBehavior = .switchToEnglish
     var savedSendKeyStepByStepBeforeApp = false
     var isInSendKeyStepByStepApp = false
     var isUpdatingLanguage = false

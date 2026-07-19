@@ -505,8 +505,13 @@ struct BugReportView: View {
         let appName = frontApp.localizedName ?? "Unknown"
         let bundleId = frontApp.bundleIdentifier ?? "Unknown"
 
-        let alwaysUsesEnglish = appState.excludedApps.contains { $0.bundleIdentifier == bundleId }
-        let alwaysEnglishMark = alwaysUsesEnglish ? " 🇬🇧" : ""
+        let englishRule = appState.excludedApps.first { $0.bundleIdentifier == bundleId }
+        let alwaysEnglishMark: String
+        switch englishRule?.englishBehavior {
+        case .switchToEnglish: alwaysEnglishMark = " →E"
+        case .lockEnglish: alwaysEnglishMark = " 🔒E"
+        case nil: alwaysEnglishMark = ""
+        }
 
         return "\(appName) (\(bundleId))\(alwaysEnglishMark)"
     }
@@ -518,7 +523,7 @@ struct BugReportView: View {
 
         var details = "\n  **Danh sách:**\n"
         for app in appState.excludedApps.prefix(10) {
-            details += "  - \(app.name) (\(app.bundleIdentifier))\n"
+            details += "  - \(app.name) (\(app.bundleIdentifier)) — \(app.englishBehavior.displayName)\n"
         }
 
         if appState.excludedApps.count > 10 {
@@ -698,7 +703,7 @@ struct BugReportView: View {
             - **Binary Architecture:** \(PHTVManager.getBinaryArchitectures())
             - **Binary Integrity:** \(PHTVManager.checkBinaryIntegrity() ? "✅ Intact" : "⚠️ Modified (CleanMyMac?)")
             - **Front App:** \(getFrontAppInfo())
-            - **Always-English Apps:** \(appState.excludedApps.isEmpty ? "Không có" : "\(appState.excludedApps.count) app(s)")
+            - **English App Rules:** \(appState.excludedApps.isEmpty ? "Không có" : "\(appState.excludedApps.count) app(s)")
             \(getExcludedAppsDetails())
 
             ## 🔧 Advanced Settings
@@ -858,7 +863,7 @@ struct BugReportView: View {
             if appState.quickTelex { unusualSettings.append("Quick Telex") }
             if appState.sendKeyStepByStep { unusualSettings.append("Send key step-by-step") }
             if !appState.excludedApps.isEmpty {
-                unusualSettings.append("\(appState.excludedApps.count) always-English apps")
+                unusualSettings.append("\(appState.excludedApps.count) English app rules")
             }
 
             if !unusualSettings.isEmpty {
