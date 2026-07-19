@@ -49,22 +49,28 @@ final class StatusBarMenuManager: NSObject, NSMenuDelegate {
         guard !didSetupIconObservers else { return }
         didSetupIconObservers = true
 
-        let names: [NSNotification.Name] = [
+        let languageChangeNames: [NSNotification.Name] = [
             NotificationName.languageChangedFromSwiftUI,
             NotificationName.languageChangedFromBackend,
             NotificationName.languageChangedFromExcludedApp,
             NotificationName.languageChangedFromSmartSwitch,
-            NotificationName.languageChangedFromObjC,
+            NotificationName.languageChangedFromObjC
+        ]
+        let names = languageChangeNames + [
             NotificationName.menuBarIconPreferenceChanged,
             NotificationName.menuBarIconSizeChanged
         ]
 
         notificationTasks.forEach { $0.cancel() }
         notificationTasks = names.map { name in
-            Task { @MainActor [weak self] in
-                for await _ in NotificationCenter.default.notifications(named: name) {
+            let isLanguageChange = languageChangeNames.contains(name)
+            return Task { @MainActor [weak self] in
+                for await notification in NotificationCenter.default.notifications(named: name) {
                     guard let self, !Task.isCancelled else { break }
-                    self.updateIcon()
+                    let languageOverride = isLanguageChange
+                        ? (notification.object as? NSNumber)?.intValue
+                        : nil
+                    self.updateIcon(languageOverride: languageOverride)
                 }
             }
         }
@@ -72,16 +78,21 @@ final class StatusBarMenuManager: NSObject, NSMenuDelegate {
 
     // MARK: - Icon
 
-    private func updateIcon() {
+    private func updateIcon(languageOverride: Int? = nil) {
         guard let button = statusItem?.button else { return }
-        let name = resolvedIconName()
+        let name = resolvedIconName(languageOverride: languageOverride)
         let size = resolvedIconSize()
         button.image = renderedIcon(named: name, size: size)
     }
 
-    private func resolvedIconName() -> String {
-        if !appState.isEnabled { return "menubar_english" }
-        return appState.useVietnameseMenubarIcon ? "menubar_vietnamese" : "menubar_icon"
+    private func resolvedIconName(languageOverride: Int? = nil) -> String {
+        let appDelegate = AppDelegate.current()
+        return PHTVMenuBarIconPolicy.assetName(
+            isVietnameseEnabled: languageOverride.map { $0 != 0 } ?? appState.isEnabled,
+            useVietnameseIcon: appState.useVietnameseMenubarIcon,
+            isUsingNonLatinInputSource: appDelegate?.isInNonLatinInputSource ?? false,
+            languageBeforeNonLatinInputSource: appDelegate?.savedLanguageBeforeNonLatin ?? 0
+        )
     }
 
     private func resolvedIconSize() -> CGFloat {
@@ -403,8 +414,17 @@ final class StatusBarMenuManager: NSObject, NSMenuDelegate {
 
     // MARK: - Actions
 
-    @objc private func setVietnamese() { AppState.shared.isEnabled = true }
-    @objc private func setEnglish() { AppState.shared.isEnabled = false }
+    @objc private func setVietnamese() {
+        AppDelegate.current()?.rememberExplicitLanguageChoiceDuringNonLatinInput(1)
+        AppState.shared.isEnabled = true
+        updateIcon(languageOverride: 1)
+    }
+
+    @objc private func setEnglish() {
+        AppDelegate.current()?.rememberExplicitLanguageChoiceDuringNonLatinInput(0)
+        AppState.shared.isEnabled = false
+        updateIcon(languageOverride: 0)
+    }
 
     @objc private func openSettings() {
         SettingsWindowOpener.requestOpenWindow()

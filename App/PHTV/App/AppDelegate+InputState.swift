@@ -24,6 +24,11 @@ private nonisolated func phtvNotifyTableCodeChangedInBackground() async {
 }
 
 @MainActor extension AppDelegate {
+    func rememberExplicitLanguageChoiceDuringNonLatinInput(_ language: Int32) {
+        guard isInNonLatinInputSource else { return }
+        savedLanguageBeforeNonLatin = Int(language)
+    }
+
     @objc func handleLanguageChangedFromSwiftUI(_ notification: Notification) {
         if isUpdatingLanguage {
 #if DEBUG
@@ -37,6 +42,8 @@ private nonisolated func phtvNotifyTableCodeChangedInBackground() async {
         }
 
         let newLanguage = language.int32Value
+        rememberExplicitLanguageChoiceDuringNonLatinInput(newLanguage)
+
         let currentLanguage = PHTVManager.currentLanguage()
         if currentLanguage == newLanguage {
             return
@@ -136,6 +143,8 @@ private nonisolated func phtvNotifyTableCodeChangedInBackground() async {
 
         let currentLanguage = PHTVManager.currentLanguage()
         let targetLanguage: Int32 = (currentLanguage == 0) ? 1 : 0
+        rememberExplicitLanguageChoiceDuringNonLatinInput(targetLanguage)
+
         if currentLanguage == targetLanguage {
 #if DEBUG
             NSLog("[MenuBar] Language already at %d, skipping", currentLanguage)

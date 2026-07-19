@@ -68,6 +68,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     var isUpdatingCodeTable = false
     var appearanceObserver: Task<Void, Never>?
     var inputSourceObserver: Task<Void, Never>?
+    // User-selected mode to restore after a non-Latin input source stops
+    // temporarily suppressing the Vietnamese engine.
     var savedLanguageBeforeNonLatin = 0
     var isInNonLatinInputSource = false
     var monitoringNotificationTasks: [Task<Void, Never>] = []
