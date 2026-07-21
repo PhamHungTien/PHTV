@@ -218,18 +218,17 @@ do {
         ])
 
     case "metadata-check":
+        let releaseNotesTool = rootURL.appendingPathComponent("scripts/tools/release_notes.swift").path
         let latestVersion = try capture(
-            "/usr/bin/python3",
+            releaseNotesTool,
             [
-                rootURL.appendingPathComponent("scripts/tools/release_notes.py").path,
                 "appcast-version", "--appcast",
                 rootURL.appendingPathComponent("docs/appcast.xml").path,
             ]
         )
         let latestIntelVersion = try capture(
-            "/usr/bin/python3",
+            releaseNotesTool,
             [
-                rootURL.appendingPathComponent("scripts/tools/release_notes.py").path,
                 "appcast-version", "--appcast",
                 rootURL.appendingPathComponent("docs/appcast-intel.xml").path,
             ]
@@ -237,14 +236,9 @@ do {
         guard latestVersion == latestIntelVersion else {
             throw DevError.commandFailed("arm64 and Intel appcast versions differ", 1)
         }
-        try run("/usr/bin/python3", [
-            "-m", "unittest", "discover",
-            "-s", rootURL.appendingPathComponent("scripts/tests").path,
-            "-p", "test_*.py",
-            "-v",
-        ])
-        try run("/usr/bin/python3", [
-            rootURL.appendingPathComponent("scripts/tools/release_notes.py").path,
+        try run(releaseNotesTool, ["self-test"])
+        try run(rootURL.appendingPathComponent("scripts/tools/repository_policy.swift").path, ["check"])
+        try run(releaseNotesTool, [
             "check", "--version", latestVersion,
             "--appcast", rootURL.appendingPathComponent("docs/appcast.xml").path,
             "--appcast", rootURL.appendingPathComponent("docs/appcast-intel.xml").path,
