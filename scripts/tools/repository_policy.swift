@@ -72,6 +72,12 @@ let uncheckedCount = allSwift.components(separatedBy: "@unchecked Sendable").cou
 if nslogCount > 364 { fail("Legacy NSLog budget grew to \(nslogCount) (maximum 364)") }
 if uncheckedCount > 36 { fail("@unchecked Sendable budget grew to \(uncheckedCount) (maximum 36)") }
 if allSwift.contains("nonisolated(unsafe)") { fail("nonisolated(unsafe) global state is prohibited") }
+for line in allSwift.components(separatedBy: .newlines) where line.contains("PHTVLogger") || line.contains("NSLog") {
+    for value in [".shortcut", ".expansion", "trimmedCode", "trimmedName", "releaseNotes.prefix", "searchText"]
+    where line.contains(value) {
+        fail("A log statement includes user content via \(value)")
+    }
+}
 
 let sensitivePickerFiles = [
     "App/PHTV/Data/KlipyAPIClient.swift", "App/PHTV/Services/MediaStorageHelper.swift",
