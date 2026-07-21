@@ -19,6 +19,28 @@ struct PHTVPickerSettingsView: View {
                     EmojiHotkeyConfigView()
                 }
 
+                SettingsCard(
+                    title: "Quyền riêng tư GIF & Sticker",
+                    icon: "hand.raised.fill"
+                ) {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("Emoji được xử lý hoàn toàn trên máy. Chỉ khi bạn mở hoặc tìm GIF/Sticker, PHTV mới kết nối với Klipy để tải nội dung và đo lượt hiển thị quảng cáo.")
+                            .font(.callout)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+
+                        HStack(spacing: 14) {
+                            if let privacyURL = URL(string: "https://github.com/PhamHungTien/PHTV/blob/main/docs/PRIVACY.md") {
+                                Link("Chính sách riêng tư PHTV", destination: privacyURL)
+                            }
+                            if let klipyURL = URL(string: "https://klipy.com/support/privacy-policy") {
+                                Link("Chính sách Klipy", destination: klipyURL)
+                            }
+                        }
+                        .font(.callout)
+                    }
+                }
+
                 Spacer(minLength: SettingsLayout.sectionSpacing)
             }
             .settingsPageFrame()

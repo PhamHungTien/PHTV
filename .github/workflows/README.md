@@ -1,22 +1,42 @@
-# GitHub Actions Workflows
+# GitHub Actions của PHTV
 
-## Release Workflow
+## CI (`ci.yml`)
 
-File: `.github/workflows/release.yml`
+Chạy trên mọi push/PR vào `main` với quyền `contents: read`:
 
-Workflow release hiện đã được đồng bộ theo mẫu LunarV, với cấu trúc release macOS đã ký Developer ID và notarize:
+1. kiểm tra Python release-note tests, appcast, plist và privacy manifest;
+2. kiểm tra dictionary source và binary sinh ra;
+3. build Debug;
+4. chạy toàn bộ XCTest một lần, không retry và bật code coverage;
+5. tải lên `.xcresult` và build log để điều tra khi lỗi.
 
-- `build` (macos-26): build, sign, tạo DMG, generate Sparkle appcast
-- `release` (ubuntu-latest): tạo GitHub Release
-- `publish_appcast` (ubuntu-latest): commit `docs/appcast.xml` + `docs/appcast-intel.xml` về `main`
-- `update-homebrew` (ubuntu-latest): cập nhật `Casks/phtv.rb` trên `PhamHungTien/homebrew-tap`
+Các action bên thứ ba được khóa bằng full commit SHA. Dependabot theo dõi phiên
+bản GitHub Actions hàng tuần.
 
-## Trigger
+## Nightly diagnostics (`nightly.yml`)
 
-- Tự động khi push tag: `v*.*.*`
-- Chạy tay qua `workflow_dispatch` với input `version`
+Chạy hàng tuần hoặc thủ công để thực hiện Xcode static analysis và toàn bộ XCTest
+với Thread Sanitizer. Kết quả và analyze log được giữ 14 ngày; workflow này không
+thay thế CI bắt buộc trên pull request.
 
-## Required Secrets
+## Release (`release.yml`)
+
+Trigger bằng tag `v*.*.*` hoặc `workflow_dispatch` với một version hợp lệ.
+
+Luồng công việc:
+
+1. **verify** trên GitHub-hosted macOS: kiểm tra version, CHANGELOG, metadata,
+   dictionary và chạy toàn bộ XCTest;
+2. **build** trên self-hosted runner: tạo riêng bản `arm64` và `x86_64`, ký bằng
+   Developer ID Application, đóng gói DMG, notarize/staple, ký Sparkle;
+3. **release**: tạo GitHub Release với nội dung render từ đúng mục trong
+   `CHANGELOG.md`;
+4. **publish_appcast**: commit hai feed đã ký về `main`;
+5. **update-homebrew**: cập nhật `Casks/phtv.rb` trong Homebrew tap.
+
+Hai kiến trúc dùng DMG và appcast riêng; đây không phải một Universal DMG.
+
+## Secrets bắt buộc
 
 - `CERTIFICATES_P12`
 - `CERTIFICATE_PASSWORD`
@@ -26,20 +46,12 @@ Workflow release hiện đã được đồng bộ theo mẫu LunarV, với cấ
 - `SPARKLE_PRIVATE_KEY`
 - `TAP_REPO_TOKEN`
 
-`CERTIFICATES_P12` phải là certificate `Developer ID Application` export dạng `.p12` rồi base64 encode. Không dùng certificate `Apple Development` hoặc `Mac Development` cho release public/notarized. `APPLE_APP_SPECIFIC_PASSWORD` là app-specific password của Apple ID dùng để submit notarization.
+`CERTIFICATES_P12` phải chứa **Developer ID Application**, không phải Apple
+Development. `APPLE_APP_SPECIFIC_PASSWORD` dùng để gửi notarization. Không in,
+upload hoặc lưu các secret này trong artifact.
 
-## Release Flow
+## Chuẩn bị release
 
-1. Build app bằng `xcodebuild` (Release, manual signing, Developer ID Application)
-2. Verify code signature và entitlements của `PHTV.app`
-3. Tạo `PHTV-<version>-arm64.dmg` và `PHTV-<version>-intel.dmg` (nền hướng dẫn kéo-thả vào `Applications`, kèm file `Nhấp Đúp Nếu PHTV Không Mở Được`)
-4. Submit DMG lên Apple notarization, staple ticket, rồi validate bằng `stapler` và `spctl`
-5. Generate + sign `docs/appcast.xml` và `docs/appcast-intel.xml` bằng Sparkle `generate_appcast`
-6. Upload DMG assets lên GitHub Release
-7. Commit appcasts lên `main`
-8. Cập nhật Homebrew tap (`Casks/phtv.rb`) với version + SHA256 mới
-
-## Notes
-
-- Release workflow không dùng shell script ngoài repo.
-- Toàn bộ logic release/sign/package/tap update nằm trong GitHub Actions YAML.
+`CHANGELOG.md` là nguồn duy nhất cho nội dung cập nhật, changelog và GitHub Release
+notes. Quy trình đầy đủ, rollback và checklist kiểm thử nằm tại
+[docs/RELEASING.md](../../docs/RELEASING.md).

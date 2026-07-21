@@ -16,8 +16,30 @@ private struct PHTVLastLoggedCoreSettings {
     var codeTable: Int32 = -1
     var checkSpelling: Int32 = -1
 }
-private nonisolated(unsafe) var phtvLastLoggedCoreSettings = PHTVLastLoggedCoreSettings()
-private nonisolated(unsafe) var phtvCoreSettingsLoadCount: Int = 0
+
+private final class PHTVCoreSettingsLogState: @unchecked Sendable {
+    private let lock = NSLock()
+    private var lastLoggedSettings = PHTVLastLoggedCoreSettings()
+    private var loadCount = 0
+
+    func shouldLogAndRecord(_ settings: PHTVLastLoggedCoreSettings) -> Bool {
+        lock.lock()
+        defer { lock.unlock() }
+
+        loadCount += 1
+        let changed = settings.language != lastLoggedSettings.language
+            || settings.inputType != lastLoggedSettings.inputType
+            || settings.codeTable != lastLoggedSettings.codeTable
+            || settings.checkSpelling != lastLoggedSettings.checkSpelling
+        if changed || loadCount == 1 {
+            lastLoggedSettings = settings
+            return true
+        }
+        return false
+    }
+}
+
+private let phtvCoreSettingsLogState = PHTVCoreSettingsLogState()
 
 @objc extension PHTVManager {
     @nonobjc private class func phtv_decodeInt32(_ value: Any?) -> Int32? {
@@ -276,24 +298,21 @@ private nonisolated(unsafe) var phtvCoreSettingsLoadCount: Int = 0
         )
         PHTVEngineRuntimeFacade.setCheckSpelling(checkSpelling)
 
-        phtvCoreSettingsLoadCount += 1
-        let coreSettingsChanged = language != phtvLastLoggedCoreSettings.language
-            || inputType != phtvLastLoggedCoreSettings.inputType
-            || codeTable != phtvLastLoggedCoreSettings.codeTable
-            || checkSpelling != phtvLastLoggedCoreSettings.checkSpelling
-        if coreSettingsChanged || phtvCoreSettingsLoadCount == 1 {
+        let shouldLogCoreSettings = phtvCoreSettingsLogState.shouldLogAndRecord(
+            PHTVLastLoggedCoreSettings(
+                language: language,
+                inputType: inputType,
+                codeTable: codeTable,
+                checkSpelling: checkSpelling
+            )
+        )
+        if shouldLogCoreSettings {
             NSLog(
                 "[AppDelegate] Loaded core settings: language=%d, inputType=%d, codeTable=%d, spelling=%d",
                 language,
                 inputType,
                 codeTable,
                 checkSpelling
-            )
-            phtvLastLoggedCoreSettings = PHTVLastLoggedCoreSettings(
-                language: language,
-                inputType: inputType,
-                codeTable: codeTable,
-                checkSpelling: checkSpelling
             )
         }
 
@@ -499,7 +518,7 @@ private nonisolated(unsafe) var phtvCoreSettingsLoadCount: Int = 0
         phtv_loadEmojiHotkeySettingsFromDefaults()
 
         let settingsToken = phtv_computeSettingsToken(defaults: defaults)
-        if coreSettingsChanged || phtvCoreSettingsLoadCount == 1 {
+        if shouldLogCoreSettings {
             NSLog("[AppDelegate] All settings loaded from UserDefaults")
         }
         return settingsToken

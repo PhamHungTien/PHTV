@@ -9,18 +9,36 @@
 
 import Foundation
 
+private final class PHTVSessionRequestState: @unchecked Sendable {
+    private let lock = NSLock()
+    private var lastRequestTime: CFAbsoluteTime = 0
+    private var skippedRequestCount = 0
+
+    /// Returns the number of coalesced calls, or nil when this call should be skipped.
+    func beginRequest(now: CFAbsoluteTime, minimumInterval: CFAbsoluteTime) -> Int? {
+        lock.lock()
+        defer { lock.unlock() }
+
+        guard (now - lastRequestTime) >= minimumInterval else {
+            skippedRequestCount += 1
+            return nil
+        }
+
+        let skipped = skippedRequestCount
+        skippedRequestCount = 0
+        lastRequestTime = now
+        return skipped
+    }
+}
+
 @objc extension PHTVManager {
     private static let smartSwitchSpotlightCacheDurationMs: UInt64 = 150
 
     // Coalesces rapid-fire session resets that carry identical engine state.
     // Direct callers (event tap, input callbacks) use requestNewSessionInternal
     // and are not affected by this throttle.
-    private nonisolated(unsafe) static var lastSessionRequestTime: CFAbsoluteTime = 0
+    @nonobjc private static let sessionRequestState = PHTVSessionRequestState()
     private static let sessionRequestMinInterval: CFAbsoluteTime = 0.05 // 50ms
-
-    #if DEBUG
-    private nonisolated(unsafe) static var skippedSessionRequestCount: Int = 0
-    #endif
 
     private class func smartSwitchFocusedBundleId() -> String? {
         PHTVAppContextService.focusedBundleId(
@@ -32,20 +50,16 @@ import Foundation
     @objc(phtv_requestNewSession)
     class func phtv_requestNewSession() {
         let now = CFAbsoluteTimeGetCurrent()
-        guard (now - lastSessionRequestTime) >= sessionRequestMinInterval else {
-            #if DEBUG
-            skippedSessionRequestCount += 1
-            #endif
-            return
-        }
+        guard let skippedRequestCount = sessionRequestState.beginRequest(
+            now: now,
+            minimumInterval: sessionRequestMinInterval
+        ) else { return }
         #if DEBUG
-        if skippedSessionRequestCount > 0 {
+        if skippedRequestCount > 0 {
             NSLog("[RequestNewSession] Coalesced %d duplicate call(s) within %.0fms window",
-                  skippedSessionRequestCount, sessionRequestMinInterval * 1000)
-            skippedSessionRequestCount = 0
+                  skippedRequestCount, sessionRequestMinInterval * 1000)
         }
         #endif
-        lastSessionRequestTime = now
         PHTVEngineSessionService.requestNewSession()
     }
 

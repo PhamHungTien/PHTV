@@ -1,0 +1,86 @@
+# Deeper diagnostics that are intentionally kept out of the pull-request path.
+name: Nightly diagnostics
+
+on:
+  schedule:
+    - cron: '30 19 * * 6' # 02:30 Sunday in Asia/Ho_Chi_Minh (UTC+7)
+  workflow_dispatch:
+
+concurrency:
+  group: nightly-diagnostics
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  diagnostics:
+    name: Static analysis & Thread Sanitizer
+    runs-on: macos-26
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+
+      - name: Setup Xcode
+        uses: maxim-lobanov/setup-xcode@ed7a3b1fda3918c0306d1b724322adc0b8cc0a90 # v1
+        with:
+          xcode-version: latest-stable
+
+      - name: Static analysis
+        run: |
+          set -o pipefail
+          xcodebuild analyze \
+            -project App/PHTV.xcodeproj \
+            -scheme PHTV \
+            -configuration Debug \
+            -destination 'platform=macOS' \
+            -derivedDataPath "$RUNNER_TEMP/PHTV-Nightly-DerivedData" \
+            -skipPackagePluginValidation \
+            CODE_SIGN_IDENTITY="-" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            DEVELOPMENT_TEAM="" \
+            | tee "$RUNNER_TEMP/analyze.log"
+
+      - name: Run XCTest with Thread Sanitizer
+        run: |
+          set -euo pipefail
+          RESULT_BUNDLE="$RUNNER_TEMP/PHTV-TSan.xcresult"
+          defaults delete com.phamhungtien.phtv >/dev/null 2>&1 || true
+          rm -rf "$RESULT_BUNDLE"
+          xcodebuild test \
+            -project App/PHTV.xcodeproj \
+            -scheme PHTV \
+            -configuration Debug \
+            -destination 'platform=macOS' \
+            -derivedDataPath "$RUNNER_TEMP/PHTV-Nightly-DerivedData" \
+            -resultBundlePath "$RESULT_BUNDLE" \
+            -enableThreadSanitizer YES \
+            -parallel-testing-enabled NO \
+            -skipPackagePluginValidation \
+            CODE_SIGN_IDENTITY="-" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            DEVELOPMENT_TEAM=""
+
+      - name: Clean test defaults
+        if: always()
+        run: |
+          pkill -x PHTV >/dev/null 2>&1 || true
+          defaults delete com.phamhungtien.phtv >/dev/null 2>&1 || true
+
+      - name: Upload diagnostics
+        if: always()
+        continue-on-error: true
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: nightly-diagnostics
+          path: |
+            ${{ runner.temp }}/analyze.log
+            ${{ runner.temp }}/PHTV-TSan.xcresult
+          retention-days: 14

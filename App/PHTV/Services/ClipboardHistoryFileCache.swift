@@ -108,7 +108,7 @@ enum ClipboardHistoryFileCache {
             try fileManager.copyItem(at: url, to: destination)
             return destination
         } catch {
-            NSLog("[ClipboardHistory] Failed to cache file %@: %@", url.path, error.localizedDescription)
+            NSLog("[ClipboardHistory] Failed to cache file: %@", error.localizedDescription)
             return nil
         }
     }

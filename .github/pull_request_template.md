@@ -32,10 +32,10 @@ Closes #[issue number]
 <!-- Bạn đã test những gì? Check tất cả các mục áp dụng -->
 
 ### Platforms Tested
-- [ ] macOS 26.x (macOS 15.x Beta/Developer Preview)
+- [ ] macOS beta hiện hành
+- [ ] macOS stable hiện hành
 - [ ] macOS 15.x (Sequoia)
 - [ ] macOS 14.x (Sonoma)
-- [ ] macOS 13.x (Ventura)
 
 ### Architecture Tested
 - [ ] Apple Silicon (M1/M2/M3/M4)
@@ -45,7 +45,7 @@ Closes #[issue number]
 - [ ] Tested locally in Debug mode
 - [ ] Tested in Release mode
 - [ ] Tested dark mode & light mode
-- [ ] Tested with excluded apps feature
+- [ ] Tested with per-app English rules (Tự chuyển/Khóa tiếng Anh)
 - [ ] Tested with multiple input methods (Telex, VNI)
 - [ ] Tested Accessibility permission flow
 - [ ] Tested with Safe Mode (if hardware-related)
@@ -85,6 +85,9 @@ Closes #[issue number]
 
 ### Documentation
 - [ ] Updated [CHANGELOG.md](../CHANGELOG.md) with changes
+- [ ] Updated privacy manifest/docs if network or stored data changed
+- [ ] Updated compatibility matrix if app-specific behavior changed
+- [ ] Updated third-party notices if a dependency/service was added
 - [ ] Updated code comments for complex logic
 - [ ] Updated README.md if user-facing changes
 - [ ] Updated inline documentation for public APIs

@@ -1,0 +1,15 @@
+{
+  "indentation": {
+    "spaces": 4
+  },
+  "lineLength": 120,
+  "respectsExistingLineBreaks": true,
+  "rules": {
+    "FileScopedDeclarationPrivacy": false,
+    "IdentifiersMustBeASCII": false,
+    "NoBlockComments": false,
+    "OrderedImports": false,
+    "ReplaceForEachWithForLoop": false
+  },
+  "version": 1
+}

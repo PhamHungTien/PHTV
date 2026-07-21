@@ -7,9 +7,9 @@
 ### Bộ gõ tiếng Việt hiện đại cho macOS
 
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPLv3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
-[![Build Status](https://img.shields.io/github/actions/workflow/status/PhamHungTien/PHTV/release.yml?branch=main&label=Build)](../../actions/workflows/release.yml)
+[![CI Status](https://img.shields.io/github/actions/workflow/status/PhamHungTien/PHTV/ci.yml?branch=main&label=CI)](../../actions/workflows/ci.yml)
 [![macOS 14+](https://img.shields.io/badge/macOS-14+-blue.svg)](https://www.apple.com/macos/)
-[![Universal Binary](https://img.shields.io/badge/Universal-Intel%20%2B%20Apple%20Silicon-red.svg)](https://support.apple.com/en-us/HT211814)
+[![Architectures](https://img.shields.io/badge/Intel%20%2B%20Apple%20Silicon-supported-red.svg)](https://support.apple.com/en-us/HT211814)
 [![Swift 6.0+](https://img.shields.io/badge/Swift-6.0+-orange.svg)](https://swift.org)
 [![GitHub release](https://img.shields.io/github/v/release/PhamHungTien/PHTV)](../../releases/latest)
 [![Auto-update](https://img.shields.io/badge/Auto--update-Sparkle-green.svg)](https://sparkle-project.org/)
@@ -24,7 +24,7 @@
 
 ## Giới thiệu
 
-**PHTV (Precision Hybrid Typing Vietnamese)** là bộ gõ tiếng Việt **offline, nhanh, và riêng tư** cho macOS 14+. Ứng dụng chạy như một menu bar app native bằng Swift/SwiftUI, bắt phím bằng CGEvent tap và xử lý tiếng Việt trực tiếp trên máy.
+**PHTV (Precision Hybrid Typing Vietnamese)** là bộ gõ tiếng Việt **nhanh và riêng tư** cho macOS 14+. Ứng dụng chạy như một menu bar app native bằng Swift/SwiftUI, bắt phím bằng CGEvent tap và xử lý tiếng Việt trực tiếp trên máy.
 
 **Tự động cập nhật** - Nhận phiên bản mới ngay khi ra mắt với Sparkle framework. Không cần tải lại thủ công.
 
@@ -55,12 +55,12 @@ PHTV cần 2 quyền của macOS để hoạt động ổn định:
 | **Accessibility** | Tương tác với ô nhập liệu, đọc ngữ cảnh cần thiết và commit chữ đã xử lý. |
 | **Input Monitoring** | Nhận phím gõ từ macOS để engine có thể xử lý Telex/VNI trước khi gửi lại ứng dụng đích. |
 
-PHTV xử lý dữ liệu gõ **offline trên máy**. Ứng dụng không gửi nội dung bạn gõ ra máy chủ bên ngoài. Nếu macOS giữ một mục quyền cũ/hỏng, PHTV sẽ hướng dẫn cấp lại và làm mới entry TCC của quyền đang thiếu trước khi mở đúng mục System Settings.
+Engine xử lý dữ liệu gõ **offline trên máy** và không gửi nội dung bạn gõ trong ứng dụng khác ra máy chủ. Sparkle cần mạng để cập nhật; GIF/Sticker chỉ kết nối Klipy khi người dùng mở hoặc tìm nội dung. Xem đầy đủ tại [Quyền riêng tư](docs/PRIVACY.md). Nếu macOS giữ một mục quyền cũ/hỏng, PHTV sẽ hướng dẫn cấp lại và làm mới entry TCC của quyền đang thiếu trước khi mở đúng mục System Settings.
 
 ## Tính năng
 
 ### Cốt lõi
-- **Hoàn toàn offline** - Không cần Internet, bảo mật tuyệt đối
+- **Engine offline** - Telex/VNI, macro và từ điển chạy trực tiếp trên máy; tính năng mạng tùy chọn được công khai rõ
 - **Telex, VNI, Simple Telex** - Đầy đủ các phương pháp gõ phổ biến
 - **Nhiều bảng mã** - Unicode, TCVN3 (ABC), VNI Windows, Unicode Compound
 - **Native macOS** - Giao diện SwiftUI hiện đại, hỗ trợ Dark Mode
@@ -98,13 +98,14 @@ PHTV xử lý dữ liệu gõ **offline trên máy**. Ứng dụng không gửi 
 - **Multi-format support** - Hoạt động với iMessage, Zalo, Messenger Web và các app khác
 - **Auto cleanup** - Tự động xóa file GIF đã tải sau 5 giây
 - **Ad-supported** - Miễn phí hoàn toàn nhờ quảng cáo từ Klipy
+- **Minh bạch dữ liệu** - Từ khóa GIF/Sticker và sự kiện quảng cáo được gửi tới Klipy chỉ khi dùng khu nội dung trực tuyến
 - **Hotkey tiện lợi** - Cmd+E (tùy chỉnh được) để mở nhanh
 
 ### Tương thích ứng dụng
 - **Keyboard Layout Compatibility** - Hỗ trợ Dvorak, Colemak và các bố cục bàn phím đặc biệt
 - **Claude Code Support** - Tự nhận diện session Claude Code trong Terminal/IDE và áp timing profile ổn định hơn, không cần patch riêng
 - **Safe Mode** - Tự động khôi phục khi Accessibility API gặp lỗi
-- **Luôn dùng tiếng Anh** - Cố định chế độ gõ tiếng Anh cho các ứng dụng đã chọn
+- **Tiếng Anh theo ứng dụng** - Chọn Tự chuyển hoặc Khóa tiếng Anh riêng cho từng ứng dụng
 - **Send Key Step-by-Step** - Gửi từng phím riêng lẻ cho ứng dụng tương thích kém
 - **Nhớ bảng mã theo ứng dụng** - Tự động chuyển bảng mã phù hợp cho từng app
 
@@ -218,8 +219,10 @@ Xem chi tiết kiến trúc: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 ### 🤖 CI/CD & Release Automation
 
 PHTV sử dụng GitHub Actions để tự động build, sign, và release:
-- ✅ **Tự động build** trên macOS 26 với Xcode
-- ✅ **Code signing** với Apple Development certificate
+- ✅ **Full XCTest + coverage** trên runner macOS với Xcode stable
+- ✅ **Static analysis + Thread Sanitizer** theo lịch và khi chạy thủ công
+- ✅ **Release verify gate** trước khi dùng self-hosted runner để đóng gói
+- ✅ **Code signing** với Developer ID Application certificate
 - ✅ **Tạo DMG** với Applications shortcut
 - ✅ **Sparkle signing** cho auto-update bảo mật
 - ✅ **Auto-update Homebrew** formula và appcast.xml
@@ -264,16 +267,16 @@ Click biểu tượng **Vi** (Việt) / **En** (Anh) trên menu bar:
 | Thành phần | Yêu cầu |
 | --- | --- |
 | **macOS** | 14.0+ (Sonoma trở lên) |
-| **Kiến trúc** | Universal Binary (Intel + Apple Silicon) |
+| **Kiến trúc** | DMG riêng cho Intel và Apple Silicon |
 | **Xcode** | Phiên bản mới nhất (nếu build từ source) |
 | **Quyền** | Accessibility + Input Monitoring |
 
-> **Lưu ý**: PHTV hỗ trợ cả Intel và Apple Silicon (M1/M2/M3/M4/...). Universal Binary cho mọi Mac chạy macOS 14.0+.
+> **Lưu ý**: PHTV hỗ trợ cả Intel và Apple Silicon (M1/M2/M3/M4/...). Workflow phát hành tạo đúng DMG theo kiến trúc để giảm dung lượng tải.
 
 ## Công nghệ
 
 ### Core
-- **Swift 6.0** + **SwiftUI** - Giao diện native hiện đại, 100% Swift
+- **Swift 6.0** + **SwiftUI** - Ứng dụng native, Swift-first; Python chỉ dùng cho validator release metadata
 - **CGEvent API** - Event interception và xử lý bàn phím
 - **Accessibility API** - Tương tác với ô nhập liệu và hỗ trợ các app đặc biệt
 - **TCC monitoring** - Theo dõi, nhận diện và phục hồi trạng thái quyền macOS
@@ -283,19 +286,25 @@ Click biểu tượng **Vi** (Việt) / **En** (Anh) trên menu bar:
 - **Sparkle 2.8.1** - Framework auto-update với EdDSA signing
 - **GitHub Actions** - CI/CD tự động build và release
 - **Homebrew Cask** - Package manager cho macOS
-- **DMG** - Universal disk image với Applications symlink
+- **DMG** - Disk image riêng theo kiến trúc với Applications symlink
 
 ## Tài liệu
 
 ### Người dùng
 - **[Cài đặt](docs/INSTALL.md)** - Hướng dẫn cài đặt chi tiết
 - **[FAQ](docs/FAQ.md)** - Các câu hỏi thường gặp
+- **[Quyền riêng tư](docs/PRIVACY.md)** - Dữ liệu local, kết nối mạng và cách xóa dữ liệu
 
 ### Nhà phát triển
 - **[GitHub Actions Workflows](.github/workflows/README.md)** - CI/CD, auto-update, và release automation
-- **[Scripts](scripts/)** - Scripts tự động hóa (Homebrew, Sparkle, DMG creation)
+- **[Scripts](scripts/README.md)** - Local build/test, dictionary và release metadata tools
 - **Engine Regression Tests** - Chạy `xcodebuild -project App/PHTV.xcodeproj -scheme PHTV -configuration Debug -destination 'platform=macOS' test -only-testing:PHEngineTests/EngineRegressionTests` để kiểm tra các lỗi hồi quy quan trọng của bộ gõ
 - **[Kiến trúc](docs/ARCHITECTURE.md)** - Thiết kế hệ thống và cấu trúc mã nguồn
+- **[Kiểm thử](docs/TESTING.md)** - Full suite, sanitizer và Definition of Done
+- **[Phát hành](docs/RELEASING.md)** - Changelog, signing, Sparkle và rollback
+- **[Ma trận tương thích](docs/COMPATIBILITY.md)** - Ứng dụng, cấu hình và bằng chứng kiểm thử
+- **[Bảo trì kỹ thuật](docs/ENGINEERING.md)** - Quality gates và ngân sách nợ kỹ thuật
+- **[Third-Party Notices](THIRD_PARTY_NOTICES.md)** - Dependency, dịch vụ và nguồn dữ liệu
 - **[Contributing](CONTRIBUTING.md)** - Hướng dẫn đóng góp
 - **[Security](SECURITY.md)** - Chính sách bảo mật
 

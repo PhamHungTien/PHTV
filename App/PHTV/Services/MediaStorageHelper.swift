@@ -29,7 +29,7 @@ func deleteFileAfterDelay(_ fileURL: URL, delay: TimeInterval = 5.0) {
         try? await Task.sleep(for: .seconds(delay))
         guard !Task.isCancelled else { return }
         try? FileManager.default.removeItem(at: fileURL)
-        NSLog("[PHTPPicker] Cleaned up file: %@", fileURL.lastPathComponent)
+        NSLog("[PHTPPicker] Cleaned up temporary media file")
     }
 }
 
@@ -37,8 +37,7 @@ func deleteFileAfterDelay(_ fileURL: URL, delay: TimeInterval = 5.0) {
 func downloadRemoteData(
     from url: URL,
     logPrefix: String,
-    itemDescription: String,
-    identifier: String? = nil
+    itemDescription: String
 ) async -> Data? {
     do {
         let (data, response) = try await URLSession.shared.data(from: url)
@@ -51,8 +50,7 @@ func downloadRemoteData(
         }
 
         guard !data.isEmpty else {
-            let suffix = identifier.map { ": \($0)" } ?? ""
-            NSLog("\(logPrefix) No data received for \(itemDescription)\(suffix)")
+            NSLog("\(logPrefix) No data received for \(itemDescription)")
             return nil
         }
 

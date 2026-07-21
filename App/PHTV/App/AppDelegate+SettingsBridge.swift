@@ -128,10 +128,8 @@ private func phtvSettingsBridgeLiveLog(_ message: String) {
     }
 
     @objc func handleTCCDatabaseChanged(_ notification: Notification?) {
+        _ = notification
         NSLog("[TCC] TCC database change notification received in AppDelegate")
-#if DEBUG
-        NSLog("[TCC] userInfo: %@", String(describing: notification?.userInfo))
-#endif
 
         PHTVManager.invalidatePermissionCache()
 

@@ -24,8 +24,10 @@ xcuserdata/
 # Swift Package Manager
 .build/
 Packages/
-Package.resolved
 SourcePackages/
+
+# Pin the app's package graph for reproducible builds.
+!App/PHTV.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved
 
 # Certificates
 *.p12
@@ -50,6 +52,8 @@ SourcePackages/
 *.tmp
 *.temp
 build.log
+__pycache__/
+*.py[cod]
 
 # CMake / Native build outputs
 /build/

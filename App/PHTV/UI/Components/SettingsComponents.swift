@@ -487,22 +487,10 @@ struct SettingsShortcutRecorderButtonStyle: ButtonStyle {
 
 // MARK: - Unified Hotkey Capture Services
 
-private final class SettingsHotkeyLocalEventMonitor: @unchecked Sendable {
-    let value: Any
-
-    init(value: Any) {
-        self.value = value
-    }
-
-    deinit {
-        NSEvent.removeMonitor(value)
-    }
-}
-
 final class UnifiedHotkeyCaptureView: NSView {
     var onKeyPress: ((UInt16, NSEvent.ModifierFlags, UInt64) -> Void)?
     var onCancel: (() -> Void)?
-    private var localMonitor: SettingsHotkeyLocalEventMonitor?
+    private var localMonitor: Any?
     private var maxModifiers: NSEvent.ModifierFlags = []
     private var maxRawFlags: UInt64 = 0
     private var keyDownHappened = false
@@ -565,11 +553,14 @@ final class UnifiedHotkeyCaptureView: NSView {
 
             return event
         }) else { return }
-        localMonitor = SettingsHotkeyLocalEventMonitor(value: monitor)
+        localMonitor = monitor
     }
 
-    private func stopRecording() {
-        self.localMonitor = nil
+    fileprivate func stopRecording() {
+        if let localMonitor {
+            NSEvent.removeMonitor(localMonitor)
+            self.localMonitor = nil
+        }
     }
 
     private func focusForCapture() {
@@ -627,6 +618,11 @@ struct UnifiedHotkeyEventHandler: NSViewRepresentable {
         if let captureView = nsView as? UnifiedHotkeyCaptureView {
             captureView.isRecording = isRecording
         }
+    }
+
+    static func dismantleNSView(_ nsView: NSView, coordinator: Coordinator) {
+        (nsView as? UnifiedHotkeyCaptureView)?.stopRecording()
+        coordinator.view = nil
     }
 
     func makeCoordinator() -> Coordinator {

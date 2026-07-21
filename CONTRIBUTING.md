@@ -126,7 +126,7 @@ git clone https://github.com/PhamHungTien/PHTV.git
 # Kiểm tra môi trường local
 scripts/dev.swift env-check
 
-# Build project (Universal Binary - Intel + Apple Silicon)
+# Build Debug cho kiến trúc máy hiện tại
 scripts/dev.swift build
 
 # Run all XCTest tests
@@ -137,6 +137,13 @@ scripts/dev.swift engine-test
 
 # Run hotkey smoke tests
 scripts/dev.swift hotkey-test
+
+# Validate appcasts, privacy manifest và release metadata
+scripts/dev.swift metadata-check
+
+# Release build và static analysis
+scripts/dev.swift release-build
+scripts/dev.swift analyze
 
 # Clean build
 scripts/dev.swift clean
@@ -150,20 +157,25 @@ scripts/dev.swift clean
    - Sử dụng breakpoints (Cmd+\)
    - View console output (Cmd+Shift+C)
 
-2. **Console logging:**
+2. **Logging:**
    ```swift
-   print("Debug message: \(value)")
+   PHTVLogger.shared.debug("Mô tả trạng thái không chứa nội dung người dùng")
    ```
+
+   Không log phím gõ, nội dung clipboard/macro, từ khóa GIF/Sticker, API key hoặc URL có token. Dùng category và mức log phù hợp thay cho `print`/`NSLog` mới.
 
 ## Quy Tắc Code
 
 ### Swift Code Style
 
 - Sử dụng 4 spaces cho indentation
+- Dùng cấu hình `.editorconfig` và `.swift-format` cho file được sửa
 - Tên biến và hàm: `camelCase`
 - Tên class và struct: `PascalCase`
 - Tên hằng số: `camelCase` hoặc `UPPER_CASE`
 - Viết comment cho các hàm public
+- Mọi `@unchecked Sendable` phải giải thích lock/executor bảo vệ mutable state
+- Cập nhật `THIRD_PARTY_NOTICES.md` và privacy docs khi thêm dependency/dịch vụ mạng
 
 **Ví dụ:**
 

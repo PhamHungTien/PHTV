@@ -2,7 +2,7 @@
 
 Các câu hỏi thường gặp khi cài đặt, cấp quyền và sử dụng PHTV.
 
-[Trang chủ](../README.md) • [Cài đặt](INSTALL.md) • [Báo lỗi](https://github.com/PhamHungTien/PHTV/issues)
+[Trang chủ](../README.md) • [Cài đặt](INSTALL.md) • [Quyền riêng tư](PRIVACY.md) • [Báo lỗi](https://github.com/PhamHungTien/PHTV/issues)
 
 ---
 
@@ -17,7 +17,7 @@ PHTV là bộ gõ chạy ở tầng hệ thống. Để xử lý Telex/VNI ổn 
 | **Accessibility** | Tương tác với ô nhập liệu, đọc ngữ cảnh cần thiết và commit chữ đã xử lý. |
 | **Input Monitoring** | Nhận phím gõ từ macOS để engine có thể xử lý trước khi gửi lại ứng dụng đích. |
 
-PHTV xử lý dữ liệu gõ offline trên máy và không gửi nội dung bạn gõ ra máy chủ bên ngoài.
+Engine xử lý dữ liệu gõ offline trên máy và không gửi nội dung bạn gõ trong ứng dụng khác ra máy chủ. Khu GIF/Sticker và cập nhật Sparkle có kết nối mạng riêng, được mô tả tại [Quyền riêng tư](PRIVACY.md).
 
 ### 2. Tôi đã cấp Accessibility nhưng PHTV vẫn không gõ được?
 
@@ -47,7 +47,7 @@ Không cần tự chạy lệnh Terminal trong trường hợp thông thường.
 
 ### 4. PHTV có theo dõi nội dung tôi gõ không?
 
-PHTV cần nhận phím gõ để chuyển đổi tiếng Việt, nhưng việc xử lý diễn ra local trên máy. Ứng dụng không upload nội dung bạn gõ. Các tính năng như macro, clipboard history hoặc báo lỗi chỉ dùng dữ liệu cục bộ; khi gửi bug report, bạn có thể kiểm tra nội dung trước khi gửi.
+PHTV cần nhận phím gõ để chuyển đổi tiếng Việt, nhưng engine xử lý local trên máy và không upload nội dung bạn gõ trong ứng dụng khác. Macro và Clipboard History lưu cục bộ. Khi tìm GIF/Sticker, từ khóa được gửi tới Klipy; khi gửi bug report, bạn luôn có thể kiểm tra nội dung trước khi gửi.
 
 ---
 
@@ -86,7 +86,7 @@ Bạn có thể:
 
 ### 8. PHTV Picker là gì?
 
-PHTV Picker là bảng chọn nhanh Emoji, GIF, Sticker và Clipboard theo giao diện native. Bạn có thể mở bằng hotkey trong Settings hoặc từ menu bar, tìm kiếm bằng tiếng Việt/tiếng Anh và click để dán vào ứng dụng hiện tại.
+PHTV Picker là bảng chọn nhanh Emoji, GIF và Sticker theo giao diện native. Emoji hoạt động offline; GIF/Sticker dùng Klipy và chỉ kết nối mạng khi mở hoặc tìm khu tương ứng. Bạn có thể mở Picker bằng hotkey trong Settings hoặc từ menu bar rồi click để dán vào ứng dụng hiện tại.
 
 ### 9. Clipboard History hoạt động thế nào?
 

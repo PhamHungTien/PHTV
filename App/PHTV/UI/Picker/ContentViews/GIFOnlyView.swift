@@ -120,7 +120,7 @@ struct GIFOnlyView: View {
     private func copyGIF(_ gif: KlipyGIF) {
         klipyClient.recordGIFUsage(gif)
         guard let url = URL(string: gif.fullURL) else {
-            NSLog("[GIFPicker] Invalid GIF URL: %@", gif.fullURL)
+            NSLog("[GIFPicker] Klipy returned an invalid GIF URL")
             return
         }
 
@@ -128,8 +128,7 @@ struct GIFOnlyView: View {
             guard let data = await downloadRemoteData(
                 from: url,
                 logPrefix: "[GIFPicker]",
-                itemDescription: "GIF",
-                identifier: gif.slug
+                itemDescription: "GIF"
             ) else {
                 return
             }

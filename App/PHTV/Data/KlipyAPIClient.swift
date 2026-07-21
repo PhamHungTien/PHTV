@@ -54,9 +54,10 @@ final class KlipyAPIClient {
         case stickerSearchResults
     }
 
-    // KLIPY API - Free unlimited (không giới hạn request)
-    // App key cho PHTV từ https://partner.klipy.com/api-keys
-    // Key được obfuscate để tránh bot scan trực tiếp
+    // This is a public client identifier distributed inside PHTV.app, not a
+    // server secret. Splitting it only avoids accidental secret-scanner noise;
+    // it does not provide confidentiality. Production access is restricted and
+    // monitored in the Klipy partner console.
     private var appKey: String {
         let parts = [
             "dRJwhLos61B0a1SE72uH",
@@ -85,8 +86,6 @@ final class KlipyAPIClient {
     var trendingStickers: [KlipyGIF] = []
     var stickerSearchResults: [KlipyGIF] = []
     var isLoading = false
-    var needsAPIKey: Bool = false
-
     // Recent items tracking
     private let maxRecentItems = 20
     private let recentGIFsKey = "RecentGIFs"
@@ -96,8 +95,6 @@ final class KlipyAPIClient {
     var onCloseCallback: (() -> Void)?
 
     private init() {
-        needsAPIKey = appKey == "YOUR_KLIPY_APP_KEY_HERE"
-
         // Clean old cache on init
         cleanOldCache()
     }
@@ -195,14 +192,6 @@ final class KlipyAPIClient {
         }
     }
 
-    func saveAPIKey(_ key: String) {
-        PHTVLogger.shared.warning("[Klipy] Please hardcode your app key in PHTVApp.swift")
-    }
-
-    private var hasValidAppKey: Bool {
-        appKey != "YOUR_KLIPY_APP_KEY_HERE"
-    }
-
     private func buildURL(
         media: MediaKind,
         request: RequestKind,
@@ -235,13 +224,12 @@ final class KlipyAPIClient {
         limit: Int,
         target: OutputTarget
     ) async {
-        guard hasValidAppKey else {
+        guard !appKey.isEmpty else {
             if case .search = request {
-                PHTVLogger.shared.warning("\(media.logPrefix) Please set your app key for search")
+                PHTVLogger.shared.warning("\(media.logPrefix) Client identifier is unavailable for search")
             } else {
-                PHTVLogger.shared.warning("\(media.logPrefix) Please set your app key")
+                PHTVLogger.shared.warning("\(media.logPrefix) Client identifier is unavailable")
             }
-            needsAPIKey = true
             return
         }
 
@@ -261,9 +249,10 @@ final class KlipyAPIClient {
 
         switch request {
         case .trending:
-            PHTVLogger.shared.info("\(media.logPrefix) Fetching trending from: \(url.absoluteString)")
-        case .search(let query):
-            PHTVLogger.shared.info("\(media.logPrefix) Searching for: \(query)")
+            PHTVLogger.shared.info("\(media.logPrefix) Fetching trending media")
+        case .search:
+            // Never persist the user's search text in PHTV diagnostic logs.
+            PHTVLogger.shared.info("\(media.logPrefix) Searching media")
         }
 
         do {
@@ -435,7 +424,7 @@ final class KlipyAPIClient {
             return
         }
 
-        PHTVLogger.shared.info("[Klipy Ads] Opening ad target: \(targetURL)")
+        PHTVLogger.shared.info("[Klipy Ads] Opening selected ad target")
         NSWorkspace.shared.open(url)
     }
 }

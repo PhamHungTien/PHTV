@@ -710,42 +710,65 @@ struct SettingsBackup: Codable, Sendable {
     var upperCaseExcludedApps: [ExcludedApp]?  // Apps excluded from uppercase first char
 }
 
-struct AnyCodableValue: Codable, @unchecked Sendable {
-    let value: Any
+enum AnyCodableValue: Codable, Sendable {
+    case integer(Int)
+    case double(Double)
+    case boolean(Bool)
+    case string(String)
+
+    var value: Any {
+        switch self {
+        case .integer(let value): value
+        case .double(let value): value
+        case .boolean(let value): value
+        case .string(let value): value
+        }
+    }
 
     init(_ value: Any) {
-        self.value = value
+        if let number = value as? NSNumber {
+            if CFGetTypeID(number) == CFBooleanGetTypeID() {
+                self = .boolean(number.boolValue)
+            } else if ["f", "d"].contains(String(cString: number.objCType)) {
+                self = .double(number.doubleValue)
+            } else {
+                self = .integer(number.intValue)
+            }
+        } else if let stringValue = value as? String {
+            self = .string(stringValue)
+        } else {
+            self = .string("")
+        }
     }
 
     init(from decoder: Decoder) throws {
         let container = try decoder.singleValueContainer()
 
         if let intValue = try? container.decode(Int.self) {
-            value = intValue
+            self = .integer(intValue)
         } else if let doubleValue = try? container.decode(Double.self) {
-            value = doubleValue
+            self = .double(doubleValue)
         } else if let boolValue = try? container.decode(Bool.self) {
-            value = boolValue
+            self = .boolean(boolValue)
         } else if let stringValue = try? container.decode(String.self) {
-            value = stringValue
+            self = .string(stringValue)
         } else {
-            value = ""
+            self = .string("")
         }
     }
 
     func encode(to encoder: Encoder) throws {
         var container = encoder.singleValueContainer()
 
-        if let intValue = value as? Int {
+        switch self {
+        case .integer(let intValue):
             try container.encode(intValue)
-        } else if let doubleValue = value as? Double {
+        case .double(let doubleValue):
             try container.encode(doubleValue)
-        } else if let boolValue = value as? Bool {
+        case .boolean(let boolValue):
             try container.encode(boolValue)
-        } else if let stringValue = value as? String {
+        case .string(let stringValue):
             try container.encode(stringValue)
-        } else {
-            try container.encode("")
         }
     }
 }

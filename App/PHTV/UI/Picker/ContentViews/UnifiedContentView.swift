@@ -345,7 +345,7 @@ struct UnifiedContentView: View {
     private func copyGIFURL(_ gif: KlipyGIF) {
         klipyClient.recordGIFUsage(gif)
         guard let url = URL(string: gif.fullURL) else {
-            NSLog("[PHTPPicker] Invalid GIF URL: %@", gif.fullURL)
+            NSLog("[PHTPPicker] Klipy returned an invalid GIF URL")
             return
         }
 
@@ -353,8 +353,7 @@ struct UnifiedContentView: View {
             guard let data = await downloadRemoteData(
                 from: url,
                 logPrefix: "[PHTPPicker]",
-                itemDescription: "GIF",
-                identifier: gif.slug
+                itemDescription: "GIF"
             ) else {
                 return
             }
@@ -385,7 +384,7 @@ struct UnifiedContentView: View {
     private func copyStickerURL(_ sticker: KlipyGIF) {
         klipyClient.recordStickerUsage(sticker)
         guard let url = URL(string: sticker.fullURL) else {
-            NSLog("[PHTPPicker] Invalid Sticker URL: %@", sticker.fullURL)
+            NSLog("[PHTPPicker] Klipy returned an invalid Sticker URL")
             return
         }
 
@@ -393,14 +392,13 @@ struct UnifiedContentView: View {
             guard let data = await downloadRemoteData(
                 from: url,
                 logPrefix: "[PHTPPicker]",
-                itemDescription: "Sticker",
-                identifier: sticker.slug
+                itemDescription: "Sticker"
             ) else {
                 return
             }
 
             if let tempURL = saveTempSticker(data: data, filename: sticker.slug) {
-                NSLog("[PHTPPicker] Sticker downloaded: %@", sticker.slug)
+                NSLog("[PHTPPicker] Sticker downloaded")
 
                 let pasteboard = NSPasteboard.general
                 pasteboard.clearContents()

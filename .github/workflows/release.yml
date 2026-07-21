@@ -21,15 +21,106 @@ concurrency:
   cancel-in-progress: false
 
 permissions:
-  contents: write
+  contents: read
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
+  verify:
+    name: Verify release source
+    runs-on: macos-26
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          fetch-depth: 0
+
+      - name: Setup Xcode
+        uses: maxim-lobanov/setup-xcode@ed7a3b1fda3918c0306d1b724322adc0b8cc0a90 # v1
+        with:
+          xcode-version: latest-stable
+
+      - name: Determine and validate version
+        id: version
+        run: |
+          set -euo pipefail
+          if [ -n "${{ github.event.inputs.version }}" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+          else
+            VERSION="${GITHUB_REF_NAME#v}"
+          fi
+          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$ ]]; then
+            echo "❌ Invalid release version: $VERSION"
+            exit 1
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "📦 Version: $VERSION"
+
+      - name: Validate release metadata
+        run: |
+          set -euo pipefail
+          VERSION="${{ steps.version.outputs.version }}"
+          python3 -m unittest discover -s scripts/tests -p 'test_*.py' -v
+          python3 scripts/tools/release_notes.py render \
+            --version "$VERSION" \
+            --format markdown \
+            --output "$RUNNER_TEMP/release-notes.md"
+          xmllint --noout docs/appcast.xml docs/appcast-intel.xml docs/appcast-beta.xml
+          plutil -lint App/PHTV/Info.plist App/PHTV/PHTV.entitlements App/PHTV/PrivacyInfo.xcprivacy
+
+      - name: Validate dictionary sources
+        run: |
+          set -euo pipefail
+          swift scripts/tools/generate_dict_binary.swift --strict-check-sources
+          swift scripts/tools/generate_dict_binary.swift
+          git diff --exit-code -- \
+            App/PHTV/Resources/Dictionaries/en_dict.bin \
+            App/PHTV/Resources/Dictionaries/vi_dict.bin
+
+      - name: Run full XCTest suite
+        run: |
+          set -euo pipefail
+          RESULT_BUNDLE="$RUNNER_TEMP/PHTV-Release-Verify.xcresult"
+          defaults delete com.phamhungtien.phtv >/dev/null 2>&1 || true
+          rm -rf "$RESULT_BUNDLE"
+          xcodebuild \
+            -project App/PHTV.xcodeproj \
+            -scheme PHTV \
+            -configuration Debug \
+            -destination 'platform=macOS' \
+            -derivedDataPath "$RUNNER_TEMP/PHTV-Release-Verify-DerivedData" \
+            -resultBundlePath "$RESULT_BUNDLE" \
+            -parallel-testing-enabled NO \
+            -skipPackagePluginValidation \
+            CODE_SIGN_IDENTITY="-" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            DEVELOPMENT_TEAM="" \
+            test
+
+      - name: Clean test defaults
+        if: always()
+        run: |
+          pkill -x PHTV >/dev/null 2>&1 || true
+          defaults delete com.phamhungtien.phtv >/dev/null 2>&1 || true
+
+      - name: Upload verification result
+        if: always()
+        continue-on-error: true
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: release-verify-xcresult
+          path: ${{ runner.temp }}/PHTV-Release-Verify.xcresult
+          retention-days: 14
+
   build:
     name: Build PHTV (${{ matrix.arch }})
     runs-on: self-hosted
+    needs: verify
     strategy:
       fail-fast: false
       max-parallel: 2
@@ -50,7 +141,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           fetch-depth: 0
 
@@ -75,13 +166,16 @@ jobs:
       - name: Determine version
         id: version
         run: |
-          if [ -n "${{ github.event.inputs.version }}" ]; then
-            VERSION="${{ github.event.inputs.version }}"
-          else
-            VERSION="${GITHUB_REF_NAME#v}"
-          fi
+          VERSION="${{ needs.verify.outputs.version }}"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "📦 Version: $VERSION"
+
+      - name: Validate changelog release entry
+        run: |
+          python3 scripts/tools/release_notes.py render \
+            --version "${{ steps.version.outputs.version }}" \
+            --format html \
+            --output "$RUNNER_TEMP/release-notes.html"
 
       - name: Validate dictionary sources
         run: swift scripts/tools/generate_dict_binary.swift --strict-check-sources
@@ -664,7 +758,7 @@ jobs:
           echo "$SPARKLE_PRIVATE_KEY" | "$GENERATE_APPCAST" \
             --ed-key-file - \
             --download-url-prefix "$DOWNLOAD_PREFIX" \
-            --maximum-versions 0 \
+            --maximum-versions 30 \
             "$ARCHIVES_DIR"
 
           if [ ! -f "$APPCAST_WORK_FILE" ]; then
@@ -677,6 +771,12 @@ jobs:
           fi
 
           cp "$APPCAST_OUTPUT_FILE" "../docs/$APPCAST_FILE"
+
+          python3 ../scripts/tools/release_notes.py \
+            --changelog ../CHANGELOG.md \
+            inject-appcast \
+            --version "$VERSION" \
+            --appcast "../docs/$APPCAST_FILE"
 
           python3 - <<PY
           import sys
@@ -735,14 +835,14 @@ jobs:
           echo "✅ docs/$APPCAST_FILE generated and signed"
 
       - name: Upload DMG artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
           name: dmg-${{ matrix.arch }}
           path: App/${{ steps.dmg.outputs.name }}
           retention-days: 1
 
       - name: Upload appcast artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
           name: appcast-${{ matrix.arch }}
           path: docs/${{ matrix.appcast_file }}
@@ -751,7 +851,7 @@ jobs:
       - name: Upload build log
         if: always()
         continue-on-error: true
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
           name: build-log-${{ matrix.arch }}
           path: App/build-${{ matrix.arch }}.log
@@ -773,24 +873,36 @@ jobs:
     name: Create Release
     runs-on: ubuntu-latest
     needs: build
+    permissions:
+      contents: write
 
     steps:
+      - name: Checkout release metadata
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+
+      - name: Render release notes
+        run: |
+          python3 scripts/tools/release_notes.py render \
+            --version "${{ needs.build.outputs.version }}" \
+            --format markdown \
+            --output "$RUNNER_TEMP/release-notes.md"
+
       - name: Download DMG (arm64)
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: dmg-arm64
 
       - name: Download DMG (intel)
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: dmg-x86_64
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
         with:
           tag_name: v${{ needs.build.outputs.version }}
           name: PHTV ${{ needs.build.outputs.version }}
-          generate_release_notes: true
+          body_path: ${{ runner.temp }}/release-notes.md
           prerelease: ${{ contains(needs.build.outputs.version, '-') }}
           files: |
             PHTV-${{ needs.build.outputs.version }}-arm64.dmg
@@ -804,21 +916,23 @@ jobs:
     needs:
       - build
       - release
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout main
-        uses: actions/checkout@v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           ref: main
 
       - name: Download appcast (arm64)
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: appcast-arm64
           path: /tmp/phtv-appcast-arm64
 
       - name: Download appcast (intel)
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: appcast-x86_64
           path: /tmp/phtv-appcast-intel
@@ -848,14 +962,16 @@ jobs:
       - build
       - release
       - publish_appcast
+    permissions:
+      contents: read
 
     steps:
       - name: Download DMG artifacts
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: dmg-arm64
 
-      - uses: actions/download-artifact@v8
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: dmg-x86_64
 

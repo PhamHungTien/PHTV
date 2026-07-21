@@ -14,22 +14,34 @@ import Foundation
 import ObjectiveC
 
 enum SparkleLocalization {
-    nonisolated(unsafe) private static var didSwizzle = false
+    private final class SwizzleState: @unchecked Sendable {
+        private let lock = NSLock()
+        private var didSwizzle = false
+
+        func installIfNeeded(_ install: () -> Bool) {
+            lock.lock()
+            defer { lock.unlock() }
+            guard !didSwizzle else { return }
+            didSwizzle = install()
+        }
+    }
+
+    private static let state = SwizzleState()
 
     /// Call once at app launch (before any Sparkle UI appears).
     static func install() {
-        guard !didSwizzle else { return }
-        didSwizzle = true
+        state.installIfNeeded {
+            let cls: AnyClass = Bundle.self
+            let originalSel = #selector(Bundle.localizedString(forKey:value:table:))
+            let swizzledSel = #selector(Bundle.phtv_localizedString(forKey:value:table:))
 
-        let cls: AnyClass = Bundle.self
-        let originalSel = #selector(Bundle.localizedString(forKey:value:table:))
-        let swizzledSel = #selector(Bundle.phtv_localizedString(forKey:value:table:))
+            guard let original = class_getInstanceMethod(cls, originalSel),
+                  let swizzled = class_getInstanceMethod(cls, swizzledSel)
+            else { return false }
 
-        guard let original = class_getInstanceMethod(cls, originalSel),
-              let swizzled = class_getInstanceMethod(cls, swizzledSel)
-        else { return }
-
-        method_exchangeImplementations(original, swizzled)
+            method_exchangeImplementations(original, swizzled)
+            return true
+        }
     }
 }
 

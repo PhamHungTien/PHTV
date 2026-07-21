@@ -6,6 +6,57 @@ enum DevError: Error {
     case commandFailed(String, Int32)
 }
 
+func selectedDeveloperDirectory() -> String? {
+    let process = Process()
+    let pipe = Pipe()
+    process.executableURL = URL(fileURLWithPath: "/usr/bin/xcode-select")
+    process.arguments = ["-p"]
+    process.standardOutput = pipe
+    process.standardError = Pipe()
+    do {
+        try process.run()
+        process.waitUntilExit()
+        guard process.terminationStatus == 0 else { return nil }
+        let data = pipe.fileHandleForReading.readDataToEndOfFile()
+        return String(data: data, encoding: .utf8)?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+    } catch {
+        return nil
+    }
+}
+
+func resolveDeveloperDirectory() -> String {
+    let fileManager = FileManager.default
+    if let override = ProcessInfo.processInfo.environment["DEVELOPER_DIR"],
+       !override.isEmpty {
+        return override
+    }
+
+    if let selected = selectedDeveloperDirectory(),
+       selected.contains(".app/Contents/Developer"),
+       fileManager.fileExists(atPath: selected) {
+        return selected
+    }
+
+    let stable = "/Applications/Xcode.app/Contents/Developer"
+    if fileManager.fileExists(atPath: stable) {
+        return stable
+    }
+
+    if let applicationNames = try? fileManager.contentsOfDirectory(atPath: "/Applications") {
+        let candidates = applicationNames
+            .filter { $0.hasPrefix("Xcode") && $0.hasSuffix(".app") }
+            .map { "/Applications/\($0)/Contents/Developer" }
+            .filter { fileManager.fileExists(atPath: $0) }
+            .sorted { $0.localizedStandardCompare($1) == .orderedDescending }
+        if let candidate = candidates.first {
+            return candidate
+        }
+    }
+
+    return stable
+}
+
 let fileURL = URL(fileURLWithPath: #filePath)
 let rootURL = fileURL.deletingLastPathComponent().deletingLastPathComponent()
 let rootPath = rootURL.path
@@ -14,8 +65,7 @@ let scheme = "PHTV"
 let destination = "platform=macOS"
 let derivedDataPath = ProcessInfo.processInfo.environment["DERIVED_DATA_PATH"]
     ?? rootURL.appendingPathComponent(".build/derived-data").path
-let developerDir = ProcessInfo.processInfo.environment["DEVELOPER_DIR"]
-    ?? "/Applications/Xcode.app/Contents/Developer"
+let developerDir = resolveDeveloperDirectory()
 
 let command = CommandLine.arguments.dropFirst().first ?? ""
 
@@ -26,14 +76,19 @@ func usage() {
     Commands:
       env-check     Print the local toolchain setup used by this project
       build         Build the macOS app in Debug
+      release-build Build the macOS app in Release without distribution signing
+      analyze       Run Xcode static analysis in Debug
       test          Run all XCTest tests
       engine-test   Run EngineRegressionTests only
       hotkey-test   Run HotkeyReliabilityTests only
       dict-check    Validate checked-in dictionary sources
+      metadata-check Validate release notes, appcasts, plists, and Python tools
+      format        Format Swift sources with the repository configuration
+      format-check  Report Swift formatting differences without editing files
       clean         Remove local DerivedData used by this script
 
     Environment:
-      DEVELOPER_DIR       Override Xcode path, defaults to /Applications/Xcode.app/Contents/Developer
+      DEVELOPER_DIR       Override Xcode path; otherwise auto-discovers stable or beta Xcode
       DERIVED_DATA_PATH   Override build cache path, defaults to .build/derived-data
     """)
 }
@@ -100,6 +155,18 @@ func xcodebuildProject(_ extraArguments: [String]) throws {
     ] + extraArguments)
 }
 
+func swiftFormat(_ extraArguments: [String]) throws {
+    requireXcode()
+    try run("/usr/bin/xcrun", [
+        "swift", "format",
+    ] + extraArguments + [
+        "--configuration", rootURL.appendingPathComponent(".swift-format").path,
+        "--recursive", "--parallel",
+        rootURL.appendingPathComponent("App/PHTV").path,
+        rootURL.appendingPathComponent("App/Tests").path,
+    ])
+}
+
 do {
     switch command {
     case "env-check":
@@ -116,6 +183,24 @@ do {
     case "build":
         try xcodebuildProject(["build"])
 
+    case "release-build":
+        requireXcode()
+        try run("/usr/bin/xcodebuild", [
+            "-project", projectPath,
+            "-scheme", scheme,
+            "-configuration", "Release",
+            "-destination", destination,
+            "-derivedDataPath", derivedDataPath,
+            "CODE_SIGN_IDENTITY=-",
+            "CODE_SIGNING_REQUIRED=NO",
+            "CODE_SIGNING_ALLOWED=NO",
+            "DEVELOPMENT_TEAM=",
+            "build",
+        ])
+
+    case "analyze":
+        try xcodebuildProject(["analyze"])
+
     case "test":
         try xcodebuildProject(["test"])
 
@@ -131,6 +216,56 @@ do {
             rootURL.appendingPathComponent("scripts/tools/generate_dict_binary.swift").path,
             "--strict-check-sources",
         ])
+
+    case "metadata-check":
+        let latestVersion = try capture(
+            "/usr/bin/python3",
+            [
+                rootURL.appendingPathComponent("scripts/tools/release_notes.py").path,
+                "appcast-version", "--appcast",
+                rootURL.appendingPathComponent("docs/appcast.xml").path,
+            ]
+        )
+        let latestIntelVersion = try capture(
+            "/usr/bin/python3",
+            [
+                rootURL.appendingPathComponent("scripts/tools/release_notes.py").path,
+                "appcast-version", "--appcast",
+                rootURL.appendingPathComponent("docs/appcast-intel.xml").path,
+            ]
+        )
+        guard latestVersion == latestIntelVersion else {
+            throw DevError.commandFailed("arm64 and Intel appcast versions differ", 1)
+        }
+        try run("/usr/bin/python3", [
+            "-m", "unittest", "discover",
+            "-s", rootURL.appendingPathComponent("scripts/tests").path,
+            "-p", "test_*.py",
+            "-v",
+        ])
+        try run("/usr/bin/python3", [
+            rootURL.appendingPathComponent("scripts/tools/release_notes.py").path,
+            "check", "--version", latestVersion,
+            "--appcast", rootURL.appendingPathComponent("docs/appcast.xml").path,
+            "--appcast", rootURL.appendingPathComponent("docs/appcast-intel.xml").path,
+        ])
+        try run("/usr/bin/xmllint", [
+            "--noout",
+            rootURL.appendingPathComponent("docs/appcast.xml").path,
+            rootURL.appendingPathComponent("docs/appcast-intel.xml").path,
+            rootURL.appendingPathComponent("docs/appcast-beta.xml").path,
+        ])
+        for plist in ["Info.plist", "PHTV.entitlements", "PrivacyInfo.xcprivacy"] {
+            try run("/usr/bin/plutil", [
+                "-lint", rootURL.appendingPathComponent("App/PHTV/\(plist)").path,
+            ])
+        }
+
+    case "format":
+        try swiftFormat(["format", "--in-place"])
+
+    case "format-check":
+        try swiftFormat(["lint"])
 
     case "clean":
         if FileManager.default.fileExists(atPath: derivedDataPath) {

@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security and Privacy
+- Khai báo dữ liệu của GIF/Sticker trong privacy manifest và hiển thị liên kết
+  chính sách PHTV/Klipy ngay trong Cài đặt.
+- Loại dữ liệu tìm kiếm, URL media, đường dẫn Clipboard và payload TCC khỏi log
+  chẩn đoán.
+- Khóa GitHub Actions bằng commit SHA, check in SwiftPM lockfile và thêm
+  Dependabot/CODEOWNERS.
+
+### Engineering
+- Dùng `CHANGELOG.md` làm nguồn duy nhất cho nội dung GitHub Release và Sparkle;
+  thêm validator/test để hai appcast theo kiến trúc không lệch metadata.
+- CI chạy toàn bộ XCTest không retry; workflow release có verify gate; lịch chạy
+  sâu bổ sung static analysis và Thread Sanitizer.
+- Loại toàn bộ `nonisolated(unsafe)` khỏi runtime state, thay bằng state box có
+  lock; settings backup không còn lưu `Any` trong type `@unchecked Sendable`.
+- Bổ sung tài liệu Privacy, Testing, Releasing, Compatibility, Security và
+  Third-Party Notices cùng công cụ local tự nhận diện Xcode stable/beta.
+
 ## [3.4.2] - 2026-07-22
 
 ### Tổng quan

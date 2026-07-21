@@ -36,9 +36,8 @@ final class PHTVTCCNotificationService: NSObject {
                 guard !Task.isCancelled else { break }
                 if name.rawValue == "com.apple.accessibility.api" {
                     NSLog("[TCC] 🔔 TCC notification received: %@", notification.name.rawValue)
-                    NSLog("[TCC] userInfo: %@", String(describing: notification.userInfo))
                 } else {
-                    NSLog("[TCC] 🔔 TCC access changed notification: %@", String(describing: notification.userInfo))
+                    NSLog("[TCC] 🔔 TCC access changed notification received")
                 }
                 handleTCCNotification(notification)
             }

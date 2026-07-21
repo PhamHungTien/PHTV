@@ -14,18 +14,47 @@
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
             <description><![CDATA[
                 <h2>PHTV 3.4.2</h2>
-                <p>Bản cập nhật này tăng độ ổn định của <strong>Lịch sử Clipboard</strong> và cải thiện nhập liệu trong <strong>Notion, Firefox, JetBrains IDE</strong> cùng các từ tiếng Anh có phím Telex <code>w</code>.</p>
-                <h3>Đã sửa và cải thiện</h3>
+                <h3>Tổng quan</h3>
+                <p>PHTV 3.4.2 tập trung vào độ ổn định của các cửa sổ nổi và khả năng tương thích khi nhập liệu. Lịch sử Clipboard không còn dễ crash khi mở nhanh bằng <code>Control + V</code>; Notion trên Firefox và các IDE JetBrains được nhận diện chính xác hơn; đồng thời các từ tiếng Anh có phím Telex <code>w</code>, như <code>window</code>, không còn bị tự chuyển sai thành tiếng Việt.</p>
+                <h3>Fixed and Improved</h3>
                 <ul>
-                    <li><strong>Lịch sử Clipboard ổn định hơn</strong>: Khắc phục tình trạng PHTV đôi khi crash khi mở bằng <code>Control + V</code>, đặc biệt khi phím tắt được kích hoạt liên tiếp.</li>
-                    <li><strong>PHTV Picker mượt hơn</strong>: Đồng bộ vòng đời cửa sổ nổi, tránh mở chồng, đóng nhầm hoặc mất focus khi chuyển nhanh giữa Picker và Lịch sử Clipboard.</li>
-                    <li><strong>Notion trên Firefox</strong>: Cải thiện nhận diện code block để có thể gõ tiếng Việt chính xác hơn trong trình duyệt.</li>
-                    <li><strong>JetBrains IDE</strong>: Loại bỏ các ký tự hoặc thao tác điều khiển thừa như <code>INSERT</code>, <code>DELETE</code> trong vùng soạn thảo. Terminal tích hợp và các ứng dụng Terminal vẫn giữ nguyên chế độ CLI.</li>
-                    <li><strong>Từ tiếng Anh có phím Telex w</strong>: Các từ như <code>window</code>, <code>windows</code>, <code>willow</code> và <code>workflow</code> không còn bị tự chuyển sai thành tiếng Việt.</li>
-                    <li><strong>Bảo toàn tiếng Việt</strong>: Các từ hợp lệ như <code>thương</code>, <code>trường</code>, <code>đường</code> và <code>tiếng</code> vẫn được xử lý đúng.</li>
+                <li><strong>Ổn định Lịch sử Clipboard và PHTV Picker (#212)</strong>
+                <ul>
+                <li>Chặn việc một lần nhấn phím tắt bị nhận đồng thời từ nhiều nguồn sự kiện, tránh cửa sổ vừa mở đã đóng hoặc tạo chồng nhiều phiên.</li>
+                <li>Đồng bộ vòng đời cửa sổ, trạng thái focus và thao tác đóng giữa Lịch sử Clipboard với PHTV Picker, giảm nguy cơ crash khi mở/đóng hoặc chuyển nhanh giữa hai cửa sổ.</li>
+                <li>Khôi phục focus về ứng dụng trước đó một cách nhất quán sau khi đóng.</li>
                 </ul>
-                <h3>Sau khi cập nhật</h3>
-                <p>Không cần thiết lập lại hoặc cấp thêm quyền. Thiết lập, macro, lịch sử Clipboard và quy tắc theo ứng dụng hiện có được giữ nguyên.</p>
+                </li>
+                <li><strong>Gõ tiếng Việt trong code block Notion trên Firefox (#84)</strong>
+                <ul>
+                <li>Dò đúng trang Notion từ cây Accessibility của Firefox thay vì phụ thuộc vào tiêu đề cửa sổ.</li>
+                <li>Kết hợp URL, thuộc tính ngữ nghĩa và font monospace để nhận diện code block, đồng thời tránh nhận nhầm những tên thông thường có chứa chữ “code”.</li>
+                </ul>
+                </li>
+                <li><strong>Loại bỏ ký tự điều khiển thừa trong JetBrains IDE (#84)</strong>
+                <ul>
+                <li>Không còn coi toàn bộ trình soạn thảo JetBrains là Terminal/CLI, khắc phục hiện tượng xuất hiện thao tác <code>INSERT</code>, <code>DELETE</code> hoặc ký tự điều khiển thừa.</li>
+                <li>Terminal tích hợp trong JetBrains và các ứng dụng Terminal độc lập vẫn giữ nguyên chế độ CLI chuyên dụng.</li>
+                </ul>
+                </li>
+                <li><strong>Không tự đổi sai từ tiếng Anh có phím <code>w</code> (#180)</strong>
+                <ul>
+                <li>Các từ như <code>window</code>, <code>windows</code>, <code>willow</code>, <code>workflow</code> và <code>windowed</code> được giữ đúng ngay trong lúc gõ bằng Telex hoặc Simple Telex.</li>
+                <li>Tiếp tục ưu tiên các từ tiếng Việt hợp lệ như <code>thương</code>, <code>trường</code>, <code>đường</code> và <code>tiếng</code>, tránh sửa quá rộng gây sai tiếng Việt.</li>
+                <li>Hỗ trợ viết hoa, Quick Telex, Backspace, các bảng mã và tùy chọn gõ hiện có.</li>
+                </ul>
+                </li>
+                </ul>
+                <h3>Chất lượng</h3>
+                <ul>
+                <li>Bổ sung kiểm thử hồi quy cho phím tắt cửa sổ nổi, vòng đời panel, Firefox Accessibility, JetBrains, Terminal tích hợp và các tổ hợp Telex <code>w</code>.</li>
+                <li>Toàn bộ test suite đạt <strong>420/420 tests</strong> trên macOS 27 beta; Debug, Release và Analyze đều thành công.</li>
+                </ul>
+                <h3>Ghi chú nâng cấp</h3>
+                <ul>
+                <li>Không cần thiết lập lại hoặc cấp thêm quyền sau khi cập nhật.</li>
+                <li>Thiết lập, macro, lịch sử Clipboard và quy tắc theo ứng dụng được giữ nguyên.</li>
+                </ul>
             ]]></description>
             <enclosure url="https://github.com/PhamHungTien/PHTV/releases/download/v3.4.2/PHTV-3.4.2-intel.dmg" length="9290099" type="application/octet-stream" sparkle:edSignature="0x96WArSPh0QO+T+LusRbTt5N+3E9f2xfMe91XblJAZsum+U7ntjUY6ZPCHoWtzUQdAabhPjc4Xev6I8PYJLDA=="/>
         </item>

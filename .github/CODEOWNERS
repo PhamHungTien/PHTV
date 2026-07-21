@@ -1,0 +1,8 @@
+# Default owner and review routing for this repository.
+* @PhamHungTien
+
+/.github/ @PhamHungTien
+/App/PHTV/PrivacyInfo.xcprivacy @PhamHungTien
+/App/PHTV/PHTV.entitlements @PhamHungTien
+/docs/appcast*.xml @PhamHungTien
+/scripts/tools/ @PhamHungTien

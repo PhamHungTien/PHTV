@@ -1,54 +1,82 @@
-# PHTV Scripts
+# Công cụ phát triển PHTV
 
-Release automation is fully managed by GitHub Actions in:
-- `.github/workflows/release.yml`
-- `.github/workflows/ci.yml`
+## Lệnh chính
 
-## Local development entrypoint
-
-Use `scripts/dev.swift` for local build/test commands. It pins command-line builds to
-`/Applications/Xcode.app/Contents/Developer` by default, so the project still builds
-when the system `xcode-select` path points at Command Line Tools.
-
-Useful commands:
-- `scripts/dev.swift env-check`
-- `scripts/dev.swift build`
-- `scripts/dev.swift test`
-- `scripts/dev.swift engine-test`
-- `scripts/dev.swift hotkey-test`
-- `scripts/dev.swift dict-check`
-- `scripts/dev.swift clean`
-
-Override Xcode or DerivedData paths when needed:
+Chạy từ thư mục gốc repository:
 
 ```bash
-DEVELOPER_DIR=/path/to/Xcode.app/Contents/Developer scripts/dev.swift build
-DERIVED_DATA_PATH=/tmp/phtv-derived-data scripts/dev.swift test
+scripts/dev.swift env-check
+scripts/dev.swift build
+scripts/dev.swift test
+scripts/dev.swift analyze
+scripts/dev.swift metadata-check
+scripts/dev.swift dict-check
+scripts/dev.swift release-build
 ```
 
-## Remaining local tools
+`scripts/dev.swift` ưu tiên `DEVELOPER_DIR`, sau đó dùng Xcode đang được
+`xcode-select` chọn, `/Applications/Xcode.app`, hoặc bản `Xcode*.app` khả dụng.
+Vì vậy Xcode beta có thể dùng mà không cần đổi thiết lập toàn hệ thống:
 
-### `tools/generate_dict_binary.swift`
-Build-time utility to regenerate dictionary binary assets when dictionary source data changes.
+```bash
+DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer scripts/dev.swift test
+DERIVED_DATA_PATH=/tmp/phtv-derived-data scripts/dev.swift build
+```
 
-Canonical dictionary sources live in:
+`format` sửa định dạng Swift. `format-check` hiện là công cụ hỗ trợ cải tiến dần,
+chưa phải CI gate cho toàn bộ mã nguồn cũ:
+
+```bash
+scripts/dev.swift format-check
+scripts/dev.swift format
+```
+
+Để build và mở app bằng một lệnh, dùng:
+
+```bash
+script/build_and_run.sh run
+script/build_and_run.sh debug
+script/build_and_run.sh logs
+script/build_and_run.sh verify
+```
+
+## Dictionary
+
+Nguồn chuẩn được lưu tại:
+
 - `docs/dictionary/en_words.txt`
 - `docs/dictionary/vi_words.txt`
 
-Both English and Vietnamese dictionaries now build fully offline from those two checked-in source files only.
+Các lệnh bảo trì:
 
-Source files may include blank lines and comment lines prefixed with `#`.
+```bash
+swift scripts/tools/generate_dict_binary.swift --check-sources
+swift scripts/tools/generate_dict_binary.swift --strict-check-sources
+swift scripts/tools/generate_dict_binary.swift --normalize-sources
+swift scripts/tools/generate_dict_binary.swift
+```
 
-Useful maintenance modes:
-- `swift scripts/tools/generate_dict_binary.swift --check-sources`
-- `swift scripts/tools/generate_dict_binary.swift --strict-check-sources`
-- `swift scripts/tools/generate_dict_binary.swift --normalize-sources`
+Hai file `.bin` sinh ra phải được commit cùng thay đổi nguồn. CI sẽ thất bại nếu
+nguồn không hợp lệ hoặc binary đã cũ.
 
-`--strict-check-sources` is intended for CI and fails if local sources still contain duplicates or invalid entries.
-`--normalize-sources` removes duplicates/invalid lines while preserving the first-seen order of words.
+## Release notes và appcast
 
-## Notes
+`CHANGELOG.md` là nguồn nội dung duy nhất. Công cụ Python render Markdown cho
+GitHub Release và HTML tương đương cho Sparkle:
 
-- Release, Homebrew sync, and local shell helpers were removed from `scripts/` because the logic now runs in GitHub Actions.
-- The experimental InputMethodKit installer was removed with the `PHTVInputMethod` target.
-- Application runtime/source code remains Swift-first; this folder keeps the local dev entrypoint and dictionary generation tool.
+```bash
+python3 scripts/tools/release_notes.py latest
+python3 scripts/tools/release_notes.py render --version 3.4.2 --format markdown
+python3 scripts/tools/release_notes.py check --version 3.4.2 \
+  --appcast docs/appcast.xml --appcast docs/appcast-intel.xml
+python3 -m unittest discover -s scripts/tests -p 'test_*.py' -v
+```
+
+Thông thường không cần tự sửa `<description>` trong appcast; workflow release sẽ
+render và chèn nội dung trước khi publish.
+
+## Tự động hóa
+
+CI và release được định nghĩa tại `.github/workflows/`. Script trong repository
+chỉ cung cấp các primitive có thể chạy lại ở local; khóa ký và notarization vẫn
+chỉ được dùng trong môi trường release được bảo vệ.

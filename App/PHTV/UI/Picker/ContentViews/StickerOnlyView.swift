@@ -120,7 +120,7 @@ struct StickerOnlyView: View {
     private func copySticker(_ sticker: KlipyGIF) {
         klipyClient.recordStickerUsage(sticker)
         guard let url = URL(string: sticker.fullURL) else {
-            NSLog("[StickerPicker] Invalid Sticker URL: %@", sticker.fullURL)
+            NSLog("[StickerPicker] Klipy returned an invalid Sticker URL")
             return
         }
 
@@ -128,13 +128,12 @@ struct StickerOnlyView: View {
             guard let data = await downloadRemoteData(
                 from: url,
                 logPrefix: "[StickerPicker]",
-                itemDescription: "Sticker",
-                identifier: sticker.slug
+                itemDescription: "Sticker"
             ) else {
                 return
             }
 
-            NSLog("[StickerPicker] Sticker downloaded: %@", sticker.slug)
+            NSLog("[StickerPicker] Sticker downloaded")
 
             let phtpDir = getPHTPMediaDirectory()
             let stickerURL = phtpDir.appendingPathComponent("\(sticker.slug).png")

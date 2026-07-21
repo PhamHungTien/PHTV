@@ -501,7 +501,7 @@ private nonisolated func phtvAttemptTCCRepairInBackground() async -> (fixed: Boo
 
         let bundleURL = Bundle.main.bundleURL
         guard bundleURL.pathExtension == "app" else {
-            NSLog("[Accessibility] Relaunch skipped: bundle URL is not an app (%@)", bundleURL.path)
+            NSLog("[Accessibility] Relaunch skipped: bundle URL is not an app")
             return
         }
 
