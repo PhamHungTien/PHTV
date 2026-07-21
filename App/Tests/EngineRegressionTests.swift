@@ -212,7 +212,7 @@ final class EngineRegressionTests: XCTestCase {
         return renderedTypingWord(engine)
     }
 
-    private func runtimeEmittedWord(for keycode: UInt16) -> String {
+    private func runtimeEmittedWord(for keycode: UInt16, capsStatus: UInt8 = 0) -> String {
         let codeTable = PHTVEngineRuntimeFacade.currentCodeTable()
         let count = Int(engineHookNewCharCount())
         var scalars: [UnicodeScalar] = []
@@ -227,7 +227,8 @@ final class EngineRegressionTests: XCTestCase {
         }
 
         if isRestore(engineHookCode()) {
-            let codePoint = EngineMacroKeyMap.character(for: UInt32(keycode))
+            let rawKey = UInt32(keycode) | (capsStatus != 0 ? EngineBitMask.caps : 0)
+            let codePoint = EngineMacroKeyMap.character(for: rawKey)
             if codePoint != 0, let scalar = UnicodeScalar(Int(codePoint)) {
                 scalars.append(scalar)
             }
@@ -237,15 +238,21 @@ final class EngineRegressionTests: XCTestCase {
     }
 
     private func runtimeRenderedToken(_ token: String) -> String {
+        runtimeRenderedKeySequence(token.map { (keyCode(for: $0), UInt8(0)) })
+    }
+
+    private func runtimeRenderedKeySequence(_ events: [(keyCode: UInt16, capsStatus: UInt8)]) -> String {
         engineInitialize()
+        engineStartNewSession()
         var output = ""
 
-        for ch in token {
-            let code = keyCode(for: ch)
-            engineHandleEvent(eventKeyboard, stateKeyDown, code, 0, 0)
+        for event in events {
+            let code = event.keyCode
+            engineHandleEvent(eventKeyboard, stateKeyDown, code, event.capsStatus, 0)
 
             if engineHookCode() == HookCodeState.doNothing.rawValue {
-                if let scalar = UnicodeScalar(Int(EngineMacroKeyMap.character(for: UInt32(code)))) {
+                let rawKey = UInt32(code) | (event.capsStatus != 0 ? EngineBitMask.caps : 0)
+                if let scalar = UnicodeScalar(Int(EngineMacroKeyMap.character(for: rawKey))) {
                     output.unicodeScalars.append(scalar)
                 }
                 continue
@@ -256,7 +263,7 @@ final class EngineRegressionTests: XCTestCase {
                 output.removeLast(backspaceCount)
             }
 
-            output += runtimeEmittedWord(for: code)
+            output += runtimeEmittedWord(for: code, capsStatus: event.capsStatus)
         }
 
         return output
@@ -577,6 +584,214 @@ final class EngineRegressionTests: XCTestCase {
         runSpaceCase("lapaz", expectRestore: true)
         runSpaceCase("lapazfood", expectRestore: true)
         runSpaceCase("lapazfoods", expectRestore: true)
+    }
+
+    // MARK: - Issue #180: trailing Telex W in English words
+
+    func testIssue180WindowStaysEnglishAsSoonAsFinalWIsTyped() {
+        XCTAssertEqual(runtimeRenderedToken("window"), "window")
+    }
+
+    func testIssue180ImmediateRestoreUsesOneCompleteReplacementSignal() {
+        engineInitialize()
+        feedWord("window")
+
+        XCTAssertEqual(engineHookCode(), HookCodeState.willProcess.rawValue)
+        XCTAssertEqual(engineHookBackspaceCount(), 5)
+        XCTAssertEqual(engineHookNewCharCount(), 6)
+        XCTAssertEqual(hookOutputWord(), "window")
+    }
+
+    func testIssue180RestoresEnglishWordsAcrossTelexConflictPositions() {
+        let words = [
+            "window", "windows", "willow", "allow", "follow", "yellow",
+            "shadow", "workflow", "windowed"
+        ]
+        setCustomEnglishWords(words)
+
+        for word in words {
+            XCTAssertEqual(runtimeRenderedToken(word), word, word)
+        }
+    }
+
+    func testIssue180KeepsVietnameseTelexPrecedence() {
+        let cases: [(keys: String, output: String)] = [
+            ("thuowng", "thương"),
+            ("truowngf", "trường"),
+            ("tieengs", "tiếng"),
+            ("dduwowngf", "đường"),
+            ("dawks", "dắk"),
+            ("lawks", "lắk"),
+            ("hoom", "hôm"),
+            ("homo", "hôm"),
+            ("mowis", "mới"),
+            ("nghieeng", "nghiêng")
+        ]
+
+        for item in cases {
+            XCTAssertEqual(runtimeRenderedToken(item.keys), item.output, item.keys)
+        }
+    }
+
+    func testIssue180CustomVietnameseDictionaryOverridesEnglishDictionary() {
+        setCustomWords(english: ["window"], vietnamese: ["window"])
+        engineInitialize()
+        feedWord("window")
+
+        XCTAssertEqual(engineHookCode(), HookCodeState.doNothing.rawValue)
+        XCTAssertEqual(engineHookBackspaceCount(), 0)
+    }
+
+    func testIssue180RespectsDisabledAutoEnglishRestore() {
+        let saved = PHTVEngineRuntimeFacade.autoRestoreEnglishWord()
+        PHTVEngineRuntimeFacade.setAutoRestoreEnglishWord(0)
+        defer { PHTVEngineRuntimeFacade.setAutoRestoreEnglishWord(saved) }
+
+        let engine = PHTVVietnameseEngine()
+        engine.refreshRuntimeLayoutSnapshot()
+        engine.startNewSession()
+        feed(engine, [KEY_W, KEY_I, KEY_N, KEY_D, KEY_O, KEY_W])
+
+        XCTAssertFalse(engine.autoEnglishSessionActive)
+    }
+
+    func testIssue180WorksWithOldAndModernOrthography() {
+        let saved = PHTVEngineRuntimeFacade.useModernOrthography()
+        defer { PHTVEngineRuntimeFacade.setUseModernOrthography(saved) }
+
+        for value: Int32 in [0, 1] {
+            PHTVEngineRuntimeFacade.setUseModernOrthography(value)
+            XCTAssertEqual(runtimeRenderedToken("window"), "window", "modernOrthography=\(value)")
+        }
+    }
+
+    func testIssue180WorksAcrossTelexVariantsAndLeavesVNIUnchanged() {
+        let saved = PHTVEngineRuntimeFacade.currentInputType()
+        defer { PHTVEngineRuntimeFacade.setCurrentInputType(saved) }
+
+        for inputType: Int32 in [0, 2, 3] {
+            PHTVEngineRuntimeFacade.setCurrentInputType(inputType)
+            XCTAssertEqual(runtimeRenderedToken("window"), "window", "inputType=\(inputType)")
+        }
+
+        PHTVEngineRuntimeFacade.setCurrentInputType(1)
+        XCTAssertEqual(runtimeRenderedToken("window"), "window", "VNI must keep ordinary letters raw")
+    }
+
+    func testIssue180PreservesShiftAndCapsLock() {
+        let windowCodes = "window".map { keyCode(for: $0) }
+
+        var titleCase = windowCodes.map { (keyCode: $0, capsStatus: UInt8(0)) }
+        titleCase[0].capsStatus = 1
+        XCTAssertEqual(runtimeRenderedKeySequence(titleCase), "Window")
+
+        var capsLockTitleCase = windowCodes.map { (keyCode: $0, capsStatus: UInt8(0)) }
+        capsLockTitleCase[0].capsStatus = 2
+        XCTAssertEqual(runtimeRenderedKeySequence(capsLockTitleCase), "Window")
+
+        let uppercase = windowCodes.map { (keyCode: $0, capsStatus: UInt8(1)) }
+        XCTAssertEqual(runtimeRenderedKeySequence(uppercase), "WINDOW")
+    }
+
+    func testIssue180WorksAcrossCompatibilityOptionCombinations() {
+        let savedCheckSpelling = PHTVEngineRuntimeFacade.checkSpelling()
+        let savedQuickTelex = PHTVEngineRuntimeFacade.quickTelex()
+        let savedFreeMark = PHTVEngineRuntimeFacade.freeMark()
+        let savedAllowConsonant = PHTVEngineRuntimeFacade.allowConsonantZFWJ()
+        let savedUseMacro = PHTVEngineRuntimeFacade.useMacro()
+        defer {
+            PHTVEngineRuntimeFacade.setCheckSpelling(savedCheckSpelling)
+            PHTVEngineRuntimeFacade.setQuickTelex(savedQuickTelex)
+            PHTVEngineRuntimeFacade.setFreeMark(savedFreeMark)
+            PHTVEngineRuntimeFacade.setAllowConsonantZFWJ(savedAllowConsonant)
+            PHTVEngineRuntimeFacade.setUseMacro(savedUseMacro)
+        }
+
+        for checkSpelling: Int32 in [0, 1] {
+            for quickTelex: Int32 in [0, 1] {
+                for freeMark: Int32 in [0, 1] {
+                    for allowConsonant: Int32 in [0, 1] {
+                        for useMacro: Int32 in [0, 1] {
+                            PHTVEngineRuntimeFacade.setCheckSpelling(checkSpelling)
+                            PHTVEngineRuntimeFacade.setQuickTelex(quickTelex)
+                            PHTVEngineRuntimeFacade.setFreeMark(freeMark)
+                            PHTVEngineRuntimeFacade.setAllowConsonantZFWJ(allowConsonant)
+                            PHTVEngineRuntimeFacade.setUseMacro(useMacro)
+
+                            XCTAssertEqual(
+                                runtimeRenderedToken("window"),
+                                "window",
+                                "spell=\(checkSpelling), quick=\(quickTelex), free=\(freeMark), " +
+                                    "extended=\(allowConsonant), macro=\(useMacro)"
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    func testIssue180QuickTelexExpansionIsReplacedByRawEnglishWord() {
+        let savedCheckSpelling = PHTVEngineRuntimeFacade.checkSpelling()
+        let savedQuickTelex = PHTVEngineRuntimeFacade.quickTelex()
+        PHTVEngineRuntimeFacade.setCheckSpelling(1)
+        PHTVEngineRuntimeFacade.setQuickTelex(1)
+        defer {
+            PHTVEngineRuntimeFacade.setCheckSpelling(savedCheckSpelling)
+            PHTVEngineRuntimeFacade.setQuickTelex(savedQuickTelex)
+        }
+
+        engineInitialize()
+        engineStartNewSession()
+        feedWord("window")
+        XCTAssertEqual(engineHookCode(), HookCodeState.willProcess.rawValue)
+        XCTAssertEqual(engineHookNewCharCount(), 6)
+        XCTAssertEqual(hookOutputWord(), "window")
+
+        let engine = PHTVVietnameseEngine()
+        engine.refreshRuntimeLayoutSnapshot()
+        engine.startNewSession()
+        feed(engine, [KEY_W, KEY_I, KEY_N, KEY_D, KEY_O, KEY_W])
+
+        XCTAssertTrue(engine.autoEnglishSessionActive)
+        XCTAssertFalse(engine.hasQuickTelexExpansionInSession)
+        XCTAssertEqual(engine.stateIdx, 6)
+        XCTAssertEqual(renderedTypingWord(engine), "window")
+    }
+
+    func testIssue180WorksAcrossAllCodeTables() {
+        let saved = PHTVEngineRuntimeFacade.currentCodeTable()
+        defer { PHTVEngineRuntimeFacade.setCurrentCodeTable(saved) }
+
+        for codeTable: Int32 in [0, 1, 2, 3, 4] {
+            PHTVEngineRuntimeFacade.setCurrentCodeTable(codeTable)
+            XCTAssertEqual(runtimeRenderedToken("window"), "window", "codeTable=\(codeTable)")
+        }
+    }
+
+    func testIssue180BackspaceLeavesSessionEditable() {
+        engineInitialize()
+        feedWord("window")
+        engineHandleEvent(eventKeyboard, stateKeyDown, KEY_DELETE, 0, 0)
+        engineHandleEvent(eventKeyboard, stateKeyDown, KEY_W, 0, 0)
+
+        XCTAssertEqual(engineHookCode(), HookCodeState.doNothing.rawValue)
+        XCTAssertEqual(engineHookBackspaceCount(), 0)
+    }
+
+    func testIssue180DoesNotRestoreAgainOnFollowingSpaceOrPunctuation() {
+        for breakKey in [KEY_SPACE, KEY_COMMA, KEY_DOT, KEY_ENTER, KEY_RETURN, KEY_TAB, KEY_SLASH] {
+            engineInitialize()
+            feedWord("window")
+
+            engineHandleEvent(eventKeyboard, stateKeyDown, breakKey, 0, 0)
+            XCTAssertEqual(
+                engineHookCode(),
+                HookCodeState.doNothing.rawValue,
+                "breakKey=\(breakKey)"
+            )
+            XCTAssertEqual(engineHookBackspaceCount(), 0, "breakKey=\(breakKey)")
+        }
     }
 
     func testAutoRestoreSkipsUnsafeStaleBufferInsteadOfDeletingPreviousWord() {

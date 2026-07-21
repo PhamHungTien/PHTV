@@ -97,6 +97,8 @@ final class PHTVVietnameseEngine {
     var willTempOffEngine: Bool = false
     var useSpellCheckingBefore: Bool = false
     var shouldUpperCaseEnglishRestore: Bool = false
+    var autoEnglishSessionActive: Bool = false
+    var hasQuickTelexExpansionInSession: Bool = false
     var upperCaseStatus: UInt8 = 0
     var upperCaseNeedsSpaceConfirm: Bool = false
     var upperCaseEllipsisContinuation: Bool = false
@@ -713,6 +715,8 @@ final class PHTVVietnameseEngine {
         hasHandleQuickConsonant = false
         skipGrammarMarkNormalizationOnce = false
         shouldUpperCaseEnglishRestore = false
+        autoEnglishSessionActive = false
+        hasQuickTelexExpansionInSession = false
         spaceCount = 0
         longWordHelper.removeAll()
         upperCaseStatus = 0
@@ -1682,6 +1686,7 @@ final class PHTVVietnameseEngine {
 
     func handleQuickTelex(_ data: UInt16, _ isCaps: Bool) {
         guard let qt = vnQuickTelex[UInt32(data)] else { return }
+        hasQuickTelexExpansionInSession = true
         hCode = HookCodeState.willProcess.rawValue; hBPC = 1; hNCC = 2
         hData[1] = UInt32(qt[0]) | (isCaps ? CAPS_MASK : 0)
         hData[0] = UInt32(qt[1]) | (isCaps ? CAPS_MASK : 0)
@@ -1835,6 +1840,8 @@ final class PHTVVietnameseEngine {
     func vKeyInit() {
         refreshRuntimeLayoutSnapshot()
         idx = 0; stateIdx = 0
+        autoEnglishSessionActive = false
+        hasQuickTelexExpansionInSession = false
         useSpellCheckingBefore = isSpellCheckingEnabled()
         typingStatesData.removeAll(); typingStates.removeAll(); longWordHelper.removeAll()
         vPrimeUpperCaseFirstChar()
@@ -2335,7 +2342,8 @@ final class PHTVVietnameseEngine {
 
     func applyAutoRestoreEnglishDecision(
         _ decision: (restoreStateIndex: Int, canAutoRestore: Bool, shouldRestore: Bool, customRestoreSlice: [UInt32]?),
-        handleCode: Int32
+        handleCode: Int32,
+        extCode: Int32 = 5
     ) -> Bool {
         guard idx > 0,
               decision.restoreStateIndex > 1,
@@ -2363,7 +2371,7 @@ final class PHTVVietnameseEngine {
         hCode = handleCode
         hBPC = idx
         hNCC = restoreCount
-        hExt = 5
+        hExt = extCode
         for i in 0..<restoreCount {
             let rawKey = decision.customRestoreSlice?[i] ?? keyStates[i]
             typingWord[i] = rawKey
@@ -2377,12 +2385,48 @@ final class PHTVVietnameseEngine {
         return true
     }
 
+    /// Restores a confidently identified English word as soon as its final
+    /// letter is typed, instead of leaving a visibly mangled Telex form until
+    /// Space/punctuation. The current physical key is already present in
+    /// `keyStates` but not in `typingWord`, so this prepares one ordinary
+    /// replacement signal containing the complete raw word.
+    func prepareImmediateAutoEnglishRestore(for data: UInt16) -> Int? {
+        guard phtvRuntimeAutoRestoreEnglishWordEnabled() != 0,
+              (runtimeInputTypeSnapshot == 0 || runtimeInputTypeSnapshot == 2 || runtimeInputTypeSnapshot == 3),
+              data == KEY_W,
+              stateIdx >= 4,
+              idx > 0,
+              (hasVietnameseTransformsInTypingWord(idx) ||
+               idx != stateIdx ||
+               hasQuickTelexExpansionInSession) else {
+            return nil
+        }
+
+        let decision = evaluateAutoRestoreEnglishDecision()
+        guard decision.canAutoRestore, decision.shouldRestore else {
+            return nil
+        }
+
+        let restoreCount = decision.customRestoreSlice?.count ?? decision.restoreStateIndex
+        guard applyAutoRestoreEnglishDecision(
+            decision,
+            handleCode: HookCodeState.willProcess.rawValue,
+            extCode: 3
+        ) else {
+            return nil
+        }
+        return restoreCount
+    }
+
     func shouldBypassSpecialKeyForEnglishWordConflict(_ data: UInt16) -> Bool {
         guard phtvRuntimeAutoRestoreEnglishWordEnabled() != 0 else { return false }
         guard autoRestoreEnglishModeValue() == Int32(AutoRestoreEnglishMode.englishOnly.rawValue) else {
             return false
         }
-        guard isMarkKey(data) else { return false }
+        let isTelexWConflict =
+            (runtimeInputTypeSnapshot == 0 || runtimeInputTypeSnapshot == 2 || runtimeInputTypeSnapshot == 3) &&
+            data == KEY_W
+        guard isMarkKey(data) || isTelexWConflict else { return false }
         // Once Telex has already shaped the in-progress word (đ/ư/â or tone marks),
         // keep mark keys in the Vietnamese flow instead of treating them as raw ASCII.
         guard !hasVietnameseTransformsInTypingWord(idx) else { return false }
@@ -2482,6 +2526,10 @@ final class PHTVVietnameseEngine {
                     !tempDisableKey && isMacroBreakCode(data) && checkQuickConsonant() {
             // Quick consonant expansions take priority over auto-restore so shorthand
             // typing is not converted back to raw English first.
+        } else if autoEnglishSessionActive {
+            // The word was already restored while typing; do not replace it a
+            // second time when punctuation commits the session.
+            hCode = HookCodeState.doNothing.rawValue
         } else if phtvRuntimeAutoRestoreEnglishWordEnabled() != 0 && isAutoRestoreBreakKey {
             if isSpellCheckingEnabled() { checkSpelling(forceCheckVowel: true) }
             let decision = evaluateAutoRestoreEnglishDecision()
@@ -2572,6 +2620,11 @@ final class PHTVVietnameseEngine {
         } else if (phtvRuntimeQuickStartConsonantEnabled() != 0 || phtvRuntimeQuickEndConsonantEnabled() != 0) &&
                     !tempDisableKey && checkQuickConsonant() {
             spaceCount += 1
+        } else if autoEnglishSessionActive {
+            // The raw English word is already visible and synchronized with
+            // the engine buffer. Space only commits it.
+            hCode = HookCodeState.doNothing.rawValue
+            spaceCount += 1
         } else if phtvRuntimeAutoRestoreEnglishWordEnabled() != 0 && idx > 0 {
             if isSpellCheckingEnabled() { checkSpelling(forceCheckVowel: true) }
             let decision = evaluateAutoRestoreEnglishDecision()
@@ -2634,6 +2687,10 @@ final class PHTVVietnameseEngine {
 
     func handleDelete() {
         hCode = HookCodeState.doNothing.rawValue; hExt = 2; tempDisableKey = false
+        // After editing back into an auto-detected word, resume normal Telex
+        // decisions for whatever the user types next.
+        autoEnglishSessionActive = false
+        hasQuickTelexExpansionInSession = false
         if !specialChar.isEmpty {
             specialChar.removeLast()
             if specialChar.isEmpty { restoreLastTypingState() }
@@ -2689,6 +2746,7 @@ final class PHTVVietnameseEngine {
         }
 
         insertState(data, isCaps)
+        let wasAutoEnglishSessionActive = autoEnglishSessionActive
 
         // Spell gate (EngineKeyHandleEventMainFlowSpellGate.inc)
         let allowMarkDespiteTempDisable = isMarkKey(data)
@@ -2737,9 +2795,19 @@ final class PHTVVietnameseEngine {
         // Decision (EngineKeyHandleEventMainFlowDecision.inc)
         let quickTelexEnabled = phtvRuntimeQuickTelexEnabled() != 0
         let freeMarkEnabled = phtvRuntimeFreeMarkEnabled() != 0
-        let bypassSpecialForEnglishConflict = shouldBypassSpecialKeyForEnglishWordConflict(data)
+        let bypassSpecialForEnglishConflict = wasAutoEnglishSessionActive
+            ? false
+            : shouldBypassSpecialKeyForEnglishWordConflict(data)
+        let immediateEnglishRestoreCount = (wasAutoEnglishSessionActive || bypassSpecialForEnglishConflict)
+            ? nil
+            : prepareImmediateAutoEnglishRestore(for: data)
 
-        if bypassSpecialForEnglishConflict || !isSpecialKey(data) || (tempDisableKey && !allowSpecialDespiteTempDisable) {
+        if wasAutoEnglishSessionActive {
+            hCode = HookCodeState.doNothing.rawValue; hBPC = 0; hNCC = 0; hExt = 3
+            insertKey(data, isCaps)
+        } else if immediateEnglishRestoreCount != nil {
+            // The hook data already contains the complete raw English word.
+        } else if bypassSpecialForEnglishConflict || !isSpecialKey(data) || (tempDisableKey && !allowSpecialDespiteTempDisable) {
             if quickTelexEnabled && isQuickTelexKey(data) {
                 handleQuickTelex(data, isCaps); return
             } else {
@@ -2752,7 +2820,10 @@ final class PHTVVietnameseEngine {
         }
 
         // Post (EngineKeyHandleEventMainFlowPost.inc)
-        if !freeMarkEnabled && !isKeyD(data) {
+        if !wasAutoEnglishSessionActive &&
+            immediateEnglishRestoreCount == nil &&
+            !freeMarkEnabled &&
+            !isKeyD(data) {
             if hCode == HookCodeState.doNothing.rawValue { checkGrammar(deltaBackSpace: -1) } else { checkGrammar(deltaBackSpace: 0) }
         }
 
@@ -2768,6 +2839,18 @@ final class PHTVVietnameseEngine {
                 // hMacroRawKey always appends the raw key — never merges like hMacroKey does —
                 // so ASCII macro shortcuts (e.g. \gets) can be matched even in Vietnamese mode.
                 hMacroRawKey.append(UInt32(data) | (isCaps ? CAPS_MASK : 0))
+            }
+        }
+
+        if let immediateEnglishRestoreCount {
+            // Keep `idx` unchanged until macro bookkeeping above has consumed
+            // hBPC/hNCC; its replacement range is based on the old visible
+            // prefix length. Then commit the full raw word to the engine state.
+            idx = immediateEnglishRestoreCount
+            autoEnglishSessionActive = true
+            hasQuickTelexExpansionInSession = false
+            if isSpellCheckingEnabled() {
+                checkSpelling(forceCheckVowel: true)
             }
         }
 
