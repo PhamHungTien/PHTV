@@ -14,11 +14,9 @@ import Carbon
 class EmojiPickerManager {
     static let shared = EmojiPickerManager()
 
-    private let showDebounceInterval: CFAbsoluteTime = 0.20
-    private var panel: FloatingPanel<EmojiPickerView>?
+    private let panelSession = FloatingPanelSession<EmojiPickerView>()
     private var previousApp: NSRunningApplication?
-    private var lastShowRequestTime: CFAbsoluteTime = 0
-    private var panelResignKeyTask: Task<Void, Never>?
+    private var hotkeyGate = FloatingPanelHotkeyGate()
     private var restoreFocusTask: Task<Void, Never>?
     private var pendingPasteTask: Task<Void, Never>?
 
@@ -26,12 +24,17 @@ class EmojiPickerManager {
 
     /// Shows the PHTV Picker at current mouse position
     func show() {
-        let now = CFAbsoluteTimeGetCurrent()
-        if (now - lastShowRequestTime) < showDebounceInterval {
+        guard hotkeyGate.shouldAccept(at: ProcessInfo.processInfo.systemUptime) else {
             NSLog("[PHTPPicker] Ignored duplicate show request (debounced)")
             return
         }
-        lastShowRequestTime = now
+
+        restoreFocusTask?.cancel()
+        restoreFocusTask = nil
+
+        if panelSession.focusIfVisible() {
+            return
+        }
 
         NSLog("[PHTPPicker] Showing PHTV Picker at mouse position")
 
@@ -40,9 +43,6 @@ class EmojiPickerManager {
         if let appName = previousApp?.localizedName {
             NSLog("[PHTPPicker] Saved previous app: %@", appName)
         }
-
-        // Close existing panel if any
-        panel?.close()
 
         // Create new panel with PHTV Picker view
         let emojiPickerView = EmojiPickerView(
@@ -55,38 +55,9 @@ class EmojiPickerManager {
         )
 
         let contentRect = NSRect(x: 0, y: 0, width: 380, height: 480)
-        panel = FloatingPanel(view: emojiPickerView, contentRect: contentRect)
-
-        // Hide system close button since we have our own
-        panel?.standardWindowButton(.closeButton)?.isHidden = true
-        panel?.standardWindowButton(.miniaturizeButton)?.isHidden = true
-        panel?.standardWindowButton(.zoomButton)?.isHidden = true
-
-        // Show at mouse position
-        panel?.showAtMousePosition()
-
-        // makeKey() must be called after orderFrontRegardless() so the panel is
-        // visible before it becomes the key window. The content view's @FocusState
-        // then fires in the next run-loop cycle (see UnifiedContentView.onAppear).
-        panel?.makeKey()
-
-        // Belt-and-suspenders: re-assert key status after one run-loop pass so that
-        // SwiftUI's focus engine can transfer focus to the search field reliably.
-        Task { @MainActor [weak self] in
-            await Task.yield()
-            self?.panel?.makeKey()
-        }
-
-        panelResignKeyTask?.cancel()
-        panelResignKeyTask = Task { @MainActor [weak self, panel] in
-            guard let panel else { return }
-            for await _ in NotificationCenter.default.notifications(
-                named: NSWindow.didResignKeyNotification,
-                object: panel
-            ) {
-                guard !Task.isCancelled else { break }
-                self?.hide()
-            }
+        let newPanel = FloatingPanel(view: emojiPickerView, contentRect: contentRect)
+        panelSession.present(newPanel) { [weak self] in
+            self?.restorePreviousAppFocus()
         }
 
         NSLog("[EmojiPicker] Panel shown")
@@ -95,11 +66,10 @@ class EmojiPickerManager {
     /// Hides the PHTV Picker and restores focus to previous app
     func hide() {
         NSLog("[PHTPPicker] Hiding PHTV Picker")
-        panelResignKeyTask?.cancel()
-        panelResignKeyTask = nil
-        panel?.close()
-        panel = nil
+        panelSession.dismiss()
+    }
 
+    private func restorePreviousAppFocus() {
         // Restore focus to the previous app with a small delay
         // to ensure panel is fully closed first
         restoreFocusTask?.cancel()

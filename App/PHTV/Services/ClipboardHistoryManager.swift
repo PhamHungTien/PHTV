@@ -105,31 +105,6 @@ enum ClipboardHistoryPastePayloadResolver {
     }
 }
 
-/// Filters duplicate deliveries of the same physical hotkey press. Carbon and
-/// NSEvent callbacks can arrive close together while hotkeys are re-registered,
-/// and treating both as toggles would immediately tear down a panel being built.
-struct ClipboardHistoryToggleGate {
-    let minimumInterval: TimeInterval
-    private var lastAcceptedUptime: TimeInterval?
-
-    init(minimumInterval: TimeInterval = 0.20) {
-        self.minimumInterval = minimumInterval
-    }
-
-    mutating func shouldAccept(at uptime: TimeInterval) -> Bool {
-        if let lastAcceptedUptime,
-           uptime >= lastAcceptedUptime,
-           uptime - lastAcceptedUptime < minimumInterval {
-            return false
-        }
-
-        // A lower value means the monotonic clock was reset (for example after
-        // sleep on a future macOS build). Accept it and establish a new baseline.
-        lastAcceptedUptime = uptime
-        return true
-    }
-}
-
 @Observable
 @MainActor
 final class ClipboardHistoryManager {
@@ -137,25 +112,22 @@ final class ClipboardHistoryManager {
 
     private(set) var items: [ClipboardHistoryItem] = []
 
-    private var panel: FloatingPanel<ClipboardHistoryView>?
+    private let panelSession = FloatingPanelSession<ClipboardHistoryView>()
     private var previousApp: NSRunningApplication?
-    private var toggleGate = ClipboardHistoryToggleGate()
+    private var hotkeyGate = FloatingPanelHotkeyGate()
     /// Hourly: fine enough for the shortest window offered (3 days) while
     /// costing one wakeup per hour.
     private static let retentionSweepInterval: TimeInterval = 3600
 
     private var settingsObservationTask: Task<Void, Never>?
     private var retentionSweepTask: Task<Void, Never>?
-    private var panelActivationTask: Task<Void, Never>?
-    private var panelResignKeyTask: Task<Void, Never>?
-    private var panelCloseTask: Task<Void, Never>?
     private var restoreFocusTask: Task<Void, Never>?
     private var pendingPasteTask: Task<Void, Never>?
     private var clearPastingTask: Task<Void, Never>?
     var isPasting = false
 
     var isVisible: Bool {
-        panel?.isVisible == true
+        panelSession.isVisible
     }
 
     private init() {
@@ -332,7 +304,7 @@ final class ClipboardHistoryManager {
     // MARK: - UI Show/Hide
 
     func toggleVisibility() {
-        guard toggleGate.shouldAccept(at: ProcessInfo.processInfo.systemUptime) else {
+        guard hotkeyGate.shouldAccept(at: ProcessInfo.processInfo.systemUptime) else {
             return
         }
 
@@ -349,18 +321,9 @@ final class ClipboardHistoryManager {
 
         // `show()` is idempotent. Reuse a live panel instead of closing and
         // rebuilding its NSHostingView while SwiftUI image/focus work is active.
-        if let existingPanel = panel, existingPanel.isVisible {
-            existingPanel.orderFrontRegardless()
-            existingPanel.makeKey()
+        if panelSession.focusIfVisible() {
             return
         }
-
-        // A panel can be closed directly by AppKit (Escape, screen changes,
-        // system teardown). Detach any stale reference before creating a new one.
-        let stalePanel = panel
-        detachPanelObservers()
-        panel = nil
-        stalePanel?.close()
 
         // Never show an entry the retention window has already expired.
         enforceStoragePolicies()
@@ -378,87 +341,13 @@ final class ClipboardHistoryManager {
 
         let contentRect = NSRect(x: 0, y: 0, width: 380, height: 480)
         let newPanel = FloatingPanel(view: clipboardView, contentRect: contentRect)
-        panel = newPanel
-
-        newPanel.standardWindowButton(.closeButton)?.isHidden = true
-        newPanel.standardWindowButton(.miniaturizeButton)?.isHidden = true
-        newPanel.standardWindowButton(.zoomButton)?.isHidden = true
-
-        observeLifecycle(of: newPanel)
-
-        newPanel.showAtMousePosition()
-        newPanel.makeKey()
-
-        panelActivationTask = Task { @MainActor [weak self, weak newPanel] in
-            await Task.yield()
-            guard let self,
-                  let newPanel,
-                  !Task.isCancelled,
-                  self.panel === newPanel,
-                  newPanel.isVisible else { return }
-            newPanel.makeKey()
+        panelSession.present(newPanel) { [weak self] in
+            self?.restorePreviousAppFocus()
         }
     }
 
     func hide() {
-        guard let currentPanel = panel else { return }
-        hide(currentPanel)
-    }
-
-    private func hide(_ expectedPanel: FloatingPanel<ClipboardHistoryView>) {
-        guard panel === expectedPanel else { return }
-
-        // Clear ownership before close() posts AppKit notifications. Any queued
-        // notification from an older panel can no longer affect a newer panel.
-        let shouldClose = expectedPanel.isVisible
-        detachPanelObservers()
-        panel = nil
-        if shouldClose {
-            expectedPanel.close()
-        }
-        restorePreviousAppFocus()
-    }
-
-    private func observeLifecycle(of observedPanel: FloatingPanel<ClipboardHistoryView>) {
-        panelResignKeyTask = Task { @MainActor [weak self, weak observedPanel] in
-            guard let observedPanel else { return }
-            for await _ in NotificationCenter.default.notifications(
-                named: NSWindow.didResignKeyNotification,
-                object: observedPanel
-            ) {
-                guard let self, !Task.isCancelled else { break }
-                self.hide(observedPanel)
-                break
-            }
-        }
-
-        panelCloseTask = Task { @MainActor [weak self, weak observedPanel] in
-            guard let observedPanel else { return }
-            for await _ in NotificationCenter.default.notifications(
-                named: NSWindow.willCloseNotification,
-                object: observedPanel
-            ) {
-                guard let self, !Task.isCancelled else { break }
-                self.handlePanelClosedByAppKit(observedPanel)
-                break
-            }
-        }
-    }
-
-    private func handlePanelClosedByAppKit(_ closedPanel: FloatingPanel<ClipboardHistoryView>) {
-        guard panel === closedPanel else { return }
-        detachPanelObservers()
-        panel = nil
-        restorePreviousAppFocus()
-    }
-
-    private func detachPanelObservers() {
-        panelActivationTask?.cancel()
-        panelActivationTask = nil
-        panelResignKeyTask?.cancel()
-        panelResignKeyTask = nil
-        panelCloseTask?.cancel()
-        panelCloseTask = nil
+        panelSession.dismiss()
     }
 
     private func restorePreviousAppFocus() {

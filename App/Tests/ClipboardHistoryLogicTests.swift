@@ -12,7 +12,7 @@ import XCTest
 final class ClipboardHistoryLogicTests: XCTestCase {
 
     func testClipboardPanelToggleGateRejectsDuplicateHotkeyDelivery() {
-        var gate = ClipboardHistoryToggleGate(minimumInterval: 0.20)
+        var gate = FloatingPanelHotkeyGate(minimumInterval: 0.20)
 
         XCTAssertTrue(gate.shouldAccept(at: 100))
         XCTAssertFalse(gate.shouldAccept(at: 100.05))
@@ -21,7 +21,7 @@ final class ClipboardHistoryLogicTests: XCTestCase {
     }
 
     func testClipboardPanelToggleGateRecoversWhenUptimeMovesBackwards() {
-        var gate = ClipboardHistoryToggleGate(minimumInterval: 0.20)
+        var gate = FloatingPanelHotkeyGate(minimumInterval: 0.20)
 
         XCTAssertTrue(gate.shouldAccept(at: 100))
         XCTAssertTrue(gate.shouldAccept(at: 1))
