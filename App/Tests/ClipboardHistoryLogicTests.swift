@@ -11,6 +11,23 @@ import XCTest
 
 final class ClipboardHistoryLogicTests: XCTestCase {
 
+    func testClipboardPanelToggleGateRejectsDuplicateHotkeyDelivery() {
+        var gate = ClipboardHistoryToggleGate(minimumInterval: 0.20)
+
+        XCTAssertTrue(gate.shouldAccept(at: 100))
+        XCTAssertFalse(gate.shouldAccept(at: 100.05))
+        XCTAssertFalse(gate.shouldAccept(at: 100.199))
+        XCTAssertTrue(gate.shouldAccept(at: 100.20))
+    }
+
+    func testClipboardPanelToggleGateRecoversWhenUptimeMovesBackwards() {
+        var gate = ClipboardHistoryToggleGate(minimumInterval: 0.20)
+
+        XCTAssertTrue(gate.shouldAccept(at: 100))
+        XCTAssertTrue(gate.shouldAccept(at: 1))
+        XCTAssertFalse(gate.shouldAccept(at: 1.10))
+    }
+
     func testOversizedImageWithoutOtherContentIsDiscarded() {
         let payload = ClipboardHistoryCaptureSanitizer.sanitizedPayload(
             textContent: nil,
