@@ -50,6 +50,61 @@ enum PHTVNotionCodeBlockPolicy {
     }
 }
 
+/// Pure evidence classifier shared by the native and browser AX paths. Firefox
+/// exposes DOM identifiers and attributed fonts differently from Chromium, so
+/// relying on a generic substring search for "code" misses real code blocks and
+/// can also match unrelated names such as "Visual Studio Code".
+enum PHTVNotionCodeBlockEvidence {
+    private static let notionHosts = ["notion.so", "notion.site", "notion.com"]
+    private static let codeCompanionTokens: Set<String> = [
+        "block", "editor", "language", "source", "copy", "snippet", "pre"
+    ]
+    private static let monospacedFontMarkers = [
+        "mono", "menlo", "monaco", "courier", "consolas",
+        "sourcecode", "firacode", "iawriter"
+    ]
+
+    static func isNotionWorkspaceURL(_ value: String?) -> Bool {
+        guard let value = value?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !value.isEmpty else {
+            return false
+        }
+
+        // Firefox may expose AXDocument as a schemeless host/path while its
+        // AXURL value is a full URL. Normalize both forms before validating the
+        // host, and never accept a mere substring such as notion.so.evil.test.
+        let candidate = value.contains("://") ? value : "https://\(value)"
+        guard let host = URLComponents(string: candidate)?.host?.lowercased() else {
+            return false
+        }
+
+        return notionHosts.contains { host == $0 || host.hasSuffix(".\($0)") }
+    }
+
+    static func attributeIndicatesCodeBlock(_ value: String?) -> Bool {
+        guard let value, !value.isEmpty else { return false }
+        let tokens = value
+            .lowercased()
+            .components(separatedBy: CharacterSet.alphanumerics.inverted)
+            .filter { !$0.isEmpty }
+
+        guard !tokens.isEmpty else { return false }
+        if tokens.contains("codeblock") || tokens.contains("sourcecode") {
+            return true
+        }
+        guard tokens.contains("code") else { return false }
+        return tokens.count == 1 || tokens.contains(where: codeCompanionTokens.contains)
+    }
+
+    static func fontIndicatesCodeBlock(name: String?, family: String?) -> Bool {
+        [name, family]
+            .compactMap { $0?.lowercased().filter(\.isLetter) }
+            .contains { normalized in
+                monospacedFontMarkers.contains { normalized.contains($0) }
+            }
+    }
+}
+
 @objcMembers
 final class PHTVAccessibilityService: NSObject {
     private struct AccessibilityCacheState {
@@ -444,6 +499,21 @@ final class PHTVAccessibilityService: NSObject {
         return value as? String
     }
 
+    private class func urlStringAttribute(_ element: AXUIElement, _ attribute: String) -> String? {
+        var value: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(element, attribute as CFString, &value) == .success,
+              let value else {
+            return nil
+        }
+        if let string = value as? String {
+            return string
+        }
+        if let url = value as? URL {
+            return url.absoluteString
+        }
+        return nil
+    }
+
     private class func elementAttribute(_ element: AXUIElement, _ attribute: String) -> AXUIElement? {
         var value: CFTypeRef?
         guard AXUIElementCopyAttributeValue(element, attribute as CFString, &value) == .success,
@@ -607,6 +677,28 @@ final class PHTVAccessibilityService: NSObject {
         return stringAttribute(focusedWindow, kAXDocumentAttribute)
     }
 
+    /// Firefox usually exposes the active web page URL on AXWebArea rather
+    /// than on AXWindow.AXDocument. Walk from the actual editor to that web
+    /// area so a Notion page does not depend on the localized window title.
+    private class func focusedHierarchyContainsNotionURL() -> Bool {
+        guard var current = focusedElement() else { return false }
+
+        for _ in 0..<14 {
+            for attribute in [kAXURLAttribute, kAXDocumentAttribute] {
+                if PHTVNotionCodeBlockEvidence.isNotionWorkspaceURL(
+                    urlStringAttribute(current, attribute)
+                ) {
+                    return true
+                }
+            }
+            guard let parent = elementAttribute(current, kAXParentAttribute) else {
+                break
+            }
+            current = parent
+        }
+        return false
+    }
+
     private class func focusedWindowForFrontmostApp() -> AXUIElement? {
         guard let appElement = focusedApplicationElement() else {
             return nil
@@ -628,8 +720,9 @@ final class PHTVAccessibilityService: NSObject {
             return false
         }
 
-        if let document = focusedWindowDocumentForFrontmostApp()?.lowercased(),
-           document.contains("notion.so") || document.contains("notion.site") || document.contains("notion.com") {
+        if PHTVNotionCodeBlockEvidence.isNotionWorkspaceURL(
+            focusedWindowDocumentForFrontmostApp()
+        ) || focusedHierarchyContainsNotionURL() {
             return true
         }
 
@@ -835,6 +928,101 @@ final class PHTVAccessibilityService: NSObject {
             || PHTVAppDetectionService.isBrowserApp(bundleId)
     }
 
+    private class func elementIndicatesNotionCodeBlock(_ element: AXUIElement) -> Bool {
+        let attributes: [String] = [
+            kAXRoleDescriptionAttribute,
+            kAXDescriptionAttribute,
+            kAXHelpAttribute,
+            kAXTitleAttribute,
+            "AXIdentifier",
+            // Firefox exposes the backing DOM id through this attribute.
+            "AXDOMIdentifier",
+            kAXRoleAttribute,
+            kAXSubroleAttribute,
+            kAXPlaceholderValueAttribute
+        ]
+
+        return attributes.contains { attribute in
+            PHTVNotionCodeBlockEvidence.attributeIndicatesCodeBlock(
+                stringAttribute(element, attribute)
+            )
+        }
+    }
+
+    /// Browser accessibility trees do not always retain Notion's DOM class or
+    /// id on the editable node. The attributed character at the caret is a
+    /// reliable secondary signal because Notion renders code using a monospace
+    /// font while normal page text uses its proportional UI font.
+    private class func elementUsesMonospacedTextAtCaret(_ element: AXUIElement) -> Bool {
+        var selectedRangeRef: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(
+                element,
+                kAXSelectedTextRangeAttribute as CFString,
+                &selectedRangeRef
+              ) == .success,
+              let selectedRangeValue = selectedRangeRef,
+              CFGetTypeID(selectedRangeValue) == AXValueGetTypeID() else {
+            return false
+        }
+
+        var selectedRange = CFRange()
+        guard AXValueGetValue(selectedRangeValue as! AXValue, .cfRange, &selectedRange),
+              selectedRange.location >= 0 else {
+            return false
+        }
+
+        var valueRef: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(
+                element,
+                kAXValueAttribute as CFString,
+                &valueRef
+              ) == .success,
+              let value = valueRef as? String else {
+            return false
+        }
+
+        let valueLength = (value as NSString).length
+        guard valueLength > 0 else { return false }
+        let characterLocation = selectedRange.location > 0
+            ? min(selectedRange.location - 1, valueLength - 1)
+            : 0
+        var characterRange = CFRange(location: characterLocation, length: 1)
+        guard let characterRangeValue = AXValueCreate(.cfRange, &characterRange) else {
+            return false
+        }
+
+        var attributedStringRef: CFTypeRef?
+        guard AXUIElementCopyParameterizedAttributeValue(
+                element,
+                kAXAttributedStringForRangeParameterizedAttribute as CFString,
+                characterRangeValue,
+                &attributedStringRef
+              ) == .success,
+              let attributedStringRef,
+              CFGetTypeID(attributedStringRef) == CFAttributedStringGetTypeID() else {
+            return false
+        }
+
+        let attributedString = unsafeDowncast(attributedStringRef, to: CFAttributedString.self)
+        let fontTextAttribute = kAXFontTextAttribute.takeUnretainedValue()
+        let fontNameKey = kAXFontNameKey.takeUnretainedValue() as String
+        let fontFamilyKey = kAXFontFamilyKey.takeUnretainedValue() as String
+        guard CFAttributedStringGetLength(attributedString) > 0,
+              let fontValue = CFAttributedStringGetAttribute(
+                attributedString,
+                0,
+                fontTextAttribute,
+                nil
+              ) as? NSDictionary else {
+            return false
+        }
+
+        return PHTVNotionCodeBlockEvidence.fontIndicatesCodeBlock(
+            name: fontValue[fontNameKey] as? String,
+            family: fontValue[fontFamilyKey] as? String
+        )
+    }
+
     @objc class func isNotionCodeBlock() -> Bool {
         let now = mach_absolute_time()
 
@@ -856,29 +1044,20 @@ final class PHTVAccessibilityService: NSObject {
             return cache.result
         }
 
-        let attributes: [String] = [
-            kAXRoleDescriptionAttribute,
-            kAXDescriptionAttribute,
-            kAXHelpAttribute,
-            kAXTitleAttribute,
-            "AXIdentifier"
-        ]
-
         let inNotionContext = isNotionWorkspaceContext()
         var axDetected: Bool?
 
         if inNotionContext, let focused = focusedElement() {
-            var detected = false
+            let isBrowser = PHTVAppDetectionService.isBrowserApp(focusedAppBundleId())
+
+            // In Firefox the font is normally the only code-specific evidence
+            // retained on the focused editable node. Check it first to avoid a
+            // large ancestor/attribute walk on every transformed syllable.
+            var detected = isBrowser && elementUsesMonospacedTextAtCaret(focused)
             var current: AXUIElement? = focused
             var depth = 0
-            while let element = current, depth < 6, !detected {
-                for attr in attributes {
-                    if let value = stringAttribute(element, attr),
-                       value.range(of: "code", options: String.CompareOptions.caseInsensitive) != nil {
-                        detected = true
-                        break
-                    }
-                }
+            while let element = current, depth < 14, !detected {
+                detected = elementIndicatesNotionCodeBlock(element)
                 current = elementAttribute(element, kAXParentAttribute)
                 depth += 1
             }

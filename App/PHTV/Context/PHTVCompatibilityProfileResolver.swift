@@ -112,7 +112,11 @@ final class PHTVCompatibilityProfileResolver: NSObject {
         let isChatApp = chatApps.contains(bundleId)
         let isOfficeApp = officeApps.contains(bundleId)
         let isSpotlightLike = PHTVAppDetectionService.isSpotlightLikeApp(bundleId) || spotlightActive
-        let isCliTarget = isTerminalApp || isTerminalPanel || PHTVAppDetectionService.isJetBrainsApp(bundleId)
+        // An IDE is not inherently a terminal. Treating every JetBrains editor
+        // as CLI routes synthetic Backspace/Unicode events through the session
+        // tap, where the IDE can expose them as Insert/Delete actions. The
+        // dedicated CLI path is needed only for an actually focused terminal.
+        let isCliTarget = isTerminalApp || isTerminalPanel
         let cliProfileCode: Int32? = isCliTarget
             ? PHTVCliProfileService.profileCode(forBundleId: bundleId, isClaudeCodeSession: isClaudeCodeSession)
             : nil

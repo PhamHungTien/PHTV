@@ -38,6 +38,35 @@ final class CompatibilityProfileResolverTests: XCTestCase {
         XCTAssertNil(profile.cliProfileCode)
     }
 
+    func testJetBrainsEditorIsNotTreatedAsTerminal() {
+        for bundleId in ["com.jetbrains.intellij", "com.google.android.studio"] {
+            let profile = PHTVCompatibilityProfileResolver.resolve(
+                forBundleId: bundleId,
+                spotlightActive: false,
+                isTerminalPanel: false,
+                isClaudeCodeSession: false
+            )
+
+            XCTAssertEqual(profile.kind, .editorIDE, bundleId)
+            XCTAssertTrue(profile.isIDEApp, bundleId)
+            XCTAssertFalse(profile.isCliTarget, bundleId)
+            XCTAssertNil(profile.cliProfileCode, bundleId)
+        }
+    }
+
+    func testJetBrainsIntegratedTerminalKeepsCliProfile() {
+        let profile = PHTVCompatibilityProfileResolver.resolve(
+            forBundleId: "com.jetbrains.intellij",
+            spotlightActive: false,
+            isTerminalPanel: true,
+            isClaudeCodeSession: false
+        )
+
+        XCTAssertEqual(profile.kind, .terminal)
+        XCTAssertTrue(profile.isCliTarget)
+        XCTAssertEqual(profile.cliProfileCode, 1)
+    }
+
     func testChatProfileForSlack() {
         let profile = PHTVCompatibilityProfileResolver.resolve(forBundleId: "com.tinyspeck.slackmacgap")
 

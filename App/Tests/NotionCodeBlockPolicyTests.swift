@@ -94,4 +94,69 @@ final class NotionCodeBlockPolicyTests: XCTestCase {
         XCTAssertFalse(PHTVAppDetectionService.isNotionApp("com.microsoft.Outlook"))
         XCTAssertFalse(PHTVAppDetectionService.isBrowserApp("com.microsoft.Outlook"))
     }
+
+    // MARK: - Firefox accessibility evidence
+
+    func testNotionWorkspaceURLRecognizesFullAndSchemelessURLs() {
+        for value in [
+            "https://www.notion.so/workspace/page-id",
+            "https://team.notion.site/public-page",
+            "notion.so/workspace/page-id"
+        ] {
+            XCTAssertTrue(
+                PHTVNotionCodeBlockEvidence.isNotionWorkspaceURL(value),
+                value
+            )
+        }
+    }
+
+    func testNotionWorkspaceURLRejectsLookalikes() {
+        for value in [
+            "https://notion.so.evil.example/page",
+            "https://example.com/?next=https://notion.so/page",
+            "Notion — project notes"
+        ] {
+            XCTAssertFalse(
+                PHTVNotionCodeBlockEvidence.isNotionWorkspaceURL(value),
+                value
+            )
+        }
+    }
+
+    func testCodeBlockAttributesRequireSemanticEvidence() {
+        for value in ["Code", "notion-code-block-123", "Copy source code", "pre code editor"] {
+            XCTAssertTrue(
+                PHTVNotionCodeBlockEvidence.attributeIndicatesCodeBlock(value),
+                value
+            )
+        }
+
+        for value in ["Visual Studio Code", "decodeResult", "Project editor"] {
+            XCTAssertFalse(
+                PHTVNotionCodeBlockEvidence.attributeIndicatesCodeBlock(value),
+                value
+            )
+        }
+    }
+
+    func testMonospacedFontIsSecondaryCodeBlockEvidence() {
+        XCTAssertTrue(
+            PHTVNotionCodeBlockEvidence.fontIndicatesCodeBlock(
+                name: "SFMono-Regular",
+                family: "SF Mono"
+            )
+        )
+        XCTAssertTrue(
+            PHTVNotionCodeBlockEvidence.fontIndicatesCodeBlock(
+                name: "iawriter-mono",
+                family: nil
+            )
+        )
+        XCTAssertFalse(
+            PHTVNotionCodeBlockEvidence.fontIndicatesCodeBlock(
+                name: "Inter-Regular",
+                family: "Inter"
+            )
+        )
+    }
 }
