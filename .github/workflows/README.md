@@ -4,7 +4,8 @@
 
 Chạy trên mọi push/PR vào `main` với quyền `contents: read`:
 
-1. kiểm tra Python release-note tests, appcast, plist và privacy manifest;
+1. chạy bộ tự kiểm tra release notes viết bằng Swift, repository policy,
+   appcast, plist và privacy manifest;
 2. kiểm tra dictionary source và binary sinh ra;
 3. build Debug;
 4. chạy toàn bộ XCTest một lần, không retry và bật code coverage;
