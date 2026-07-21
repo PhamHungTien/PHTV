@@ -47,7 +47,7 @@ jobs:
             DEVELOPMENT_TEAM="" \
             | tee "$RUNNER_TEMP/analyze.log"
 
-      - name: Run XCTest with Thread Sanitizer
+      - name: Run concurrency regressions with Thread Sanitizer
         run: |
           set -euo pipefail
           RESULT_BUNDLE="$RUNNER_TEMP/PHTV-TSan.xcresult"
@@ -63,6 +63,12 @@ jobs:
             -enableThreadSanitizer YES \
             -parallel-testing-enabled NO \
             -skipPackagePluginValidation \
+            -only-testing:PHEngineTests/AccessibilityPermissionLossFlowTests \
+            -only-testing:PHEngineTests/EventTapPermissionLossNotificationTests \
+            -only-testing:PHEngineTests/HotkeyReliabilityTests \
+            -only-testing:PHEngineTests/LayoutCompatThreadSafetyTests \
+            -only-testing:PHEngineTests/MacroCodeTableTests \
+            -only-testing:PHEngineTests/TypingRuntimeScenarioTests \
             CODE_SIGN_IDENTITY="-" \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO \

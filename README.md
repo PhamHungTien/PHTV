@@ -276,7 +276,7 @@ Click biểu tượng **Vi** (Việt) / **En** (Anh) trên menu bar:
 ## Công nghệ
 
 ### Core
-- **Swift 6.0** + **SwiftUI** - Ứng dụng native, Swift-first; Python chỉ dùng cho validator release metadata
+- **Swift 6.0** + **SwiftUI** - Ứng dụng và toàn bộ local tooling đều viết bằng Swift
 - **CGEvent API** - Event interception và xử lý bàn phím
 - **Accessibility API** - Tương tác với ô nhập liệu và hỗ trợ các app đặc biệt
 - **TCC monitoring** - Theo dõi, nhận diện và phục hồi trạng thái quyền macOS

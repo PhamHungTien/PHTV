@@ -144,28 +144,11 @@ final class PHTVTCCMaintenanceService: NSObject {
         }
 
         let escapedBundleID = shellEscapedSingleQuotedPath(bundleID)
-        let script = "#!/bin/sh\ntccutil reset Accessibility '\(escapedBundleID)'\nexit 0\n"
-        let tempPath = (NSTemporaryDirectory() as NSString)
-            .appendingPathComponent("phtv_tcc_reset_\(UUID().uuidString).sh")
-
-        do {
-            try script.write(toFile: tempPath, atomically: true, encoding: .utf8)
-            try FileManager.default.setAttributes(
-                [.posixPermissions: NSNumber(value: Int16(0o755))],
-                ofItemAtPath: tempPath
-            )
-        } catch let writeScriptError {
-            NSLog("[TCC] Failed to prepare reset script: %@", writeScriptError.localizedDescription)
-            error?.pointee = writeScriptError as NSError
-            return false
-        }
-
-        defer {
-            try? FileManager.default.removeItem(atPath: tempPath)
-        }
-
-        let quotedPath = shellEscapedSingleQuotedPath(tempPath)
-        let osascriptSource = "do shell script \"sh '\(quotedPath)'\" with administrator privileges"
+        let command = "/usr/bin/tccutil reset Accessibility '\(escapedBundleID)'"
+        let appleScriptCommand = command
+            .replacingOccurrences(of: "\\", with: "\\\\")
+            .replacingOccurrences(of: "\"", with: "\\\"")
+        let osascriptSource = "do shell script \"\(appleScriptCommand)\" with administrator privileges"
 
         let appleScript = NSAppleScript(source: osascriptSource)
         var errorDict: NSDictionary?

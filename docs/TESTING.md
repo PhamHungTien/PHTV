@@ -38,7 +38,7 @@ scripts/dev.swift release-build
 scripts/dev.swift analyze
 
 # Build, mở app Debug và xác nhận tiến trình còn sống
-./script/build_and_run.sh --verify
+scripts/build_and_run.swift verify
 ```
 
 Không dùng kết quả của test hẹp để khẳng định toàn bộ ứng dụng đã ổn. Test
@@ -54,8 +54,9 @@ Pull request và push vào `main` phải:
 3. Chạy toàn bộ test target một lần, không tự coi lần retry là thành công.
 4. Lưu `.xcresult` trong 14 ngày và xuất báo cáo code coverage.
 
-Workflow `Nightly diagnostics` chạy static analysis và toàn bộ XCTest với Thread
-Sanitizer mỗi tuần; cũng có thể kích hoạt thủ công khi thay đổi concurrency.
+Workflow `Nightly diagnostics` chạy static analysis và nhóm regression chạm các
+ranh giới concurrency với Thread Sanitizer mỗi tuần; cũng có thể kích hoạt thủ
+công khi thay đổi concurrency. Full XCTest vẫn là gate riêng ở mọi PR/release.
 
 Nếu test không ổn định, sửa nguyên nhân hoặc cô lập thành test được theo dõi rõ;
 không thêm vòng retry im lặng.

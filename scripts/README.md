@@ -34,10 +34,10 @@ scripts/dev.swift format
 Để build và mở app bằng một lệnh, dùng:
 
 ```bash
-script/build_and_run.sh run
-script/build_and_run.sh debug
-script/build_and_run.sh logs
-script/build_and_run.sh verify
+scripts/build_and_run.swift run
+scripts/build_and_run.swift debug
+scripts/build_and_run.swift logs
+scripts/build_and_run.swift verify
 ```
 
 ## Dictionary
@@ -61,15 +61,16 @@ nguồn không hợp lệ hoặc binary đã cũ.
 
 ## Release notes và appcast
 
-`CHANGELOG.md` là nguồn nội dung duy nhất. Công cụ Python render Markdown cho
+`CHANGELOG.md` là nguồn nội dung duy nhất. Công cụ Swift render Markdown cho
 GitHub Release và HTML tương đương cho Sparkle:
 
 ```bash
-python3 scripts/tools/release_notes.py latest
-python3 scripts/tools/release_notes.py render --version 3.4.2 --format markdown
-python3 scripts/tools/release_notes.py check --version 3.4.2 \
+scripts/tools/release_notes.swift latest
+scripts/tools/release_notes.swift render --version 3.4.2 --format markdown
+scripts/tools/release_notes.swift check --version 3.4.2 \
   --appcast docs/appcast.xml --appcast docs/appcast-intel.xml
-python3 -m unittest discover -s scripts/tests -p 'test_*.py' -v
+scripts/tools/release_notes.swift self-test
+scripts/tools/repository_policy.swift check
 ```
 
 Thông thường không cần tự sửa `<description>` trong appcast; workflow release sẽ

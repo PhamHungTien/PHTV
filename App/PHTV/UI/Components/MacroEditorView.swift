@@ -268,14 +268,14 @@ struct MacroEditorView: View {
                 return
             }
 
-            PHTVLogger.shared.macro("[MacroEditor] Editing macro: \(editingMacro.shortcut)")
+            PHTVLogger.shared.macro("[MacroEditor] Editing existing macro")
             macros[index].shortcut = trimmedName
             macros[index].expansion = trimmedCode
             macros[index].categoryId = selectedCategoryId
             macros[index].snippetType = snippetType
             savedMacroId = editingMacro.id
             action = MacroUpdateAction.edited
-            PHTVLogger.shared.macro("[MacroEditor] Updated to: \(trimmedName) -> \(trimmedCode), category: \(selectedCategoryId?.uuidString ?? "nil"), type: \(snippetType.rawValue)")
+            PHTVLogger.shared.macro("[MacroEditor] Updated macro (type=\(snippetType.rawValue))")
         } else {
             // ADD MODE: Check if macro already exists
             if macros.contains(where: { $0.shortcut.lowercased() == trimmedName.lowercased() }) {
@@ -293,7 +293,7 @@ struct MacroEditorView: View {
             macros.append(newMacro)
             savedMacroId = newMacro.id
             action = MacroUpdateAction.added
-            PHTVLogger.shared.macro("[MacroEditor] Added new macro: \(newMacro.shortcut) -> \(newMacro.expansion), category: \(selectedCategoryId?.uuidString ?? "nil"), type: \(snippetType.rawValue)")
+            PHTVLogger.shared.macro("[MacroEditor] Added macro (type=\(snippetType.rawValue))")
 
             // Auto-enable macro feature when creating first macro
             if !appState.useMacro {
@@ -313,7 +313,7 @@ struct MacroEditorView: View {
             // Post notification with macro ID and action for animation
             if let savedMacroId {
                 MacroStorage.postUpdated(macroId: savedMacroId, action: action)
-                PHTVLogger.shared.macro("[MacroEditor] Notification posted with action: \(action), macroId: \(savedMacroId)")
+                PHTVLogger.shared.macro("[MacroEditor] Change notification posted (action=\(action))")
             } else {
                 MacroStorage.postUpdated()
                 PHTVLogger.shared.macro("[MacroEditor] Notification posted")

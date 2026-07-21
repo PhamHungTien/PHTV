@@ -39,14 +39,15 @@ jobs:
       - name: Validate repository metadata
         run: |
           set -euo pipefail
-          python3 -m unittest discover -s scripts/tests -p 'test_*.py' -v
+          scripts/tools/release_notes.swift self-test
+          scripts/tools/repository_policy.swift check
           # A CHANGELOG entry may be prepared before its release exists in the
           # feed. Validate the currently published item instead of blocking
           # normal release preparation.
-          VERSION=$(python3 scripts/tools/release_notes.py appcast-version --appcast docs/appcast.xml)
-          INTEL_VERSION=$(python3 scripts/tools/release_notes.py appcast-version --appcast docs/appcast-intel.xml)
+          VERSION=$(scripts/tools/release_notes.swift appcast-version --appcast docs/appcast.xml)
+          INTEL_VERSION=$(scripts/tools/release_notes.swift appcast-version --appcast docs/appcast-intel.xml)
           test "$VERSION" = "$INTEL_VERSION"
-          python3 scripts/tools/release_notes.py check \
+          scripts/tools/release_notes.swift check \
             --version "$VERSION" \
             --appcast docs/appcast.xml \
             --appcast docs/appcast-intel.xml

@@ -11,13 +11,13 @@ nợ kỹ thuật. Nó không thay thế [kiến trúc](ARCHITECTURE.md) hay
 | Metadata, privacy manifest, appcast | Bắt buộc | — | Bắt buộc |
 | Dictionary source và generated binary | Bắt buộc | — | Bắt buộc |
 | Debug build | Bắt buộc | — | — |
-| Toàn bộ XCTest | Bắt buộc, không retry | Thread Sanitizer | Bắt buộc, không retry |
+| Toàn bộ XCTest | Bắt buộc, không retry | Regression concurrency + Thread Sanitizer | Bắt buộc, không retry |
 | Static analysis | Khi cần tại local | Bắt buộc | Khuyến nghị local trước tag |
 | Developer ID, notarization, Sparkle signature | — | — | Bắt buộc |
 
 ## Ngân sách nợ kỹ thuật
 
-Các giới hạn sau nằm trong `scripts/tests/test_repository_policy.py` và chỉ được
+Các giới hạn sau nằm trong `scripts/tools/repository_policy.swift` và chỉ được
 phép đi xuống:
 
 - tối đa **364** lời gọi `NSLog` cũ; code mới dùng `PHTVLogger`/`os.Logger` và
@@ -27,6 +27,7 @@ phép đi xuống:
 - **0** `nonisolated(unsafe)`;
 - mọi GitHub Action bên ngoài phải pin full commit SHA;
 - không có link tài liệu local bị hỏng.
+- không có local tool `.py` hoặc `.sh`; tooling trong repository dùng Swift.
 
 Các con số là trần chống hồi quy, không phải mục tiêu cuối. Khi sửa một khu vực,
 nên chuyển log cũ sang category phù hợp và thay `@unchecked Sendable` bằng actor,

@@ -18,7 +18,6 @@ struct ReleaseNotesView: View {
         self.info = info
         PHTVLogger.shared.ui("[ReleaseNotesView] Init with version: \(info.version)")
         PHTVLogger.shared.ui("[ReleaseNotesView] releaseNotes length: \(info.releaseNotes.count)")
-        PHTVLogger.shared.ui("[ReleaseNotesView] releaseNotes preview: \(String(info.releaseNotes.prefix(200)))")
     }
 
     var body: some View {

@@ -308,8 +308,8 @@ struct MacroSettingsView: View {
             defaultFilename: "phtv-macros.json"
         ) { result in
             switch result {
-            case .success(let url):
-                PHTVLogger.shared.macro("[MacroSettings] Exported \(macros.count) macros to: \(url.path)")
+            case .success:
+                PHTVLogger.shared.macro("[MacroSettings] Exported \(macros.count) macros")
             case .failure(let error):
                 if (error as? CocoaError)?.code == .userCancelled {
                     return
@@ -477,15 +477,12 @@ struct MacroSettingsView: View {
             return
         }
 
-        let deletedMacro = macros[index]
-
         withAnimation(.spring(response: 0.4, dampingFraction: 0.75)) {
             macros.remove(at: index)
             selectedMacro = nil
         }
 
-        PHTVLogger.shared.macro(
-            "[MacroSettings] Deleted macro: \(deletedMacro.shortcut) -> \(deletedMacro.expansion)")
+        PHTVLogger.shared.macro("[MacroSettings] Deleted macro")
         saveMacros()
     }
 

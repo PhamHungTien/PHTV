@@ -15,8 +15,8 @@ bản GitHub Actions hàng tuần.
 
 ## Nightly diagnostics (`nightly.yml`)
 
-Chạy hàng tuần hoặc thủ công để thực hiện Xcode static analysis và toàn bộ XCTest
-với Thread Sanitizer. Kết quả và analyze log được giữ 14 ngày; workflow này không
+Chạy hàng tuần hoặc thủ công để thực hiện Xcode static analysis và nhóm regression
+concurrency với Thread Sanitizer. Kết quả và analyze log được giữ 14 ngày; workflow này không
 thay thế CI bắt buộc trên pull request.
 
 ## Release (`release.yml`)

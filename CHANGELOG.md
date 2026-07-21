@@ -24,6 +24,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   lock; settings backup không còn lưu `Any` trong type `@unchecked Sendable`.
 - Bổ sung tài liệu Privacy, Testing, Releasing, Compatibility, Security và
   Third-Party Notices cùng công cụ local tự nhận diện Xcode stable/beta.
+- Chuyển build/run helper, release metadata validator, repository policy và
+  Homebrew cask updater sang Swift; repository không còn local tool `.py`/`.sh`.
 
 ## [3.4.2] - 2026-07-22
 

@@ -24,7 +24,7 @@
 3. Kiểm tra nội dung GitHub Release sẽ được tạo:
 
    ```bash
-   python3 scripts/tools/release_notes.py render \
+   scripts/tools/release_notes.swift render \
      --version x.y.z \
      --format markdown
    ```

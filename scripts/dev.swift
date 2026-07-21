@@ -82,7 +82,7 @@ func usage() {
       engine-test   Run EngineRegressionTests only
       hotkey-test   Run HotkeyReliabilityTests only
       dict-check    Validate checked-in dictionary sources
-      metadata-check Validate release notes, appcasts, plists, and Python tools
+      metadata-check Validate release notes, appcasts, plists, and repository policy
       format        Format Swift sources with the repository configuration
       format-check  Report Swift formatting differences without editing files
       clean         Remove local DerivedData used by this script

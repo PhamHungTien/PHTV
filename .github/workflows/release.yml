@@ -64,13 +64,21 @@ jobs:
         run: |
           set -euo pipefail
           VERSION="${{ steps.version.outputs.version }}"
-          python3 -m unittest discover -s scripts/tests -p 'test_*.py' -v
-          python3 scripts/tools/release_notes.py render \
+          scripts/tools/release_notes.swift self-test
+          scripts/tools/repository_policy.swift check
+          scripts/tools/release_notes.swift render \
             --version "$VERSION" \
             --format markdown \
             --output "$RUNNER_TEMP/release-notes.md"
           xmllint --noout docs/appcast.xml docs/appcast-intel.xml docs/appcast-beta.xml
           plutil -lint App/PHTV/Info.plist App/PHTV/PHTV.entitlements App/PHTV/PrivacyInfo.xcprivacy
+
+      - name: Upload release notes
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: release-notes
+          path: ${{ runner.temp }}/release-notes.md
+          retention-days: 1
 
       - name: Validate dictionary sources
         run: |
@@ -172,7 +180,7 @@ jobs:
 
       - name: Validate changelog release entry
         run: |
-          python3 scripts/tools/release_notes.py render \
+          scripts/tools/release_notes.swift render \
             --version "${{ steps.version.outputs.version }}" \
             --format html \
             --output "$RUNNER_TEMP/release-notes.html"
@@ -192,64 +200,9 @@ jobs:
       - name: Compute build number
         id: set_versions
         run: |
-          PREVIOUS_BUILD=$(python3 - <<'PY'
-          import subprocess
-          import xml.etree.ElementTree as ET
-
-          ns = {"sparkle": "http://www.andymatuschak.org/xml-namespaces/sparkle"}
-          sparkle_attr_version = "{http://www.andymatuschak.org/xml-namespaces/sparkle}version"
-          candidates = [
-              "docs/appcast.xml",
-              "docs/appcast-intel.xml",
-          ]
-
-          def load_text(path):
-              specs = [f"origin/main:{path}", path]
-              for spec in specs:
-                  try:
-                      if ":" in spec:
-                          return subprocess.check_output(
-                              ["git", "show", spec],
-                              text=True,
-                              stderr=subprocess.DEVNULL,
-                          )
-                      with open(spec, "r", encoding="utf-8") as handle:
-                          return handle.read()
-                  except Exception:
-                      continue
-              return None
-
-          max_build = 0
-          for path in candidates:
-              content = load_text(path)
-              if not content:
-                  continue
-
-              root = ET.fromstring(content)
-              channel = root.find("channel")
-              if channel is None:
-                  continue
-
-              for item in channel.findall("item"):
-                  version_node = item.find("sparkle:version", ns)
-                  if version_node is not None and version_node.text:
-                      try:
-                          max_build = max(max_build, int(version_node.text.strip()))
-                      except ValueError:
-                          pass
-
-                  enclosure = item.find("enclosure")
-                  if enclosure is not None:
-                      raw = enclosure.get(sparkle_attr_version)
-                      if raw:
-                          try:
-                              max_build = max(max_build, int(raw.strip()))
-                          except ValueError:
-                              pass
-
-          print(max_build)
-          PY
-          )
+          PREVIOUS_BUILD=$(scripts/tools/release_notes.swift max-build \
+            --appcast docs/appcast.xml \
+            --appcast docs/appcast-intel.xml)
 
           BUILD_NUMBER=$((PREVIOUS_BUILD + 1))
           echo "build_number=$BUILD_NUMBER" >> "$GITHUB_OUTPUT"
@@ -284,7 +237,7 @@ jobs:
           security import "$RUNNER_TEMP/AppleWWDRCAG3.cer" -k "$KEYCHAIN_PATH" -T /usr/bin/codesign -T /usr/bin/security
 
           echo "$CERTIFICATES_P12" > "$RUNNER_TEMP/cert_base64.txt"
-          python3 -c "import base64; open('$RUNNER_TEMP/certificate.p12', 'wb').write(base64.b64decode(open('$RUNNER_TEMP/cert_base64.txt', 'r').read()))"
+          openssl base64 -d -A -in "$RUNNER_TEMP/cert_base64.txt" -out "$RUNNER_TEMP/certificate.p12"
 
           security import "$RUNNER_TEMP/certificate.p12" \
             -k "$KEYCHAIN_PATH" \
@@ -772,61 +725,16 @@ jobs:
 
           cp "$APPCAST_OUTPUT_FILE" "../docs/$APPCAST_FILE"
 
-          python3 ../scripts/tools/release_notes.py \
+          ../scripts/tools/release_notes.swift inject-appcast \
             --changelog ../CHANGELOG.md \
-            inject-appcast \
             --version "$VERSION" \
             --appcast "../docs/$APPCAST_FILE"
 
-          python3 - <<PY
-          import sys
-          import xml.etree.ElementTree as ET
-
-          version = "$VERSION".strip()
-          build_number = "${{ steps.set_versions.outputs.build_number }}".strip()
-          expected_archive = "$DMG_NAME".strip()
-          expected_build = int(build_number)
-          ns = {"sparkle": "http://www.andymatuschak.org/xml-namespaces/sparkle"}
-          sparkle_attr_version = "{http://www.andymatuschak.org/xml-namespaces/sparkle}version"
-
-          tree = ET.parse("../docs/$APPCAST_FILE")
-          root = tree.getroot()
-          channel = root.find("channel")
-          if channel is None:
-              print("❌ Error: $APPCAST_FILE missing <channel>")
-              sys.exit(1)
-
-          items = channel.findall("item")
-          if not items:
-              print("❌ Error: $APPCAST_FILE has no <item>")
-              sys.exit(1)
-
-          for item in items:
-              short_node = item.find("sparkle:shortVersionString", ns)
-              short_version = (short_node.text or "").strip() if short_node is not None else ""
-              version_node = item.find("sparkle:version", ns)
-              enc = item.find("enclosure")
-              item_build = None
-              if version_node is not None and version_node.text:
-                  try: item_build = int(version_node.text.strip())
-                  except ValueError: pass
-              if item_build is None:
-                  if enc is not None:
-                      raw = enc.get(sparkle_attr_version)
-                      if raw:
-                          try: item_build = int(raw.strip())
-                          except ValueError: pass
-              if short_version == version and item_build == expected_build:
-                  enclosure_url = (enc.get("url") or "").strip() if enc is not None else ""
-                  if not enclosure_url.endswith(f"/{expected_archive}"):
-                      print(f"❌ $APPCAST_FILE points to unexpected archive: {enclosure_url}")
-                      sys.exit(1)
-                  print(f"✅ $APPCAST_FILE contains shortVersion={version} build={expected_build} archive={expected_archive}")
-                  sys.exit(0)
-
-          print(f"❌ $APPCAST_FILE missing item shortVersion={version} build={expected_build}")
-          sys.exit(1)
-          PY
+          ../scripts/tools/release_notes.swift validate-item \
+            --version "$VERSION" \
+            --build "${{ steps.set_versions.outputs.build_number }}" \
+            --archive "$DMG_NAME" \
+            --appcast "../docs/$APPCAST_FILE"
 
           if ! grep -q "sparkle:edSignature" ../docs/$APPCAST_FILE; then
             echo "❌ Error: docs/$APPCAST_FILE has no sparkle:edSignature"
@@ -877,15 +785,11 @@ jobs:
       contents: write
 
     steps:
-      - name: Checkout release metadata
-        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
-
-      - name: Render release notes
-        run: |
-          python3 scripts/tools/release_notes.py render \
-            --version "${{ needs.build.outputs.version }}" \
-            --format markdown \
-            --output "$RUNNER_TEMP/release-notes.md"
+      - name: Download release notes
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: release-notes
+          path: ${{ runner.temp }}
 
       - name: Download DMG (arm64)
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
@@ -957,7 +861,7 @@ jobs:
 
   update-homebrew:
     name: Update Homebrew Tap
-    runs-on: ubuntu-latest
+    runs-on: macos-26
     needs:
       - build
       - release
@@ -966,6 +870,9 @@ jobs:
       contents: read
 
     steps:
+      - name: Checkout release tools
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+
       - name: Download DMG artifacts
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
@@ -987,55 +894,19 @@ jobs:
             exit 1
           fi
 
-          SHA256_ARM64=$(sha256sum "PHTV-$VERSION-arm64.dmg" | cut -d' ' -f1)
-          SHA256_INTEL=$(sha256sum "PHTV-$VERSION-intel.dmg" | cut -d' ' -f1)
+          SHA256_ARM64=$(shasum -a 256 "PHTV-$VERSION-arm64.dmg" | cut -d' ' -f1)
+          SHA256_INTEL=$(shasum -a 256 "PHTV-$VERSION-intel.dmg" | cut -d' ' -f1)
           echo "✅ arm64 SHA256: $SHA256_ARM64"
           echo "✅ intel SHA256: $SHA256_INTEL"
 
           git clone "https://x-access-token:${TAP_REPO_TOKEN}@github.com/PhamHungTien/homebrew-tap.git" /tmp/homebrew-tap
           cd /tmp/homebrew-tap
 
-          # Update cask with arch-specific URLs and checksums
-          VERSION="$VERSION" SHA256_ARM64="$SHA256_ARM64" SHA256_INTEL="$SHA256_INTEL" python3 - <<'PY'
-          import os, re, sys
-          from pathlib import Path
-
-          cask_path = Path("Casks/phtv.rb")
-          if not cask_path.exists():
-              print("❌ Error: Casks/phtv.rb not found", file=sys.stderr)
-              sys.exit(1)
-
-          v       = os.environ["VERSION"]
-          sha_arm = os.environ["SHA256_ARM64"]
-          sha_x86 = os.environ["SHA256_INTEL"]
-
-          text = cask_path.read_text(encoding="utf-8")
-
-          # Update version line
-          text, n = re.subn(r'(?m)^(\s*)version\s+"[^"]+"\s*$', rf'\1version "{v}"', text, count=1)
-          if n != 1:
-              print("❌ Could not find version line in Casks/phtv.rb", file=sys.stderr)
-              sys.exit(1)
-
-          # Check if cask already has arch do stanza; if so, update both shas
-          if "on_arm" in text or "arch do" in text:
-              text = re.sub(r'(on_arm\s+do.*?sha256\s+")[^"]+(")', rf'\g<1>{sha_arm}\g<2>', text, flags=re.DOTALL)
-              text = re.sub(r'(on_intel\s+do.*?sha256\s+")[^"]+(")', rf'\g<1>{sha_x86}\g<2>', text, flags=re.DOTALL)
-          else:
-              # Legacy single sha256 — replace with arch-specific block
-              # Replace the single sha256 line with an arch do block
-              text, n = re.subn(
-                  r'(?m)^(\s*)url\s+"[^"]+"\s*\n(\s*)sha256\s+"[^"]+"\s*$',
-                  rf'\1on_arm do\n\1  url "https://github.com/PhamHungTien/PHTV/releases/download/v{v}/PHTV-{v}-arm64.dmg"\n\1  sha256 "{sha_arm}"\n\1end\n\1on_intel do\n\1  url "https://github.com/PhamHungTien/PHTV/releases/download/v{v}/PHTV-{v}-intel.dmg"\n\1  sha256 "{sha_x86}"\n\1end',
-                  text, count=1
-              )
-              if n != 1:
-                  print("❌ Could not update url/sha256 in Casks/phtv.rb", file=sys.stderr)
-                  sys.exit(1)
-
-          cask_path.write_text(text, encoding="utf-8")
-          print("✅ Updated Casks/phtv.rb")
-          PY
+          "$GITHUB_WORKSPACE/scripts/tools/update_homebrew_cask.swift" \
+            --cask Casks/phtv.rb \
+            --version "$VERSION" \
+            --arm64-sha256 "$SHA256_ARM64" \
+            --intel-sha256 "$SHA256_INTEL"
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
