@@ -213,6 +213,37 @@ func latestAppcastVersion(_ appcast: String) throws -> String {
     return version
 }
 
+func maximumBuildNumber(_ appcasts: [String]) throws -> Int {
+    var maximum = 0
+    for appcast in appcasts {
+        for pattern in [#"<sparkle:version>([0-9]+)</sparkle:version>"#, #"sparkle:version=\"([0-9]+)\""#] {
+            let expression = try regex(pattern)
+            for match in expression.matches(in: appcast, range: NSRange(appcast.startIndex..., in: appcast)) {
+                if let range = Range(match.range(at: 1), in: appcast), let value = Int(appcast[range]) {
+                    maximum = max(maximum, value)
+                }
+            }
+        }
+    }
+    return maximum
+}
+
+func validateReleaseItem(_ appcast: String, path: String, version: String, build: Int, archive: String) throws {
+    for item in try items(in: appcast) where try itemVersion(item) == version {
+        let versionBuild = (try firstMatch(#"<sparkle:version>([0-9]+)</sparkle:version>"#, in: item)?[1])
+            .flatMap { Int($0) }
+        guard let enclosure = try firstMatch(#"<enclosure\s+[^>]+>"#, in: item)?[0] else { continue }
+        let enclosureBuild = (try firstMatch(#"sparkle:version=\"([0-9]+)\""#, in: enclosure)?[1])
+            .flatMap { Int($0) }
+        let url = try firstMatch(#"url=\"([^\"]+)\""#, in: enclosure)?[1] ?? ""
+        if (versionBuild ?? enclosureBuild) == build, url.hasSuffix("/" + archive) {
+            print("Validated \(path): version=\(version) build=\(build) archive=\(archive)")
+            return
+        }
+    }
+    throw ReleaseNotesError.message("\(path) has no matching version/build/archive item")
+}
+
 func normalizedHTML(_ value: String) -> String {
     value.components(separatedBy: .newlines).map { $0.trimmingCharacters(in: .whitespaces) }.joined(separator: "\n")
 }
@@ -308,6 +339,25 @@ do {
     if command == "appcast-version" {
         let path = try argument("--appcast", in: arguments)!
         print(try latestAppcastVersion(String(contentsOfFile: path, encoding: .utf8)))
+        exit(0)
+    }
+    if command == "max-build" {
+        var appcasts: [String] = []
+        for (index, value) in arguments.enumerated() where value == "--appcast" && index + 1 < arguments.count {
+            appcasts.append(try String(contentsOfFile: arguments[index + 1], encoding: .utf8))
+        }
+        print(try maximumBuildNumber(appcasts))
+        exit(0)
+    }
+    if command == "validate-item" {
+        let path = try argument("--appcast", in: arguments)!
+        try validateReleaseItem(
+            String(contentsOfFile: path, encoding: .utf8),
+            path: path,
+            version: try argument("--version", in: arguments)!,
+            build: Int(try argument("--build", in: arguments)!) ?? -1,
+            archive: try argument("--archive", in: arguments)!
+        )
         exit(0)
     }
     let changelog = try String(contentsOfFile: changelogPath, encoding: .utf8)
