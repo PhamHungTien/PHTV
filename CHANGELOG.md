@@ -7,6 +7,53 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.4.2] - 2026-07-22
+
+### Tổng quan
+PHTV 3.4.2 tập trung vào độ ổn định của các cửa sổ nổi và khả năng tương thích
+khi nhập liệu. Lịch sử Clipboard không còn dễ crash khi mở nhanh bằng
+`Control + V`; Notion trên Firefox và các IDE JetBrains được nhận diện chính
+xác hơn; đồng thời các từ tiếng Anh có phím Telex `w`, như `window`, không còn
+bị tự chuyển sai thành tiếng Việt.
+
+### Fixed and Improved
+- **Ổn định Lịch sử Clipboard và PHTV Picker (#212)**
+  - Chặn việc một lần nhấn phím tắt bị nhận đồng thời từ nhiều nguồn sự kiện,
+    tránh cửa sổ vừa mở đã đóng hoặc tạo chồng nhiều phiên.
+  - Đồng bộ vòng đời cửa sổ, trạng thái focus và thao tác đóng giữa Lịch sử
+    Clipboard với PHTV Picker, giảm nguy cơ crash khi mở/đóng hoặc chuyển nhanh
+    giữa hai cửa sổ.
+  - Khôi phục focus về ứng dụng trước đó một cách nhất quán sau khi đóng.
+
+- **Gõ tiếng Việt trong code block Notion trên Firefox (#84)**
+  - Dò đúng trang Notion từ cây Accessibility của Firefox thay vì phụ thuộc
+    vào tiêu đề cửa sổ.
+  - Kết hợp URL, thuộc tính ngữ nghĩa và font monospace để nhận diện code block,
+    đồng thời tránh nhận nhầm những tên thông thường có chứa chữ “code”.
+
+- **Loại bỏ ký tự điều khiển thừa trong JetBrains IDE (#84)**
+  - Không còn coi toàn bộ trình soạn thảo JetBrains là Terminal/CLI, khắc phục
+    hiện tượng xuất hiện thao tác `INSERT`, `DELETE` hoặc ký tự điều khiển thừa.
+  - Terminal tích hợp trong JetBrains và các ứng dụng Terminal độc lập vẫn giữ
+    nguyên chế độ CLI chuyên dụng.
+
+- **Không tự đổi sai từ tiếng Anh có phím `w` (#180)**
+  - Các từ như `window`, `windows`, `willow`, `workflow` và `windowed` được giữ
+    đúng ngay trong lúc gõ bằng Telex hoặc Simple Telex.
+  - Tiếp tục ưu tiên các từ tiếng Việt hợp lệ như `thương`, `trường`, `đường`
+    và `tiếng`, tránh sửa quá rộng gây sai tiếng Việt.
+  - Hỗ trợ viết hoa, Quick Telex, Backspace, các bảng mã và tùy chọn gõ hiện có.
+
+### Chất lượng
+- Bổ sung kiểm thử hồi quy cho phím tắt cửa sổ nổi, vòng đời panel, Firefox
+  Accessibility, JetBrains, Terminal tích hợp và các tổ hợp Telex `w`.
+- Toàn bộ test suite đạt **420/420 tests** trên macOS 27 beta; Debug, Release và
+  Analyze đều thành công.
+
+### Ghi chú nâng cấp
+- Không cần thiết lập lại hoặc cấp thêm quyền sau khi cập nhật.
+- Thiết lập, macro, lịch sử Clipboard và quy tắc theo ứng dụng được giữ nguyên.
+
 ## [3.4.1] - 2026-07-20
 
 ### Tổng quan
