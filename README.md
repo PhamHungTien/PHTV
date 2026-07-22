@@ -28,6 +28,10 @@
 
 **Tự động cập nhật** - Nhận phiên bản mới ngay khi ra mắt với Sparkle framework. Không cần tải lại thủ công.
 
+> **Windows:** phiên bản native dùng WinUI 3, TSF và Swift Core đang ở giai đoạn
+> thiết kế nền móng, chưa có binary để tải. Xem kiến trúc và roadmap tại
+> [Windows/README.md](Windows/README.md).
+
 ## 🚀 Quick Start
 
 ```bash
@@ -207,7 +211,7 @@ open https://github.com/PhamHungTien/PHTV/releases/latest
 
 ```bash
 git clone https://github.com/PhamHungTien/PHTV.git
-cd PHTV/App
+cd PHTV/macOS
 open PHTV.xcodeproj
 # Build với Cmd+B, chạy với Cmd+R
 ```
@@ -298,7 +302,7 @@ Click biểu tượng **Vi** (Việt) / **En** (Anh) trên menu bar:
 ### Nhà phát triển
 - **[GitHub Actions Workflows](.github/workflows/README.md)** - CI/CD, auto-update, và release automation
 - **[Scripts](scripts/README.md)** - Local build/test, dictionary và release metadata tools
-- **Engine Regression Tests** - Chạy `xcodebuild -project App/PHTV.xcodeproj -scheme PHTV -configuration Debug -destination 'platform=macOS' test -only-testing:PHEngineTests/EngineRegressionTests` để kiểm tra các lỗi hồi quy quan trọng của bộ gõ
+- **Engine Regression Tests** - Chạy `xcodebuild -project macOS/PHTV.xcodeproj -scheme PHTV -configuration Debug -destination 'platform=macOS' test -only-testing:PHEngineTests/EngineRegressionTests` để kiểm tra các lỗi hồi quy quan trọng của bộ gõ
 - **[Kiến trúc](docs/ARCHITECTURE.md)** - Thiết kế hệ thống và cấu trúc mã nguồn
 - **[Kiểm thử](docs/TESTING.md)** - Full suite, sanitizer và Definition of Done
 - **[Phát hành](docs/RELEASING.md)** - Changelog, signing, Sparkle và rollback

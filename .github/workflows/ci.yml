@@ -2,7 +2,7 @@
 # Author: Phạm Hùng Tiến
 # Copyright © 2026 Phạm Hùng Tiến. All rights reserved.
 
-name: CI
+name: macOS CI
 
 on:
   push:
@@ -24,7 +24,7 @@ env:
 
 jobs:
   build:
-    name: Build & Regression Tests
+    name: macOS Build & Regression Tests
     runs-on: macos-26
 
     steps:
@@ -46,13 +46,13 @@ jobs:
         run: |
           set -euo pipefail
           swift scripts/tools/generate_dict_binary.swift
-          if ! git diff --exit-code -- App/PHTV/Resources/Dictionaries/en_dict.bin App/PHTV/Resources/Dictionaries/vi_dict.bin; then
+          if ! git diff --exit-code -- macOS/PHTV/Resources/Dictionaries/en_dict.bin macOS/PHTV/Resources/Dictionaries/vi_dict.bin; then
             echo "❌ Dictionary binaries are stale. Re-run swift scripts/tools/generate_dict_binary.swift and commit the updated .bin files."
             exit 1
           fi
 
       - name: Build
-        working-directory: App
+        working-directory: macOS
         run: |
           set -o pipefail
           xcodebuild build \
@@ -82,7 +82,7 @@ jobs:
           rm -rf "$RESULT_BUNDLE"
 
           xcodebuild \
-            -project App/PHTV.xcodeproj \
+            -project macOS/PHTV.xcodeproj \
             -scheme PHTV \
             -configuration Debug \
             -destination "$DESTINATION" \
@@ -124,5 +124,5 @@ jobs:
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
           name: ci-build-log
-          path: App/build.log
+          path: macOS/build.log
           retention-days: 7

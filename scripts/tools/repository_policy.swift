@@ -37,7 +37,7 @@ for workflow in files(under: root.appendingPathComponent(".github/workflows"), e
 }
 
 // Sparkle lockfile must be checked in and exact.
-let resolvedURL = root.appendingPathComponent("App/PHTV.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved")
+let resolvedURL = root.appendingPathComponent("macOS/PHTV.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved")
 do {
     let data = try Data(contentsOf: resolvedURL)
     let object = try JSONSerialization.jsonObject(with: data) as? [String: Any]
@@ -53,7 +53,7 @@ do {
 
 // Privacy declarations for the online Picker boundary.
 do {
-    let data = try Data(contentsOf: root.appendingPathComponent("App/PHTV/PrivacyInfo.xcprivacy"))
+    let data = try Data(contentsOf: root.appendingPathComponent("macOS/PHTV/PrivacyInfo.xcprivacy"))
     let plist = try PropertyListSerialization.propertyList(from: data, format: nil) as? [String: Any]
     let entries = plist?["NSPrivacyCollectedDataTypes"] as? [[String: Any]] ?? []
     let declared = Set(entries.compactMap { $0["NSPrivacyCollectedDataType"] as? String })
@@ -65,7 +65,7 @@ do {
     if !expected.isSubset(of: declared) { fail("PrivacyInfo.xcprivacy is missing Picker data declarations") }
 } catch { fail("PrivacyInfo.xcprivacy: \(error)") }
 
-let swiftFiles = files(under: root.appendingPathComponent("App/PHTV"), extension: "swift")
+let swiftFiles = files(under: root.appendingPathComponent("macOS/PHTV"), extension: "swift")
 let allSwift = swiftFiles.map(contents).joined(separator: "\n")
 let nslogCount = allSwift.components(separatedBy: "NSLog(").count - 1
 let uncheckedCount = allSwift.components(separatedBy: "@unchecked Sendable").count - 1
@@ -80,10 +80,10 @@ for line in allSwift.components(separatedBy: .newlines) where line.contains("PHT
 }
 
 let sensitivePickerFiles = [
-    "App/PHTV/Data/KlipyAPIClient.swift", "App/PHTV/Services/MediaStorageHelper.swift",
-    "App/PHTV/UI/Picker/ContentViews/GIFOnlyView.swift",
-    "App/PHTV/UI/Picker/ContentViews/StickerOnlyView.swift",
-    "App/PHTV/UI/Picker/ContentViews/UnifiedContentView.swift",
+    "macOS/PHTV/Data/KlipyAPIClient.swift", "macOS/PHTV/Services/MediaStorageHelper.swift",
+    "macOS/PHTV/UI/Picker/ContentViews/GIFOnlyView.swift",
+    "macOS/PHTV/UI/Picker/ContentViews/StickerOnlyView.swift",
+    "macOS/PHTV/UI/Picker/ContentViews/UnifiedContentView.swift",
 ]
 for relativePath in sensitivePickerFiles {
     let logged = contents(root.appendingPathComponent(relativePath)).components(separatedBy: .newlines)

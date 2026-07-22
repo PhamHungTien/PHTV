@@ -2,7 +2,10 @@
 * @PhamHungTien
 
 /.github/ @PhamHungTien
-/App/PHTV/PrivacyInfo.xcprivacy @PhamHungTien
-/App/PHTV/PHTV.entitlements @PhamHungTien
+/macOS/PHTV/PrivacyInfo.xcprivacy @PhamHungTien
+/macOS/PHTV/PHTV.entitlements @PhamHungTien
+/Windows/src/PHTV.Windows.IME/ @PhamHungTien
+/Windows/docs/SECURITY.md @PhamHungTien
+/Windows/docs/PRIVACY.md @PhamHungTien
 /docs/appcast*.xml @PhamHungTien
 /scripts/tools/ @PhamHungTien

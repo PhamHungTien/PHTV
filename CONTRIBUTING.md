@@ -92,7 +92,7 @@ Format: `<type>: <mô tả>`
 
 ```
 PHTV/
-├── App/                    # Mã nguồn chính cho macOS
+├── macOS/                  # Ứng dụng native đang phát hành cho macOS
 │   ├── PHTV/
 │   │   ├── App/            # AppDelegate và vòng đời ứng dụng
 │   │   ├── Engine/         # Engine xử lý tiếng Việt (Swift)
@@ -109,6 +109,10 @@ PHTV/
 │   │   └── Resources/      # Từ điển, localization, assets
 │   ├── Tests/              # Engine regression tests
 │   └── PHTV.xcodeproj/     # Xcode project
+├── Windows/                # Nền móng phiên bản Windows (TSF + WinUI 3)
+│   ├── docs/               # Kiến trúc, roadmap, test, security, release
+│   ├── src/                # Hợp đồng cho Core, IME và companion app
+│   └── tests/              # Test vectors/integration tests dự kiến
 ├── docs/                   # Tài liệu, kiến trúc, hình ảnh
 ├── scripts/                # Local dev entrypoint và build tools
 │   └── tools/              # Build tools (generate_dict_binary.swift, etc.)

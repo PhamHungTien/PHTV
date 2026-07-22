@@ -1,6 +1,6 @@
 # GitHub Actions của PHTV
 
-## CI (`ci.yml`)
+## macOS CI (`ci.yml`)
 
 Chạy trên mọi push/PR vào `main` với quyền `contents: read`:
 
@@ -14,13 +14,13 @@ Chạy trên mọi push/PR vào `main` với quyền `contents: read`:
 Các action bên thứ ba được khóa bằng full commit SHA. Dependabot theo dõi phiên
 bản GitHub Actions hàng tuần.
 
-## Nightly diagnostics (`nightly.yml`)
+## macOS Nightly diagnostics (`nightly.yml`)
 
 Chạy hàng tuần hoặc thủ công để thực hiện Xcode static analysis và nhóm regression
 concurrency với Thread Sanitizer. Kết quả và analyze log được giữ 14 ngày; workflow này không
 thay thế CI bắt buộc trên pull request.
 
-## Release (`release.yml`)
+## macOS Release (`release.yml`)
 
 Trigger bằng tag `v*.*.*` hoặc `workflow_dispatch` với một version hợp lệ.
 
@@ -36,6 +36,12 @@ Luồng công việc:
 5. **update-homebrew**: cập nhật `Casks/phtv.rb` trong Homebrew tap.
 
 Hai kiến trúc dùng DMG và appcast riêng; đây không phải một Universal DMG.
+
+## Windows workflows
+
+Phiên bản Windows hiện chỉ có kiến trúc và tài liệu trong `Windows/`, chưa có
+project có thể build. Chỉ thêm Windows CI sau khi Swift Core và TSF PoC tồn tại;
+workflow khi đó phải dùng Windows runner và không làm thay đổi pipeline macOS.
 
 ## Secrets bắt buộc
 

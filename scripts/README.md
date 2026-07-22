@@ -74,7 +74,7 @@ scripts/tools/release_notes.swift render --version 3.4.2 --format markdown
 scripts/tools/release_notes.swift check --version 3.4.2 \
   --appcast docs/appcast.xml --appcast docs/appcast-intel.xml
 scripts/tools/release_notes.swift sync-xcode-version \
-  --project App/PHTV.xcodeproj/project.pbxproj \
+  --project macOS/PHTV.xcodeproj/project.pbxproj \
   --version 3.4.2 --build 308
 scripts/tools/release_notes.swift self-test
 scripts/tools/repository_policy.swift check

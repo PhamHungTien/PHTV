@@ -27,7 +27,7 @@ Packages/
 SourcePackages/
 
 # Pin the app's package graph for reproducible builds.
-!App/PHTV.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved
+!macOS/PHTV.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved
 
 # Certificates
 *.p12
@@ -41,6 +41,7 @@ SourcePackages/
 # IDE
 .idea/
 .codex/
+.vs/
 *.swp
 *.swo
 *~
@@ -59,3 +60,19 @@ __pycache__/
 # CMake / Native build outputs
 /build/
 /build-*/
+
+# Visual Studio / .NET
+**/bin/
+**/obj/
+*.user
+*.suo
+*.VC.db
+*.VC.VC.opendb
+
+# Windows packages and signing artifacts
+AppPackages/
+*.appx
+*.appxbundle
+*.msix
+*.msixbundle
+*.snk

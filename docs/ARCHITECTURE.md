@@ -1,8 +1,12 @@
-# PHTV Architecture
+# PHTV macOS Architecture
 
 ## Tổng quan
 
 PHTV là bộ gõ tiếng Việt cho macOS, được xây dựng bằng Swift. Ứng dụng chạy như một menu bar app native, dùng CGEvent tap để nhận phím, engine Swift để xử lý tiếng Việt và Accessibility/TCC để commit chữ ổn định vào ứng dụng đích.
+
+Đây là kiến trúc của sản phẩm macOS trong `macOS/`. Nền móng Windows được tách
+riêng tại [Windows/README.md](../Windows/README.md) để không trộn TSF/WinUI với
+CGEvent/SwiftUI.
 
 Project hiện chỉ còn:
 
@@ -14,7 +18,7 @@ Target InputMethodKit thử nghiệm đã được gỡ bỏ; PHTV không cài t
 ## Cấu trúc thư mục
 
 ```text
-App/PHTV/
+macOS/PHTV/
 ├── App/                      # AppDelegate và vòng đời ứng dụng
 ├── Engine/                   # Engine xử lý tiếng Việt và Swift bridge exports
 ├── Input/                    # EventTap, Hotkey, xử lý phím đầu vào
@@ -29,7 +33,7 @@ App/PHTV/
 ├── UI/                       # SwiftUI views và components
 └── Utilities/                # Tiện ích dùng chung (logger, cache, constants)
 
-App/Tests/                    # XCTest regression tests
+macOS/Tests/                    # XCTest regression tests
 scripts/tools/                # Build-time tools (generate_dict_binary.swift, etc.)
 ```
 
@@ -155,7 +159,7 @@ Luồng này xử lý các case TCC bị kẹt sau khi app được cập nhật
 
 ```bash
 # Mở project
-open App/PHTV.xcodeproj
+open macOS/PHTV.xcodeproj
 
 # Kiểm tra môi trường local
 scripts/dev.swift env-check

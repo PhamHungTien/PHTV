@@ -2,7 +2,7 @@
 # Author: Phạm Hùng Tiến
 # Copyright © 2026 Phạm Hùng Tiến. All rights reserved.
 
-name: Build and Release
+name: macOS Build and Release
 
 on:
   push:
@@ -83,8 +83,8 @@ jobs:
           swift scripts/tools/generate_dict_binary.swift --strict-check-sources
           swift scripts/tools/generate_dict_binary.swift
           git diff --exit-code -- \
-            App/PHTV/Resources/Dictionaries/en_dict.bin \
-            App/PHTV/Resources/Dictionaries/vi_dict.bin
+            macOS/PHTV/Resources/Dictionaries/en_dict.bin \
+            macOS/PHTV/Resources/Dictionaries/vi_dict.bin
 
       - name: Run full XCTest suite
         run: |
@@ -93,7 +93,7 @@ jobs:
           defaults delete com.phamhungtien.phtv >/dev/null 2>&1 || true
           rm -rf "$RESULT_BUNDLE"
           xcodebuild \
-            -project App/PHTV.xcodeproj \
+            -project macOS/PHTV.xcodeproj \
             -scheme PHTV \
             -configuration Debug \
             -destination 'platform=macOS' \
@@ -189,7 +189,7 @@ jobs:
         run: |
           set -euo pipefail
           swift scripts/tools/generate_dict_binary.swift
-          if ! git diff --exit-code -- App/PHTV/Resources/Dictionaries/en_dict.bin App/PHTV/Resources/Dictionaries/vi_dict.bin; then
+          if ! git diff --exit-code -- macOS/PHTV/Resources/Dictionaries/en_dict.bin macOS/PHTV/Resources/Dictionaries/vi_dict.bin; then
             echo "❌ Dictionary binaries are stale. Re-run swift scripts/tools/generate_dict_binary.swift and commit the updated .bin files."
             exit 1
           fi
@@ -264,7 +264,7 @@ jobs:
           echo "keychain=$KEYCHAIN_PATH" >> "$GITHUB_OUTPUT"
 
       - name: Verify dependencies
-        working-directory: App
+        working-directory: macOS
         run: |
           echo "🔍 Verifying SPM dependencies..."
           # Resolve packages to check versions
@@ -273,7 +273,7 @@ jobs:
           echo "✅ Dependencies verified"
 
       - name: Build (${{ matrix.arch }})
-        working-directory: App
+        working-directory: macOS
         env:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
@@ -414,7 +414,7 @@ jobs:
           plutil -p "$ENTITLEMENTS_PLIST"
 
       - name: Verify app bundle metadata
-        working-directory: App
+        working-directory: macOS
         run: |
           VERSION="${{ steps.version.outputs.version }}"
           BUILD_NUMBER="${{ steps.set_versions.outputs.build_number }}"
@@ -441,7 +441,7 @@ jobs:
 
       - name: Create DMG (${{ matrix.arch }})
         id: dmg
-        working-directory: App
+        working-directory: macOS
         run: |
           VERSION="${{ steps.version.outputs.version }}"
           APP_PATH="./build-${{ matrix.arch }}/Build/Products/Release/PHTV.app"
@@ -576,7 +576,7 @@ jobs:
           echo "✅ DMG created: $DMG_NAME ($SIZE bytes)"
 
       - name: Notarize and staple DMG (${{ matrix.arch }})
-        working-directory: App
+        working-directory: macOS
         env:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
@@ -669,7 +669,7 @@ jobs:
           echo "✅ DMG notarized and stapled: $DMG_NAME"
 
       - name: Generate Sparkle appcast (${{ matrix.arch }})
-        working-directory: App
+        working-directory: macOS
         env:
           SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
         run: |
@@ -743,7 +743,7 @@ jobs:
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
           name: dmg-${{ matrix.arch }}
-          path: App/${{ steps.dmg.outputs.name }}
+          path: macOS/${{ steps.dmg.outputs.name }}
           retention-days: 1
 
       - name: Upload appcast artifact
@@ -759,7 +759,7 @@ jobs:
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
           name: build-log-${{ matrix.arch }}
-          path: App/build-${{ matrix.arch }}.log
+          path: macOS/build-${{ matrix.arch }}.log
           retention-days: 7
 
       - name: Cleanup signing keychain
@@ -845,7 +845,7 @@ jobs:
           cp /tmp/phtv-appcast-arm64/appcast.xml       docs/appcast.xml
           cp /tmp/phtv-appcast-intel/appcast-intel.xml docs/appcast-intel.xml
           scripts/tools/release_notes.swift sync-xcode-version \
-            --project App/PHTV.xcodeproj/project.pbxproj \
+            --project macOS/PHTV.xcodeproj/project.pbxproj \
             --version "${{ needs.build.outputs.version }}" \
             --build "${{ needs.build.outputs.build_number }}"
 
@@ -855,7 +855,7 @@ jobs:
           git add \
             docs/appcast.xml \
             docs/appcast-intel.xml \
-            App/PHTV.xcodeproj/project.pbxproj
+            macOS/PHTV.xcodeproj/project.pbxproj
 
           if git diff --staged --quiet; then
             echo "No appcast changes to commit."

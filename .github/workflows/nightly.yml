@@ -1,5 +1,5 @@
 # Deeper diagnostics that are intentionally kept out of the pull-request path.
-name: Nightly diagnostics
+name: macOS Nightly Diagnostics
 
 on:
   schedule:
@@ -18,7 +18,7 @@ env:
 
 jobs:
   diagnostics:
-    name: Static analysis & Thread Sanitizer
+    name: macOS Static Analysis & Thread Sanitizer
     runs-on: macos-26
     timeout-minutes: 60
 
@@ -35,7 +35,7 @@ jobs:
         run: |
           set -o pipefail
           xcodebuild analyze \
-            -project App/PHTV.xcodeproj \
+            -project macOS/PHTV.xcodeproj \
             -scheme PHTV \
             -configuration Debug \
             -destination 'platform=macOS' \
@@ -54,7 +54,7 @@ jobs:
           defaults delete com.phamhungtien.phtv >/dev/null 2>&1 || true
           rm -rf "$RESULT_BUNDLE"
           xcodebuild test \
-            -project App/PHTV.xcodeproj \
+            -project macOS/PHTV.xcodeproj \
             -scheme PHTV \
             -configuration Debug \
             -destination 'platform=macOS' \

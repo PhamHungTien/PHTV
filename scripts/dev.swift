@@ -60,7 +60,7 @@ func resolveDeveloperDirectory() -> String {
 let fileURL = URL(fileURLWithPath: #filePath)
 let rootURL = fileURL.deletingLastPathComponent().deletingLastPathComponent()
 let rootPath = rootURL.path
-let projectPath = rootURL.appendingPathComponent("App/PHTV.xcodeproj").path
+let projectPath = rootURL.appendingPathComponent("macOS/PHTV.xcodeproj").path
 let scheme = "PHTV"
 let destination = "platform=macOS"
 let derivedDataPath = ProcessInfo.processInfo.environment["DERIVED_DATA_PATH"]
@@ -171,8 +171,8 @@ func swiftFormat(_ extraArguments: [String]) throws {
     ] + extraArguments + [
         "--configuration", rootURL.appendingPathComponent(".swift-format").path,
         "--recursive", "--parallel",
-        rootURL.appendingPathComponent("App/PHTV").path,
-        rootURL.appendingPathComponent("App/Tests").path,
+        rootURL.appendingPathComponent("macOS/PHTV").path,
+        rootURL.appendingPathComponent("macOS/Tests").path,
     ])
 }
 
@@ -252,7 +252,7 @@ do {
             ["max-build", "--appcast", armAppcastPath, "--appcast", intelAppcastPath]
         )
         let projectText = try String(
-            contentsOf: rootURL.appendingPathComponent("App/PHTV.xcodeproj/project.pbxproj"),
+            contentsOf: rootURL.appendingPathComponent("macOS/PHTV.xcodeproj/project.pbxproj"),
             encoding: .utf8
         )
         func projectValues(for setting: String) -> Set<String> {
@@ -285,7 +285,7 @@ do {
         ])
         for plist in ["Info.plist", "PHTV.entitlements", "PrivacyInfo.xcprivacy"] {
             try run("/usr/bin/plutil", [
-                "-lint", rootURL.appendingPathComponent("App/PHTV/\(plist)").path,
+                "-lint", rootURL.appendingPathComponent("macOS/PHTV/\(plist)").path,
             ])
         }
 

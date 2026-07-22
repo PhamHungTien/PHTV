@@ -70,7 +70,7 @@ panel lifecycle, chạy thêm Thread Sanitizer:
 ```bash
 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer \
 xcodebuild test \
-  -project App/PHTV.xcodeproj \
+  -project macOS/PHTV.xcodeproj \
   -scheme PHTV \
   -destination 'platform=macOS' \
   -enableThreadSanitizer YES \
