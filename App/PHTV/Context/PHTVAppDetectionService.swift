@@ -242,9 +242,9 @@ final class PHTVAppDetectionService: NSObject {
 
     // Qoder combines a VS Code-style editor with a Quest prompt implemented
     // as a Chromium command surface. Quest is identified through the
-    // address-bar-shaped accessibility fallback, but uses plain replacement
-    // plus a short settle delay. Monaco and the integrated terminal keep the
-    // regular editor paths.
+    // address-bar-shaped accessibility fallback, but uses paced delete and
+    // Unicode events plus a short settle delay. Monaco and the integrated
+    // terminal keep the regular editor paths.
     private static let hybridBrowserEditorApps = BundlePatternSet([
         "com.qoder.ide",
     ])

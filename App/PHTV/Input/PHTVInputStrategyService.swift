@@ -173,8 +173,8 @@ final class PHTVInputStrategyService: NSObject {
     /// though its prompt behaves like a normal Chromium editor. Applying the
     /// browser placeholder correction there inserts an empty character and
     /// increments the delete count, which can remove parts of the next word.
-    @objc(shouldUseHybridCommandSurfaceTypeoverForBundleId:addressBarDetected:)
-    class func shouldUseHybridCommandSurfaceTypeover(
+    @objc(shouldUsePacedHybridCommandSurfaceReplacementForBundleId:addressBarDetected:)
+    class func shouldUsePacedHybridCommandSurfaceReplacement(
         forBundleId bundleId: String?,
         addressBarDetected: Bool
     ) -> Bool {

@@ -916,20 +916,20 @@ final class PHTVEventCallbackService {
                 #endif
             }
 
-            let shouldUseHybridCommandSurfaceTypeover =
-                PHTVInputStrategyService.shouldUseHybridCommandSurfaceTypeover(
+            let shouldUsePacedHybridCommandSurfaceReplacement =
+                PHTVInputStrategyService.shouldUsePacedHybridCommandSurfaceReplacement(
                     forBundleId: effectiveBundleId,
                     addressBarDetected: isAddrBar)
             let shouldApplyBrowserAddressBarFix =
                 processSignalPlan.shouldTryBrowserAddressBarFix &&
-                !shouldUseHybridCommandSurfaceTypeover
+                !shouldUsePacedHybridCommandSurfaceReplacement
             let shouldApplyLegacyBackspaceFix =
                 (processSignalPlan.shouldTryLegacyNonBrowserFix || isNotionCodeBlockDetected) &&
-                !shouldUseHybridCommandSurfaceTypeover
+                !shouldUsePacedHybridCommandSurfaceReplacement
 
             #if DEBUG
-            if shouldUseHybridCommandSurfaceTypeover {
-                NSLog("[Qoder] Quest command surface -> selection typeover (no placeholder, backspace=%d)",
+            if shouldUsePacedHybridCommandSurfaceReplacement {
+                NSLog("[Qoder] Quest command surface -> paced replacement (no placeholder, backspace=%d)",
                       hookData.backspaceCount)
             }
             #endif
@@ -1055,26 +1055,14 @@ final class PHTVEventCallbackService {
                         "deferBackspace=\(bsCount) newCharCount=\(hookData.newCharCount)",
                         throttleMs: kDebugLogThrottleMs)
                     #endif
-                } else if shouldUseHybridCommandSurfaceTypeover,
-                          PHTVAccessibilityService.selectBackwardForTypeover(bsCount) {
-                    // Qoder's Chromium prompt commits synthetic backspaces
-                    // asynchronously. Select the old text and type over it so
-                    // a late delete cannot remove the replacement or next key.
-                    PHTVCliRuntimeStateService.scheduleBlock(
-                        forMicroseconds: 50000, nowMachTime: mach_absolute_time())
+                } else if shouldUsePacedHybridCommandSurfaceReplacement {
                     #if DEBUG
-                    NSLog("[Qoder] AX select+typeover x%d", bsCount)
-                    #endif
-                } else if shouldUseHybridCommandSurfaceTypeover {
-                    // Some Qoder builds may not expose a writable AX selection.
-                    // Pace the fallback delete transaction before inserting
-                    // replacement text instead of sending a burst of events.
-                    #if DEBUG
-                    NSLog("[Qoder] AX selection unavailable; paced backspace x%d (%dus gap)",
+                    NSLog("[Qoder] Paced backspace x%d (%dus gap)",
                           bsCount, kHybridCommandSurfaceKeyDelayUs)
                     #endif
                     PHTVKeyEventSenderService.sendPacedBackspaceSequence(
-                        bsCount, interDelayUs: kHybridCommandSurfaceKeyDelayUs)
+                        bsCount,
+                        interDelayUs: kHybridCommandSurfaceKeyDelayUs)
                 } else if isNotionCodeBlockDetected,
                           PHTVAccessibilityService.selectBackwardForTypeover(bsCount) {
                     // CodeMirror code blocks drop synthetic backspaces but do
@@ -1104,6 +1092,10 @@ final class PHTVEventCallbackService {
 
             // Send new character
             let useStepByStep = characterSendPlan.useStepByStepCharacterSend
+            let usePacedHybridCharacterSend =
+                shouldUsePacedHybridCommandSurfaceReplacement &&
+                hookData.code != EngineSignalCode.restore &&
+                hookData.code != EngineSignalCode.restoreAndStartNewSession
             #if DEBUG
             if isSpotlightTarget {
                 PHTVSpotlightDetectionService.emitRuntimeDebugLog(
@@ -1112,7 +1104,22 @@ final class PHTVEventCallbackService {
             }
             #endif
 
-            if !useStepByStep {
+            if usePacedHybridCharacterSend {
+                let newCharCount = Int(hookData.newCharCount)
+                if newCharCount > 0 && newCharCount <= Int(EngineSignalCode.maxBuffer) {
+                    for index in 0..<newCharCount {
+                        PHTVKeyEventSenderService.sendKeyCode(
+                            hookData.char(at: newCharCount - 1 - index))
+                        if index + 1 < newCharCount {
+                            usleep(kHybridCommandSurfaceKeyDelayUs)
+                        }
+                    }
+                }
+                #if DEBUG
+                NSLog("[Qoder] Paced Unicode send x%d (%dus gap)",
+                      newCharCount, kHybridCommandSurfaceKeyDelayUs)
+                #endif
+            } else if !useStepByStep {
                 PHTVCharacterOutputService.sendNewCharString(
                     dataFromMacro: false, offset: 0,
                     keycode: eventKeycode, flags: eventFlags.rawValue)
