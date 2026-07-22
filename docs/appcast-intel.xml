@@ -7,6 +7,45 @@
         <language>vi</language>
         <!-- Intel (x86_64) feed — Most recent version first -->
         <item>
+            <title>3.4.4</title>
+            <pubDate>Wed, 22 Jul 2026 13:40:35 +0700</pubDate>
+            <sparkle:version>311</sparkle:version>
+            <sparkle:shortVersionString>3.4.4</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[
+                <h2>PHTV 3.4.4</h2>
+                <h3>Tổng quan</h3>
+                <p>PHTV 3.4.4 tập trung khắc phục lỗi gõ tiếng Việt trong Qoder. Phiên bản này nhận diện đúng kiến trúc kết hợp giữa trình soạn thảo, giao diện Quest nền Chromium và Terminal tích hợp, nhờ đó áp dụng cách xử lý phù hợp cho từng khu vực mà không làm thay đổi hành vi của các IDE hay trình duyệt khác.</p>
+                <h3>Fixed and Improved</h3>
+                <ul>
+                <li><strong>Gõ tiếng Việt trong Qoder (#216)</strong>
+                <ul>
+                <li>Sửa hiện tượng ký tự và dấu tiếng Việt bị dính, lặp hoặc đặt sai vị trí trong ô nhập Quest trên màn hình chính của Qoder.</li>
+                <li>Áp dụng cơ chế sửa dấu tương thích Chromium tương tự Dia cho giao diện Quest, đồng thời giữ cơ chế nhập liệu dành cho trình soạn thảo ở vùng code.</li>
+                <li>Nhận diện chính xác Qoder bằng bundle ID <code>com.qoder.ide</code> thay vì xử lý toàn bộ ứng dụng như một trình duyệt hoặc IDE thuần túy.</li>
+                <li>Terminal tích hợp trong Qoder tiếp tục sử dụng profile CLI chuyên dụng, không ảnh hưởng thao tác lệnh và phím điều hướng.</li>
+                </ul>
+                </li>
+                <li><strong>Chẩn đoán lỗi theo ứng dụng chính xác hơn</strong>
+                <ul>
+                <li>Báo lỗi rút gọn nay kèm bundle ID của ứng dụng đang hoạt động, giúp phân biệt đúng ứng dụng gây lỗi ngay cả khi người dùng chuyển sang trình duyệt để gửi báo cáo.</li>
+                </ul>
+                </li>
+                </ul>
+                <h3>Chất lượng</h3>
+                <ul>
+                <li>Bổ sung kiểm thử hồi quy riêng cho ô Quest, trình soạn thảo và Terminal tích hợp của Qoder.</li>
+                <li>Universal Debug build thành công; toàn bộ <strong>424/424 tests</strong> và kiểm tra release metadata đều đạt.</li>
+                </ul>
+                <h3>Ghi chú nâng cấp</h3>
+                <ul>
+                <li>Không cần cấp thêm quyền hoặc thiết lập lại PHTV sau khi cập nhật.</li>
+                <li>Thiết lập, macro, lịch sử Clipboard và quy tắc theo ứng dụng được giữ nguyên.</li>
+                </ul>
+            ]]></description>
+            <enclosure url="https://github.com/PhamHungTien/PHTV/releases/download/v3.4.4/PHTV-3.4.4-intel.dmg" length="9294853" type="application/octet-stream" sparkle:edSignature="uCcFCMc2YqszeSbLFnVwMTc7oq0dLUCmUXwSya7KW9IDhMPJofxqROWyqJRXnBj0svTzK5h3vuiU1/XZvUIwCw=="/>
+        </item>
+        <item>
             <title>3.4.3</title>
             <pubDate>Wed, 22 Jul 2026 13:25:05 +0700</pubDate>
             <sparkle:version>310</sparkle:version>
@@ -413,14 +452,6 @@
                 <p>Nếu macOS vẫn giữ cache quyền cũ, hãy khởi động lại máy sau khi cấp lại quyền.</p>
             ]]></description>
             <enclosure url="https://github.com/PhamHungTien/PHTV/releases/download/v3.1.5/PHTV-3.1.5-intel.dmg" length="9517190" type="application/octet-stream" sparkle:edSignature="vWLo+ntGc6+bHzULqiHNoP9nsjAwFiVQhtE24Zjnt1hJt/DQ0NPP+Nrk//WDmKCyCwRJTnjRF6DMb8qQ9zrLAg=="/>
-        </item>
-        <item>
-            <title>3.1.4</title>
-            <pubDate>Tue, 19 May 2026 18:34:23 +0000</pubDate>
-            <sparkle:version>281</sparkle:version>
-            <sparkle:shortVersionString>3.1.4</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <enclosure url="https://github.com/PhamHungTien/PHTV/releases/download/v3.1.4/PHTV-3.1.4-intel.dmg" length="9515445" type="application/octet-stream" sparkle:edSignature="wZ4vRo8WLQT7stwfQ7dMbBYneyGCN5Fmv7Vk5rybFWicEYnkN4WL3yFDBayH1B7qXlBNOSH6gt6IsxTM/6rlAQ=="/>
         </item>
         <item>
             <title>2.8.9</title>
