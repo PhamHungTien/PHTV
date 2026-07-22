@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.4.6] - 2026-07-22
+
+### Tổng quan
+PHTV 3.4.6 tiếp tục hoàn thiện khả năng nhập liệu trong ô Quest của Qoder, đặc
+biệt khi chuyển tiếp giữa từ tiếng Anh và tiếng Việt. Phiên bản này tập trung
+đồng bộ quá trình xoá, khôi phục từ tiếng Anh và nhập ký tự tiếp theo để nội
+dung luôn xuất hiện đúng tại vị trí con trỏ.
+
+### Fixed and Improved
+- **Ổn định từ tiếng Anh trong Qoder Quest (#216)**
+  - Khắc phục hiện tượng từ tiếng Anh như `scenario` bị mất ký tự sau khi nhấn
+    Space hoặc bắt đầu nhập từ tiếp theo.
+  - Ngăn con trỏ nhảy ngược về từ vừa nhập, tránh nội dung mới ghi đè hoặc xen
+    vào giữa từ tiếng Anh đã hoàn thành.
+  - Đồng bộ thứ tự xoá, gửi lại chuỗi Unicode và phím phân cách trong luồng tự
+    động khôi phục tiếng Anh dành riêng cho Qoder.
+  - Giữ nguyên cơ chế nhập liệu chuyên dụng của vùng code Monaco và Terminal
+    tích hợp trong Qoder.
+
+### Ghi chú nâng cấp
+- Không cần cấp thêm quyền hoặc thiết lập lại PHTV sau khi cập nhật.
+- Thiết lập, macro, lịch sử Clipboard và quy tắc theo ứng dụng được giữ nguyên.
+
 ## [3.4.5] - 2026-07-22
 
 ### Tổng quan
