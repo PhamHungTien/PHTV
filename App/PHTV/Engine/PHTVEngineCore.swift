@@ -1693,6 +1693,20 @@ final class PHTVVietnameseEngine {
         insertKey(qt[1], isCaps, false)
     }
 
+    func recordQuickTelexMacroKey(_ data: UInt16, _ isCaps: Bool) {
+        guard phtvRuntimeUseMacroEnabled() != 0,
+              let expansion = vnQuickTelex[UInt32(data)] else { return }
+
+        let capsMask = isCaps ? CAPS_MASK : 0
+        // The transformed macro key mirrors the two characters visible in the
+        // destination app, while the raw key preserves the shortcut the user
+        // actually typed. If the raw shortcut matches, hMacroKey.count is also
+        // the exact number of visible characters the hook must replace.
+        hMacroKey.append(UInt32(expansion[0]) | capsMask)
+        hMacroKey.append(UInt32(expansion[1]) | capsMask)
+        hMacroRawKey.append(UInt32(data) | capsMask)
+    }
+
     func restoreToRawKeys() -> Bool {
         guard stateIdx > 0 && idx > 0 else { return false }
         var hasTransforms = false
@@ -2809,7 +2823,9 @@ final class PHTVVietnameseEngine {
             // The hook data already contains the complete raw English word.
         } else if bypassSpecialForEnglishConflict || !isSpecialKey(data) || (tempDisableKey && !allowSpecialDespiteTempDisable) {
             if quickTelexEnabled && isQuickTelexKey(data) {
-                handleQuickTelex(data, isCaps); return
+                handleQuickTelex(data, isCaps)
+                recordQuickTelexMacroKey(data, isCaps)
+                return
             } else {
                 hCode = HookCodeState.doNothing.rawValue; hBPC = 0; hNCC = 0; hExt = 3
                 insertKey(data, isCaps)

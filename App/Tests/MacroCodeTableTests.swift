@@ -62,6 +62,7 @@ final class MacroCodeTableTests: XCTestCase {
         PHTVEngineRuntimeFacade.setCurrentInputType(0)  // Telex
         PHTVEngineRuntimeFacade.setCurrentCodeTable(0)  // Unicode
         PHTVEngineRuntimeFacade.setUseMacro(1)
+        PHTVEngineRuntimeFacade.setQuickTelex(0)
         PHTVEngineRuntimeFacade.setAutoCapsMacro(0)
         PHTVEngineRuntimeFacade.setCheckSpelling(1)
         engineInitialize()
@@ -70,6 +71,7 @@ final class MacroCodeTableTests: XCTestCase {
     override func tearDown() {
         loadMacros([])
         PHTVEngineRuntimeFacade.setUseMacro(0)
+        PHTVEngineRuntimeFacade.setQuickTelex(0)
         PHTVEngineRuntimeFacade.setCurrentCodeTable(0)
         engineInitialize()
         super.tearDown()
@@ -103,7 +105,7 @@ final class MacroCodeTableTests: XCTestCase {
         macroResult(afterTyping: token).didTrigger
     }
 
-    private func macroResult(afterTyping token: String) -> (didTrigger: Bool, macroData: [UInt32]) {
+    private func macroResult(afterTyping token: String) -> (didTrigger: Bool, macroData: [UInt32], backspaceCount: Int) {
         // App-hosted tests can schedule unrelated session work against the
         // process singleton. A local engine keeps this fixture's keystroke
         // sequence atomic while exercising the same runtime macro map.
@@ -128,7 +130,8 @@ final class MacroCodeTableTests: XCTestCase {
         )
         return (
             engine.hCode == HookCodeState.replaceMacro.rawValue,
-            engine.hMacroData
+            engine.hMacroData,
+            engine.hBPC
         )
     }
 
@@ -137,6 +140,16 @@ final class MacroCodeTableTests: XCTestCase {
     func testAsciiMacroTriggersOnSpace() {
         loadMacros([MacroItem(shortcut: "btw", expansion: "by the way")])
         XCTAssertTrue(typedTokenTriggersMacro("btw"))
+    }
+
+    func testAsciiMacroTracksRawShortcutWhileQuickTelexExpandsVisibleText() {
+        PHTVEngineRuntimeFacade.setQuickTelex(1)
+        loadMacros([MacroItem(shortcut: "btw", expansion: "by the way")])
+
+        let result = macroResult(afterTyping: "btw")
+
+        XCTAssertTrue(result.didTrigger)
+        XCTAssertEqual(result.backspaceCount, 4) // `btw` is displayed as `bthw`.
     }
 
     func testUnrelatedTokenDoesNotTriggerMacro() {
