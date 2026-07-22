@@ -173,6 +173,63 @@ final class CompatibilityStrategyTests: XCTestCase {
         XCTAssertFalse(plan.shouldTryLegacyNonBrowserFix)
     }
 
+    func testQoderUsesBrowserCorrectionForQuestAndEditorFallbackElsewhere() {
+        let bundleId = "com.qoder.ide"
+        let signalPlan = PHTVInputStrategyService.processSignalPlan(
+            forBundleId: bundleId,
+            keyCode: Int32(KeyCode.eKey),
+            spaceKeyCode: Int32(KeyCode.space),
+            slashKeyCode: Int32(KeyCode.slash),
+            extCode: 0,
+            backspaceCount: 2,
+            newCharCount: 1,
+            isBrowserApp: PHTVAppDetectionService.isBrowserApp(bundleId),
+            isSpotlightTarget: false,
+            needsPrecomposedBatched: PHTVAppDetectionService.needsPrecomposedBatched(bundleId),
+            browserFixEnabled: true
+        )
+
+        XCTAssertTrue(PHTVAppDetectionService.isVSCodeFamilyApp(bundleId))
+        XCTAssertTrue(PHTVAppDetectionService.containsUnicodeCompound(bundleId))
+        XCTAssertTrue(PHTVAppDetectionService.usesHybridBrowserEditorFix(bundleId))
+        XCTAssertTrue(signalPlan.shouldTryBrowserAddressBarFix)
+        XCTAssertTrue(signalPlan.shouldTryLegacyNonBrowserFix)
+
+        let questPlan = PHTVInputStrategyService.resolvedBackspacePlan(
+            forBrowserAddressBarFix: signalPlan.shouldTryBrowserAddressBarFix,
+            addressBarDetected: true,
+            googleSheetsContext: false,
+            legacyNonBrowserFix: signalPlan.shouldTryLegacyNonBrowserFix,
+            containsUnicodeCompound: true,
+            notionCodeBlockDetected: false,
+            backspaceCount: 2,
+            maxBuffer: 20,
+            safetyLimit: 15
+        )
+        XCTAssertEqual(
+            questPlan.adjustmentAction,
+            PHTVBackspaceAdjustmentAction.sendEmptyCharacter.rawValue
+        )
+        XCTAssertEqual(questPlan.adjustedBackspaceCount, 3)
+
+        let editorPlan = PHTVInputStrategyService.resolvedBackspacePlan(
+            forBrowserAddressBarFix: signalPlan.shouldTryBrowserAddressBarFix,
+            addressBarDetected: false,
+            googleSheetsContext: false,
+            legacyNonBrowserFix: signalPlan.shouldTryLegacyNonBrowserFix,
+            containsUnicodeCompound: true,
+            notionCodeBlockDetected: false,
+            backspaceCount: 2,
+            maxBuffer: 20,
+            safetyLimit: 15
+        )
+        XCTAssertEqual(
+            editorPlan.adjustmentAction,
+            PHTVBackspaceAdjustmentAction.sendShiftLeftThenBackspace.rawValue
+        )
+        XCTAssertEqual(editorPlan.adjustedBackspaceCount, 1)
+    }
+
     func testStrictAddressBarDetectionRejectsGenericTextFieldOutsideWebArea() {
         XCTAssertFalse(
             PHTVAccessibilityService.addressBarClassification(

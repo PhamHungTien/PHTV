@@ -86,6 +86,7 @@ final class PHTVAppDetectionService: NSObject {
         "org.chromium.Chromium",
         "com.vivaldi.Vivaldi",
         "com.operasoftware.Opera",
+        "com.qoder.ide",
         "notion.id",
         "com.google.Chrome.app.*",
         "com.brave.Browser.app.*",
@@ -150,6 +151,7 @@ final class PHTVAppDetectionService: NSObject {
         "com.mighty.app",
         "com.collovos.naver.whale",
         "ru.yandex.desktop.yandex-browser",
+        "com.qoder.ide",
         "com.google.Chrome.app.*",
         "com.google.Chrome.canary.app.*",
         "com.google.Chrome.dev.app.*",
@@ -234,8 +236,18 @@ final class PHTVAppDetectionService: NSObject {
         "com.vscodium.codium",
         "com.google.antigravity",
         "com.todesktop.cursor",
-        "com.todesktop.230313mzl4w4u92"
+        "com.todesktop.230313mzl4w4u92",
+        "com.qoder.ide",
     ]
+
+    // Qoder combines a VS Code-style editor with a Quest prompt implemented
+    // as a Chromium command surface. The prompt needs the browser/Dia
+    // placeholder correction, while Monaco and the integrated terminal still
+    // need the regular editor fallback whenever the focused element is inside
+    // an AXWebArea.
+    private static let hybridBrowserEditorApps = BundlePatternSet([
+        "com.qoder.ide",
+    ])
 
     private static let forcePrecomposedApps = BundlePatternSet([
         "com.apple.Spotlight",
@@ -516,6 +528,10 @@ final class PHTVAppDetectionService: NSObject {
             return false
         }
         return vscodeFamilyApps.contains(normalized)
+    }
+
+    @objc class func usesHybridBrowserEditorFix(_ bundleId: String?) -> Bool {
+        hybridBrowserEditorApps.contains(bundleId)
     }
 
     @objc class func isJetBrainsApp(_ bundleId: String?) -> Bool {

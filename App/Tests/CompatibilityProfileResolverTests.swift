@@ -38,6 +38,30 @@ final class CompatibilityProfileResolverTests: XCTestCase {
         XCTAssertNil(profile.cliProfileCode)
     }
 
+    func testQoderKeepsEditorIdentityAndChromiumQuestCompatibility() {
+        let profile = PHTVCompatibilityProfileResolver.resolve(forBundleId: "com.qoder.ide")
+
+        XCTAssertEqual(profile.kind, .editorIDE)
+        XCTAssertTrue(profile.isIDEApp)
+        XCTAssertTrue(profile.isBrowser)
+        XCTAssertTrue(profile.containsUnicodeCompound)
+        XCTAssertFalse(profile.isCliTarget)
+        XCTAssertNil(profile.cliProfileCode)
+    }
+
+    func testQoderIntegratedTerminalKeepsCliProfile() {
+        let profile = PHTVCompatibilityProfileResolver.resolve(
+            forBundleId: "com.qoder.ide",
+            spotlightActive: false,
+            isTerminalPanel: true,
+            isClaudeCodeSession: false
+        )
+
+        XCTAssertEqual(profile.kind, .terminal)
+        XCTAssertTrue(profile.isCliTarget)
+        XCTAssertEqual(profile.cliProfileCode, 1)
+    }
+
     func testJetBrainsEditorIsNotTreatedAsTerminal() {
         for bundleId in ["com.jetbrains.intellij", "com.google.android.studio"] {
             let profile = PHTVCompatibilityProfileResolver.resolve(

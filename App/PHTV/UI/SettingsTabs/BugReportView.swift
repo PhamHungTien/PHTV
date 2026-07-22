@@ -835,12 +835,14 @@ struct BugReportView: View {
             let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "?"
             let macOS = ProcessInfo.processInfo.operatingSystemVersionString
             let chip = getChipInfo()
+            let activeBundleId = appState.typingRuntimeHealth.activeBundleId ?? "Unknown"
 
             report += "## 💻 Hệ thống\n"
             report += "- **PHTV:** \(version) (\(build))\n"
             report += "- **Runtime Session:** \(PHTVLogger.shared.currentSessionID())\n"
             report += "- **Runtime Phase:** \(appState.typingRuntimeHealth.phase.rawValue)\n"
             report += "- **App Profile:** \(appState.typingRuntimeHealth.activeAppProfile.displayName)\n"
+            report += "- **Active Bundle ID:** \(activeBundleId)\n"
             report += "- **macOS:** \(macOS)\n"
             report += "- **Chip:** \(chip)\n"
             report += "- **Chế độ:** \(appState.isEnabled ? "🇻🇳 Tiếng Việt" : "🇬🇧 English")\n"

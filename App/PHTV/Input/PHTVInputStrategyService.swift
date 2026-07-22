@@ -176,7 +176,8 @@ final class PHTVInputStrategyService: NSObject {
         needsPrecomposedBatched: Bool,
         browserFixEnabled: Bool,
         isNotionApp: Bool,
-        needsLegacySpaceCommitFix: Bool
+        needsLegacySpaceCommitFix: Bool,
+        usesHybridBrowserEditorFix: Bool
     ) -> PHTVInputStrategy {
         let isSpecialApp = isSpotlightTarget || needsPrecomposedBatched
         let isPotentialShortcut = isSlashKey
@@ -184,6 +185,7 @@ final class PHTVInputStrategyService: NSObject {
 
         let isSpaceRestore = isSpaceKey && backspaceCount > 0
         let shouldSkipSpace = isSpaceKey && !isSpaceRestore
+        let shouldUseLegacyFix = !isBrowserApp || usesHybridBrowserEditorFix
 
         let shouldTryBrowserAddressBarFix =
             isBrowserFix &&
@@ -202,7 +204,7 @@ final class PHTVInputStrategyService: NSObject {
             // even when Space is the commit key.
             (!isSpaceKey || needsLegacySpaceCommitFix) &&
             !isPotentialShortcut &&
-            !isBrowserApp
+            shouldUseLegacyFix
 
         let shouldLogSpaceSkip =
             isSpaceKey &&
@@ -503,7 +505,8 @@ final class PHTVInputStrategyService: NSObject {
             needsPrecomposedBatched: needsPrecomposedBatched,
             browserFixEnabled: browserFixEnabled,
             isNotionApp: isNotionApp,
-            needsLegacySpaceCommitFix: compatibilityProfile.needsLegacySpaceCommitFix
+            needsLegacySpaceCommitFix: compatibilityProfile.needsLegacySpaceCommitFix,
+            usesHybridBrowserEditorFix: PHTVAppDetectionService.usesHybridBrowserEditorFix(bundleId)
         )
 
         return PHTVProcessSignalPlanBox(

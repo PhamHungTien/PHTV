@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Sửa lỗi dấu tiếng Việt bị dính hoặc sai vị trí trong ô nhập Quest của Qoder
+  (#216), đồng thời giữ đúng chế độ Editor/IDE và Terminal tích hợp của Qoder.
+- Báo lỗi rút gọn nay kèm bundle ID của ứng dụng đang hoạt động để chẩn đoán
+  lỗi tương thích theo ứng dụng chính xác hơn.
+
 ## [3.4.3] - 2026-07-22
 
 ### Tổng quan
