@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.4.5] - 2026-07-22
+
+### Tổng quan
+PHTV 3.4.5 tiếp tục hoàn thiện khả năng gõ tiếng Việt trong ô Quest của Qoder.
+Phiên bản này tập trung xử lý thứ tự xoá và chèn ký tự của giao diện Chromium,
+giúp câu dài và các từ có nhiều lần biến đổi dấu được nhập ổn định hơn.
+
+### Fixed and Improved
+- **Ổn định nhập liệu trong Qoder Quest (#216)**
+  - Khắc phục hiện tượng mất ký tự, thiếu dấu hoặc đảo thứ tự chữ khi gõ nhanh
+    các từ như `tiếng`, `Việt` và các câu tiếng Việt dài.
+  - Loại bỏ cơ chế ký tự đệm và thao tác vùng chọn Accessibility không phù hợp
+    với ô Quest, tránh Qoder phát sinh các lần xoá ngoài ý muốn.
+  - Gửi thao tác xoá và chuỗi Unicode theo nhịp riêng cho Qoder, bảo đảm giao
+    dịch sửa dấu hoàn tất trước khi nhận phím vật lý tiếp theo.
+  - Giới hạn thay đổi trong ô Quest; vùng code Monaco và Terminal tích hợp vẫn
+    giữ nguyên cơ chế tương thích chuyên dụng hiện có.
+
+### Chất lượng
+- Bổ sung kiểm thử hồi quy cho nhận diện ô Quest, kế hoạch xoá/chèn và phạm vi
+  áp dụng, tránh ảnh hưởng Chrome, Dia, Notion cùng các IDE khác.
+- Toàn bộ **426/426 tests** đạt trên macOS 27 beta.
+
+### Ghi chú nâng cấp
+- Không cần cấp thêm quyền hoặc thiết lập lại PHTV sau khi cập nhật.
+- Thiết lập, macro, lịch sử Clipboard và quy tắc theo ứng dụng được giữ nguyên.
+
 ## [3.4.4] - 2026-07-22
 
 ### Tổng quan
