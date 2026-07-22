@@ -67,6 +67,34 @@ func replaceRegex(_ value: String, pattern: String, template: String) throws -> 
     )
 }
 
+func synchronizeXcodeProject(_ project: String, version: String, build: Int) throws -> String {
+    guard version.range(
+        of: #"^[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$"#,
+        options: .regularExpression
+    ) != nil else {
+        throw ReleaseNotesError.message("Invalid Xcode marketing version: \(version)")
+    }
+    guard build > 0 else { throw ReleaseNotesError.message("Xcode build number must be positive") }
+
+    var updated = project
+    for (setting, value) in [
+        ("MARKETING_VERSION", version),
+        ("CURRENT_PROJECT_VERSION", String(build)),
+    ] {
+        let expression = try regex(#"(?m)(\#(setting)\s*=\s*)[^;]+;"#)
+        let range = NSRange(updated.startIndex..., in: updated)
+        guard expression.numberOfMatches(in: updated, range: range) > 0 else {
+            throw ReleaseNotesError.message("Xcode project has no \(setting) setting")
+        }
+        updated = expression.stringByReplacingMatches(
+            in: updated,
+            range: range,
+            withTemplate: "$1\(value);"
+        )
+    }
+    return updated
+}
+
 func renderInline(_ value: String) throws -> String {
     var rendered = value
         .replacingOccurrences(of: "&", with: "&amp;")
@@ -328,6 +356,15 @@ func runSelfTests() throws {
         throw ReleaseNotesError.message("Appcast injection is not idempotent")
     }
     try validateAppcast(injected, path: "self-test", version: "3.4.2", expectedHTML: html)
+    let project = """
+      MARKETING_VERSION = 1.0;
+      CURRENT_PROJECT_VERSION = 1;
+    """
+    let synchronized = try synchronizeXcodeProject(project, version: "3.4.2", build: 308)
+    guard synchronized.contains("MARKETING_VERSION = 3.4.2;"),
+          synchronized.contains("CURRENT_PROJECT_VERSION = 308;") else {
+        throw ReleaseNotesError.message("Xcode version synchronization self-test failed")
+    }
     print("Release notes self-tests passed")
 }
 
@@ -347,6 +384,19 @@ do {
             appcasts.append(try String(contentsOfFile: arguments[index + 1], encoding: .utf8))
         }
         print(try maximumBuildNumber(appcasts))
+        exit(0)
+    }
+    if command == "sync-xcode-version" {
+        let path = try argument("--project", in: arguments)!
+        let version = try argument("--version", in: arguments)!
+        guard let build = Int(try argument("--build", in: arguments)!) else {
+            throw ReleaseNotesError.message("Invalid Xcode build number")
+        }
+        let original = try String(contentsOfFile: path, encoding: .utf8)
+        let updated = try synchronizeXcodeProject(original, version: version, build: build)
+        if updated != original {
+            try updated.write(toFile: path, atomically: true, encoding: .utf8)
+        }
         exit(0)
     }
     if command == "validate-item" {

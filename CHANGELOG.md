@@ -26,6 +26,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Third-Party Notices cùng công cụ local tự nhận diện Xcode stable/beta.
 - Chuyển build/run helper, release metadata validator, repository policy và
   Homebrew cask updater sang Swift; repository không còn local tool `.py`/`.sh`.
+- Đồng bộ version/build mặc định của project Xcode với appcast và tự cập nhật
+  sau mỗi lần phát hành, tránh build local mang version placeholder `1.0 (1)`.
 
 ## [3.4.2] - 2026-07-22
 

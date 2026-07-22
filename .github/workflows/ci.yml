@@ -37,22 +37,7 @@ jobs:
           xcode-version: latest-stable
 
       - name: Validate repository metadata
-        run: |
-          set -euo pipefail
-          scripts/tools/release_notes.swift self-test
-          scripts/tools/repository_policy.swift check
-          # A CHANGELOG entry may be prepared before its release exists in the
-          # feed. Validate the currently published item instead of blocking
-          # normal release preparation.
-          VERSION=$(scripts/tools/release_notes.swift appcast-version --appcast docs/appcast.xml)
-          INTEL_VERSION=$(scripts/tools/release_notes.swift appcast-version --appcast docs/appcast-intel.xml)
-          test "$VERSION" = "$INTEL_VERSION"
-          scripts/tools/release_notes.swift check \
-            --version "$VERSION" \
-            --appcast docs/appcast.xml \
-            --appcast docs/appcast-intel.xml
-          xmllint --noout docs/appcast.xml docs/appcast-intel.xml docs/appcast-beta.xml
-          plutil -lint App/PHTV/Info.plist App/PHTV/PHTV.entitlements App/PHTV/PrivacyInfo.xcprivacy
+        run: scripts/dev.swift metadata-check
 
       - name: Validate dictionary sources
         run: swift scripts/tools/generate_dict_binary.swift --strict-check-sources

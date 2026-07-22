@@ -49,7 +49,8 @@ phải chứa changelog tương ứng.
    render từ changelog.
 5. **GitHub Release**: dùng Markdown từ cùng changelog, không dùng generated
    commit notes làm nội dung chính.
-6. **Publish**: commit hai appcast về `main`.
+6. **Publish**: commit hai appcast và đồng bộ version/build mặc định của Xcode
+   về `main`.
 7. **Homebrew**: cập nhật URL và SHA256 theo kiến trúc.
 
 Các GitHub Action được pin bằng commit SHA. Dependabot theo dõi phiên bản action;

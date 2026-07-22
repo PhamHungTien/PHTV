@@ -64,14 +64,11 @@ jobs:
         run: |
           set -euo pipefail
           VERSION="${{ steps.version.outputs.version }}"
-          scripts/tools/release_notes.swift self-test
-          scripts/tools/repository_policy.swift check
+          scripts/dev.swift metadata-check
           scripts/tools/release_notes.swift render \
             --version "$VERSION" \
             --format markdown \
             --output "$RUNNER_TEMP/release-notes.md"
-          xmllint --noout docs/appcast.xml docs/appcast-intel.xml docs/appcast-beta.xml
-          plutil -lint App/PHTV/Info.plist App/PHTV/PHTV.entitlements App/PHTV/PrivacyInfo.xcprivacy
 
       - name: Upload release notes
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
@@ -816,7 +813,9 @@ jobs:
 
   publish_appcast:
     name: Publish Appcasts
-    runs-on: ubuntu-latest
+    # The checked-in release tooling is Swift; a macOS runner guarantees the
+    # same Foundation/Xcode toolchain used by the verify and build stages.
+    runs-on: macos-26
     needs:
       - build
       - release
@@ -845,11 +844,18 @@ jobs:
         run: |
           cp /tmp/phtv-appcast-arm64/appcast.xml       docs/appcast.xml
           cp /tmp/phtv-appcast-intel/appcast-intel.xml docs/appcast-intel.xml
+          scripts/tools/release_notes.swift sync-xcode-version \
+            --project App/PHTV.xcodeproj/project.pbxproj \
+            --version "${{ needs.build.outputs.version }}" \
+            --build "${{ needs.build.outputs.build_number }}"
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          git add docs/appcast.xml docs/appcast-intel.xml
+          git add \
+            docs/appcast.xml \
+            docs/appcast-intel.xml \
+            App/PHTV.xcodeproj/project.pbxproj
 
           if git diff --staged --quiet; then
             echo "No appcast changes to commit."

@@ -23,6 +23,10 @@ DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer scripts/dev.swift 
 DERIVED_DATA_PATH=/tmp/phtv-derived-data scripts/dev.swift build
 ```
 
+Các lệnh `test`, `engine-test` và `hotkey-test` dùng cùng cấu hình test không ký,
+không chạy song song như CI; công cụ local không xóa thiết lập hoặc tự đóng bản
+PHTV mà người dùng đang chạy.
+
 `format` sửa định dạng Swift. `format-check` hiện là công cụ hỗ trợ cải tiến dần,
 chưa phải CI gate cho toàn bộ mã nguồn cũ:
 
@@ -69,12 +73,16 @@ scripts/tools/release_notes.swift latest
 scripts/tools/release_notes.swift render --version 3.4.2 --format markdown
 scripts/tools/release_notes.swift check --version 3.4.2 \
   --appcast docs/appcast.xml --appcast docs/appcast-intel.xml
+scripts/tools/release_notes.swift sync-xcode-version \
+  --project App/PHTV.xcodeproj/project.pbxproj \
+  --version 3.4.2 --build 308
 scripts/tools/release_notes.swift self-test
 scripts/tools/repository_policy.swift check
 ```
 
 Thông thường không cần tự sửa `<description>` trong appcast; workflow release sẽ
-render và chèn nội dung trước khi publish.
+render và chèn nội dung trước khi publish. Lệnh đồng bộ Xcode cũng được workflow
+gọi tự động sau khi appcast mới được tạo.
 
 ## Tự động hóa
 

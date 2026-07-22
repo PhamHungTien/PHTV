@@ -155,6 +155,15 @@ func xcodebuildProject(_ extraArguments: [String]) throws {
     ] + extraArguments)
 }
 
+let testBuildArguments = [
+    "-parallel-testing-enabled", "NO",
+    "-skipPackagePluginValidation",
+    "CODE_SIGN_IDENTITY=-",
+    "CODE_SIGNING_REQUIRED=NO",
+    "CODE_SIGNING_ALLOWED=NO",
+    "DEVELOPMENT_TEAM=",
+]
+
 func swiftFormat(_ extraArguments: [String]) throws {
     requireXcode()
     try run("/usr/bin/xcrun", [
@@ -202,13 +211,19 @@ do {
         try xcodebuildProject(["analyze"])
 
     case "test":
-        try xcodebuildProject(["test"])
+        try xcodebuildProject(testBuildArguments + ["test"])
 
     case "engine-test":
-        try xcodebuildProject(["test", "-only-testing:PHEngineTests/EngineRegressionTests"])
+        try xcodebuildProject(testBuildArguments + [
+            "-only-testing:PHEngineTests/EngineRegressionTests",
+            "test",
+        ])
 
     case "hotkey-test":
-        try xcodebuildProject(["test", "-only-testing:PHEngineTests/HotkeyReliabilityTests"])
+        try xcodebuildProject(testBuildArguments + [
+            "-only-testing:PHEngineTests/HotkeyReliabilityTests",
+            "test",
+        ])
 
     case "dict-check":
         try run("/usr/bin/xcrun", [
@@ -219,29 +234,48 @@ do {
 
     case "metadata-check":
         let releaseNotesTool = rootURL.appendingPathComponent("scripts/tools/release_notes.swift").path
+        let armAppcastPath = rootURL.appendingPathComponent("docs/appcast.xml").path
+        let intelAppcastPath = rootURL.appendingPathComponent("docs/appcast-intel.xml").path
         let latestVersion = try capture(
             releaseNotesTool,
-            [
-                "appcast-version", "--appcast",
-                rootURL.appendingPathComponent("docs/appcast.xml").path,
-            ]
+            ["appcast-version", "--appcast", armAppcastPath]
         )
         let latestIntelVersion = try capture(
             releaseNotesTool,
-            [
-                "appcast-version", "--appcast",
-                rootURL.appendingPathComponent("docs/appcast-intel.xml").path,
-            ]
+            ["appcast-version", "--appcast", intelAppcastPath]
         )
         guard latestVersion == latestIntelVersion else {
             throw DevError.commandFailed("arm64 and Intel appcast versions differ", 1)
+        }
+        let latestBuild = try capture(
+            releaseNotesTool,
+            ["max-build", "--appcast", armAppcastPath, "--appcast", intelAppcastPath]
+        )
+        let projectText = try String(
+            contentsOf: rootURL.appendingPathComponent("App/PHTV.xcodeproj/project.pbxproj"),
+            encoding: .utf8
+        )
+        func projectValues(for setting: String) -> Set<String> {
+            Set(projectText.components(separatedBy: .newlines).compactMap { line in
+                let parts = line.split(separator: "=", maxSplits: 1).map {
+                    $0.trimmingCharacters(in: .whitespaces)
+                }
+                guard parts.count == 2, parts[0] == setting else { return nil }
+                return parts[1].trimmingCharacters(in: CharacterSet(charactersIn: "; "))
+            })
+        }
+        guard projectValues(for: "MARKETING_VERSION") == [latestVersion] else {
+            throw DevError.commandFailed("Xcode MARKETING_VERSION must match appcast version \(latestVersion)", 1)
+        }
+        guard projectValues(for: "CURRENT_PROJECT_VERSION") == [latestBuild] else {
+            throw DevError.commandFailed("Xcode CURRENT_PROJECT_VERSION must match appcast build \(latestBuild)", 1)
         }
         try run(releaseNotesTool, ["self-test"])
         try run(rootURL.appendingPathComponent("scripts/tools/repository_policy.swift").path, ["check"])
         try run(releaseNotesTool, [
             "check", "--version", latestVersion,
-            "--appcast", rootURL.appendingPathComponent("docs/appcast.xml").path,
-            "--appcast", rootURL.appendingPathComponent("docs/appcast-intel.xml").path,
+            "--appcast", armAppcastPath,
+            "--appcast", intelAppcastPath,
         ])
         try run("/usr/bin/xmllint", [
             "--noout",
