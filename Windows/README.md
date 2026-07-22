@@ -26,7 +26,7 @@ Text Services Framework (TSF) và cung cấp giao diện quản lý native bằn
 PHTV.Windows.IME (C++/WinRT, COM DLL)
        │ C ABI
        ▼
-PHTV.Core (Swift)
+Shared/PHTVCore (Swift)
 
 PHTV.Windows.App (C# + WinUI 3)
        └── cài đặt, onboarding, tray, chẩn đoán và cập nhật
@@ -51,11 +51,13 @@ Windows/
 │   └── adr/
 │       └── 0001-native-windows-stack.md
 ├── src/
-│   ├── PHTV.Core/          # Swift core dùng chung
 │   ├── PHTV.Windows.IME/   # TSF Text Input Processor
 │   └── PHTV.Windows.App/   # WinUI 3 companion app
 └── tests/                  # Test vectors và integration tests Windows
 ```
+
+Engine và test vector dùng chung nằm tại [Shared/README.md](../Shared/README.md),
+không được copy vào từng nền tảng.
 
 Các thư mục `src/` hiện chỉ có tài liệu hợp đồng thành phần. Project Visual
 Studio/SwiftPM sẽ chỉ được tạo sau khi PoC TSF vượt qua các cổng trong
@@ -88,4 +90,3 @@ Phiên bản SDK cụ thể phải được khóa trong source control khi proje
 - [Text Services Framework](https://learn.microsoft.com/windows/win32/tsf/what-is-text-services-framework)
 - [Yêu cầu đối với IME](https://learn.microsoft.com/windows/apps/develop/input/input-method-editor-requirements)
 - [Windows App SDK](https://learn.microsoft.com/windows/apps/windows-app-sdk/)
-

@@ -8,7 +8,7 @@ thống được đặt sau một adapter TSF nhỏ, có thể kiểm thử và 
 
 ## Thành phần
 
-### `PHTV.Core`
+### `Shared/PHTVCore`
 
 Thư viện Swift không giao diện, chịu trách nhiệm:
 
@@ -52,7 +52,7 @@ atomically và phát notification có version; IME chỉ đọc snapshot hợp l
 ```text
 OnTestKeyDown
     └─► chuẩn hóa VirtualKey + modifier + layout
-          └─► PHTV.Core.handle(event)
+          └─► PHTVCore.handle(event)
                 └─► EditPlan
                       ├─ passThrough
                       ├─ replace(rangeLength, text)
@@ -121,4 +121,3 @@ Trước khi tạo toàn bộ UI, PoC phải chứng minh:
 5. Đóng gói được Swift runtime và ký toàn bộ binary theo cách có thể phát hành.
 
 Nếu mục 2 hoặc 5 thất bại, phải lập ADR mới trước khi thay đổi ngôn ngữ Core.
-
