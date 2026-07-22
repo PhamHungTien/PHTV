@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.4.3] - 2026-07-22
+
+### Tổng quan
+PHTV 3.4.3 tập trung củng cố quyền riêng tư, độ an toàn của dữ liệu chẩn đoán và
+độ tin cậy của quy trình cập nhật. Phiên bản này không thay đổi cách gõ hoặc
+thiết lập hiện có.
+
 ### Security and Privacy
 - Khai báo dữ liệu của GIF/Sticker trong privacy manifest và hiển thị liên kết
   chính sách PHTV/Klipy ngay trong Cài đặt.
@@ -28,6 +35,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Homebrew cask updater sang Swift; repository không còn local tool `.py`/`.sh`.
 - Đồng bộ version/build mặc định của project Xcode với appcast và tự cập nhật
   sau mỗi lần phát hành, tránh build local mang version placeholder `1.0 (1)`.
+
+### Ghi chú nâng cấp
+- Không cần cấp thêm quyền hoặc thiết lập lại ứng dụng.
+- Thiết lập, macro, lịch sử Clipboard và quy tắc theo ứng dụng được giữ nguyên.
 
 ## [3.4.2] - 2026-07-22
 
