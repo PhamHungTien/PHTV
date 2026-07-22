@@ -929,8 +929,8 @@ final class PHTVEventCallbackService {
 
             #if DEBUG
             if shouldUsePacedHybridCommandSurfaceReplacement {
-                NSLog("[Qoder] Quest command surface -> paced replacement (no placeholder, backspace=%d)",
-                      hookData.backspaceCount)
+                fputs("[Qoder] Quest command surface -> paced replacement " +
+                      "(no placeholder, backspace=\(hookData.backspaceCount))\n", stderr)
             }
             #endif
 
@@ -1057,8 +1057,8 @@ final class PHTVEventCallbackService {
                     #endif
                 } else if shouldUsePacedHybridCommandSurfaceReplacement {
                     #if DEBUG
-                    NSLog("[Qoder] Paced backspace x%d (%dus gap)",
-                          bsCount, kHybridCommandSurfaceKeyDelayUs)
+                    fputs("[Qoder] Paced backspace x\(bsCount) " +
+                          "(\(kHybridCommandSurfaceKeyDelayUs)us gap)\n", stderr)
                     #endif
                     PHTVKeyEventSenderService.sendPacedBackspaceSequence(
                         bsCount,
@@ -1116,8 +1116,8 @@ final class PHTVEventCallbackService {
                     }
                 }
                 #if DEBUG
-                NSLog("[Qoder] Paced Unicode send x%d (%dus gap)",
-                      newCharCount, kHybridCommandSurfaceKeyDelayUs)
+                fputs("[Qoder] Paced Unicode send x\(newCharCount) " +
+                      "(\(kHybridCommandSurfaceKeyDelayUs)us gap)\n", stderr)
                 #endif
             } else if !useStepByStep {
                 PHTVCharacterOutputService.sendNewCharString(
@@ -1161,10 +1161,9 @@ final class PHTVEventCallbackService {
                     forMicroseconds: settleDelayUs,
                     nowMachTime: mach_absolute_time())
                 #if DEBUG
-                NSLog("[InputStabilization] target=%@ delay=%lluus addressBar=%d",
-                      effectiveBundleId ?? "",
-                      settleDelayUs,
-                      isAddrBar ? 1 : 0)
+                fputs("[InputStabilization] target=\(effectiveBundleId ?? "") " +
+                      "delay=\(settleDelayUs)us addressBar=\(isAddrBar ? 1 : 0)\n",
+                      stderr)
                 #endif
             }
 
