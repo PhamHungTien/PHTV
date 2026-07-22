@@ -39,6 +39,7 @@ final class PHTVEventCallbackService {
     /// CodeMirror applies input per render frame (~16ms); deletions arriving
     /// within one frame get dropped, so pace comfortably above a frame.
     private static let kNotionCodeBlockKeyDelayUs: UInt32 = 40000
+    private static let kHybridCommandSurfaceKeyDelayUs: UInt32 = 12000
     private static let keyEventKeyboard: Int32 = Int32(PHTV_ENGINE_EVENT_KEYBOARD)
     private static let keyEventStateKeyDown: Int32 = Int32(PHTV_ENGINE_EVENT_STATE_KEY_DOWN)
     private final class EnglishUppercaseStateBox: @unchecked Sendable {
@@ -915,20 +916,20 @@ final class PHTVEventCallbackService {
                 #endif
             }
 
-            let shouldUsePlainHybridCommandSurfaceReplacement =
-                PHTVInputStrategyService.shouldUsePlainHybridCommandSurfaceReplacement(
+            let shouldUseHybridCommandSurfaceTypeover =
+                PHTVInputStrategyService.shouldUseHybridCommandSurfaceTypeover(
                     forBundleId: effectiveBundleId,
                     addressBarDetected: isAddrBar)
             let shouldApplyBrowserAddressBarFix =
                 processSignalPlan.shouldTryBrowserAddressBarFix &&
-                !shouldUsePlainHybridCommandSurfaceReplacement
+                !shouldUseHybridCommandSurfaceTypeover
             let shouldApplyLegacyBackspaceFix =
                 (processSignalPlan.shouldTryLegacyNonBrowserFix || isNotionCodeBlockDetected) &&
-                !shouldUsePlainHybridCommandSurfaceReplacement
+                !shouldUseHybridCommandSurfaceTypeover
 
             #if DEBUG
-            if shouldUsePlainHybridCommandSurfaceReplacement {
-                NSLog("[Qoder] Quest command surface -> plain replacement (no placeholder, backspace=%d)",
+            if shouldUseHybridCommandSurfaceTypeover {
+                NSLog("[Qoder] Quest command surface -> selection typeover (no placeholder, backspace=%d)",
                       hookData.backspaceCount)
             }
             #endif
@@ -1054,6 +1055,26 @@ final class PHTVEventCallbackService {
                         "deferBackspace=\(bsCount) newCharCount=\(hookData.newCharCount)",
                         throttleMs: kDebugLogThrottleMs)
                     #endif
+                } else if shouldUseHybridCommandSurfaceTypeover,
+                          PHTVAccessibilityService.selectBackwardForTypeover(bsCount) {
+                    // Qoder's Chromium prompt commits synthetic backspaces
+                    // asynchronously. Select the old text and type over it so
+                    // a late delete cannot remove the replacement or next key.
+                    PHTVCliRuntimeStateService.scheduleBlock(
+                        forMicroseconds: 50000, nowMachTime: mach_absolute_time())
+                    #if DEBUG
+                    NSLog("[Qoder] AX select+typeover x%d", bsCount)
+                    #endif
+                } else if shouldUseHybridCommandSurfaceTypeover {
+                    // Some Qoder builds may not expose a writable AX selection.
+                    // Pace the fallback delete transaction before inserting
+                    // replacement text instead of sending a burst of events.
+                    #if DEBUG
+                    NSLog("[Qoder] AX selection unavailable; paced backspace x%d (%dus gap)",
+                          bsCount, kHybridCommandSurfaceKeyDelayUs)
+                    #endif
+                    PHTVKeyEventSenderService.sendPacedBackspaceSequence(
+                        bsCount, interDelayUs: kHybridCommandSurfaceKeyDelayUs)
                 } else if isNotionCodeBlockDetected,
                           PHTVAccessibilityService.selectBackwardForTypeover(bsCount) {
                     // CodeMirror code blocks drop synthetic backspaces but do

@@ -196,7 +196,7 @@ final class CompatibilityStrategyTests: XCTestCase {
         XCTAssertTrue(signalPlan.shouldTryLegacyNonBrowserFix)
 
         let plainQuestReplacement =
-            PHTVInputStrategyService.shouldUsePlainHybridCommandSurfaceReplacement(
+            PHTVInputStrategyService.shouldUseHybridCommandSurfaceTypeover(
                 forBundleId: bundleId,
                 addressBarDetected: true)
         XCTAssertTrue(plainQuestReplacement)
@@ -221,12 +221,12 @@ final class CompatibilityStrategyTests: XCTestCase {
         XCTAssertEqual(questPlan.adjustedBackspaceCount, 2)
 
         XCTAssertFalse(
-            PHTVInputStrategyService.shouldUsePlainHybridCommandSurfaceReplacement(
+            PHTVInputStrategyService.shouldUseHybridCommandSurfaceTypeover(
                 forBundleId: bundleId,
                 addressBarDetected: false)
         )
         XCTAssertFalse(
-            PHTVInputStrategyService.shouldUsePlainHybridCommandSurfaceReplacement(
+            PHTVInputStrategyService.shouldUseHybridCommandSurfaceTypeover(
                 forBundleId: "com.google.Chrome",
                 addressBarDetected: true)
         )

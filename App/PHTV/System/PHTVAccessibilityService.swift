@@ -580,8 +580,9 @@ final class PHTVAccessibilityService: NSObject {
     /// Selects the `count` UTF-16 units before the caret in the focused
     /// element so the next synthetic text event types over them. Returns true
     /// only when the selection was applied and verified by reading it back —
-    /// CodeMirror-based editors accept AX selection changes but silently
-    /// ignore AX text writes, which is exactly the combination this enables.
+    /// Chromium/CodeMirror editors often accept AX selection changes but
+    /// silently ignore AX text writes, which is exactly the combination this
+    /// enables.
     @objc class func selectBackwardForTypeover(_ count: Int32) -> Bool {
         guard count > 0, let focused = focusedElement() else { return false }
 
