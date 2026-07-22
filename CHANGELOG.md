@@ -7,11 +7,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Fixed
-- Sửa lỗi dấu tiếng Việt bị dính hoặc sai vị trí trong ô nhập Quest của Qoder
-  (#216), đồng thời giữ đúng chế độ Editor/IDE và Terminal tích hợp của Qoder.
-- Báo lỗi rút gọn nay kèm bundle ID của ứng dụng đang hoạt động để chẩn đoán
-  lỗi tương thích theo ứng dụng chính xác hơn.
+## [3.4.4] - 2026-07-22
+
+### Tổng quan
+PHTV 3.4.4 tập trung khắc phục lỗi gõ tiếng Việt trong Qoder. Phiên bản này nhận
+diện đúng kiến trúc kết hợp giữa trình soạn thảo, giao diện Quest nền Chromium
+và Terminal tích hợp, nhờ đó áp dụng cách xử lý phù hợp cho từng khu vực mà
+không làm thay đổi hành vi của các IDE hay trình duyệt khác.
+
+### Fixed and Improved
+- **Gõ tiếng Việt trong Qoder (#216)**
+  - Sửa hiện tượng ký tự và dấu tiếng Việt bị dính, lặp hoặc đặt sai vị trí
+    trong ô nhập Quest trên màn hình chính của Qoder.
+  - Áp dụng cơ chế sửa dấu tương thích Chromium tương tự Dia cho giao diện
+    Quest, đồng thời giữ cơ chế nhập liệu dành cho trình soạn thảo ở vùng code.
+  - Nhận diện chính xác Qoder bằng bundle ID `com.qoder.ide` thay vì xử lý toàn
+    bộ ứng dụng như một trình duyệt hoặc IDE thuần túy.
+  - Terminal tích hợp trong Qoder tiếp tục sử dụng profile CLI chuyên dụng,
+    không ảnh hưởng thao tác lệnh và phím điều hướng.
+
+- **Chẩn đoán lỗi theo ứng dụng chính xác hơn**
+  - Báo lỗi rút gọn nay kèm bundle ID của ứng dụng đang hoạt động, giúp phân
+    biệt đúng ứng dụng gây lỗi ngay cả khi người dùng chuyển sang trình duyệt
+    để gửi báo cáo.
+
+### Chất lượng
+- Bổ sung kiểm thử hồi quy riêng cho ô Quest, trình soạn thảo và Terminal tích
+  hợp của Qoder.
+- Universal Debug build thành công; toàn bộ **424/424 tests** và kiểm tra release
+  metadata đều đạt.
+
+### Ghi chú nâng cấp
+- Không cần cấp thêm quyền hoặc thiết lập lại PHTV sau khi cập nhật.
+- Thiết lập, macro, lịch sử Clipboard và quy tắc theo ứng dụng được giữ nguyên.
 
 ## [3.4.3] - 2026-07-22
 
