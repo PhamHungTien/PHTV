@@ -169,6 +169,18 @@ final class PHTVInputStrategyService: NSObject {
         return hybridCommandSurfaceSettleDelayUs
     }
 
+    /// Qoder Quest reports an address-bar-shaped accessibility context even
+    /// though its prompt behaves like a normal Chromium editor. Applying the
+    /// browser placeholder correction there inserts an empty character and
+    /// increments the delete count, which can remove parts of the next word.
+    @objc(shouldUsePlainHybridCommandSurfaceReplacementForBundleId:addressBarDetected:)
+    class func shouldUsePlainHybridCommandSurfaceReplacement(
+        forBundleId bundleId: String?,
+        addressBarDetected: Bool
+    ) -> Bool {
+        addressBarDetected && PHTVAppDetectionService.usesHybridBrowserEditorFix(bundleId)
+    }
+
     @objc(shouldOwnCliPrintableKeyForCliTarget:printableKey:otherControlKey:navigationKey:)
     class func shouldOwnCliPrintableKey(
         forCliTarget isCliTarget: Bool,

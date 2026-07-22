@@ -915,11 +915,26 @@ final class PHTVEventCallbackService {
                 #endif
             }
 
+            let shouldUsePlainHybridCommandSurfaceReplacement =
+                PHTVInputStrategyService.shouldUsePlainHybridCommandSurfaceReplacement(
+                    forBundleId: effectiveBundleId,
+                    addressBarDetected: isAddrBar)
+            let shouldApplyBrowserAddressBarFix =
+                processSignalPlan.shouldTryBrowserAddressBarFix &&
+                !shouldUsePlainHybridCommandSurfaceReplacement
             let shouldApplyLegacyBackspaceFix =
-                processSignalPlan.shouldTryLegacyNonBrowserFix || isNotionCodeBlockDetected
+                (processSignalPlan.shouldTryLegacyNonBrowserFix || isNotionCodeBlockDetected) &&
+                !shouldUsePlainHybridCommandSurfaceReplacement
+
+            #if DEBUG
+            if shouldUsePlainHybridCommandSurfaceReplacement {
+                NSLog("[Qoder] Quest command surface -> plain replacement (no placeholder, backspace=%d)",
+                      hookData.backspaceCount)
+            }
+            #endif
 
             let resolvedBackspacePlan = PHTVInputStrategyService.resolvedBackspacePlan(
-                forBrowserAddressBarFix: processSignalPlan.shouldTryBrowserAddressBarFix,
+                forBrowserAddressBarFix: shouldApplyBrowserAddressBarFix,
                 addressBarDetected: isAddrBar,
                 googleSheetsContext: isGoogleSheetsContext,
                 legacyNonBrowserFix: shouldApplyLegacyBackspaceFix,
@@ -1117,6 +1132,12 @@ final class PHTVEventCallbackService {
                 PHTVCliRuntimeStateService.scheduleBlock(
                     forMicroseconds: settleDelayUs,
                     nowMachTime: mach_absolute_time())
+                #if DEBUG
+                NSLog("[InputStabilization] target=%@ delay=%lluus addressBar=%d",
+                      effectiveBundleId ?? "",
+                      settleDelayUs,
+                      isAddrBar ? 1 : 0)
+                #endif
             }
 
         } else if signalAction == PHTVEngineSignalAction.replaceMacro.rawValue {

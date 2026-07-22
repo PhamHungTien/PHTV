@@ -173,7 +173,7 @@ final class CompatibilityStrategyTests: XCTestCase {
         XCTAssertFalse(plan.shouldTryLegacyNonBrowserFix)
     }
 
-    func testQoderUsesBrowserCorrectionForQuestAndEditorFallbackElsewhere() {
+    func testQoderQuestUsesPlainReplacementWhileEditorKeepsFallback() {
         let bundleId = "com.qoder.ide"
         let signalPlan = PHTVInputStrategyService.processSignalPlan(
             forBundleId: bundleId,
@@ -195,11 +195,19 @@ final class CompatibilityStrategyTests: XCTestCase {
         XCTAssertTrue(signalPlan.shouldTryBrowserAddressBarFix)
         XCTAssertTrue(signalPlan.shouldTryLegacyNonBrowserFix)
 
+        let plainQuestReplacement =
+            PHTVInputStrategyService.shouldUsePlainHybridCommandSurfaceReplacement(
+                forBundleId: bundleId,
+                addressBarDetected: true)
+        XCTAssertTrue(plainQuestReplacement)
+
         let questPlan = PHTVInputStrategyService.resolvedBackspacePlan(
-            forBrowserAddressBarFix: signalPlan.shouldTryBrowserAddressBarFix,
+            forBrowserAddressBarFix:
+                signalPlan.shouldTryBrowserAddressBarFix && !plainQuestReplacement,
             addressBarDetected: true,
             googleSheetsContext: false,
-            legacyNonBrowserFix: signalPlan.shouldTryLegacyNonBrowserFix,
+            legacyNonBrowserFix:
+                signalPlan.shouldTryLegacyNonBrowserFix && !plainQuestReplacement,
             containsUnicodeCompound: true,
             notionCodeBlockDetected: false,
             backspaceCount: 2,
@@ -208,9 +216,20 @@ final class CompatibilityStrategyTests: XCTestCase {
         )
         XCTAssertEqual(
             questPlan.adjustmentAction,
-            PHTVBackspaceAdjustmentAction.sendEmptyCharacter.rawValue
+            PHTVBackspaceAdjustmentAction.none.rawValue
         )
-        XCTAssertEqual(questPlan.adjustedBackspaceCount, 3)
+        XCTAssertEqual(questPlan.adjustedBackspaceCount, 2)
+
+        XCTAssertFalse(
+            PHTVInputStrategyService.shouldUsePlainHybridCommandSurfaceReplacement(
+                forBundleId: bundleId,
+                addressBarDetected: false)
+        )
+        XCTAssertFalse(
+            PHTVInputStrategyService.shouldUsePlainHybridCommandSurfaceReplacement(
+                forBundleId: "com.google.Chrome",
+                addressBarDetected: true)
+        )
 
         let editorPlan = PHTVInputStrategyService.resolvedBackspacePlan(
             forBrowserAddressBarFix: signalPlan.shouldTryBrowserAddressBarFix,
