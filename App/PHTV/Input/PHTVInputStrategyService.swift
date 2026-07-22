@@ -152,6 +152,22 @@ final class PHTVProcessSignalPlanBox: NSObject {
 @objcMembers
 final class PHTVInputStrategyService: NSObject {
     static let reliableWholeTextInsertionThreshold = 128
+    /// One renderer frame plus a small scheduling margin. Hybrid Chromium
+    /// command surfaces can otherwise receive the next physical key before
+    /// their synthetic delete-and-insert transaction has committed.
+    static let hybridCommandSurfaceSettleDelayUs: UInt64 = 20_000
+
+    @objc(syntheticEventSettleDelayUsForBundleId:addressBarDetected:)
+    class func syntheticEventSettleDelayUs(
+        forBundleId bundleId: String?,
+        addressBarDetected: Bool
+    ) -> UInt64 {
+        guard addressBarDetected,
+              PHTVAppDetectionService.usesHybridBrowserEditorFix(bundleId) else {
+            return 0
+        }
+        return hybridCommandSurfaceSettleDelayUs
+    }
 
     @objc(shouldOwnCliPrintableKeyForCliTarget:printableKey:otherControlKey:navigationKey:)
     class func shouldOwnCliPrintableKey(

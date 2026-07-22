@@ -344,7 +344,9 @@ final class PHTVEventCallbackService {
             return Unmanaged.passRetained(event)
         }
 
-        // CLI stabilization: block briefly after synthetic injection to avoid interleaving
+        // Synthetic-input stabilization: CLI targets and narrowly-scoped
+        // compatibility profiles can hold the next real key briefly so it
+        // cannot interleave with an in-flight delete-and-insert transaction.
         if type == .keyDown {
             let remainUs = PHTVCliRuntimeStateService.remainingBlockMicroseconds(
                 forNowMachTime: mach_absolute_time())
@@ -1100,6 +1102,21 @@ final class PHTVEventCallbackService {
                 if characterSendPlan.shouldStartNewSessionAfterSend {
                     PHTVEngineDataBridge.startNewSession()
                 }
+            }
+
+            // Qoder Quest and similar hybrid Chromium command surfaces apply
+            // synthetic deletes/inserts asynchronously in their renderer. If
+            // the next real key is already queued, it can land between those
+            // operations and then be removed by a late backspace. Hold only
+            // that next key for at most one renderer frame; regular browser
+            // content, Monaco editors and integrated terminals are untouched.
+            let settleDelayUs = PHTVInputStrategyService.syntheticEventSettleDelayUs(
+                forBundleId: effectiveBundleId,
+                addressBarDetected: isAddrBar)
+            if settleDelayUs > 0 {
+                PHTVCliRuntimeStateService.scheduleBlock(
+                    forMicroseconds: settleDelayUs,
+                    nowMachTime: mach_absolute_time())
             }
 
         } else if signalAction == PHTVEngineSignalAction.replaceMacro.rawValue {

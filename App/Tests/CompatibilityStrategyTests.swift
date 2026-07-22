@@ -230,6 +230,27 @@ final class CompatibilityStrategyTests: XCTestCase {
         XCTAssertEqual(editorPlan.adjustedBackspaceCount, 1)
     }
 
+    func testHybridCommandSurfaceStabilizationIsNarrowlyScoped() {
+        XCTAssertEqual(
+            PHTVInputStrategyService.syntheticEventSettleDelayUs(
+                forBundleId: "com.qoder.ide",
+                addressBarDetected: true),
+            PHTVInputStrategyService.hybridCommandSurfaceSettleDelayUs
+        )
+        XCTAssertEqual(
+            PHTVInputStrategyService.syntheticEventSettleDelayUs(
+                forBundleId: "com.qoder.ide",
+                addressBarDetected: false),
+            0
+        )
+        XCTAssertEqual(
+            PHTVInputStrategyService.syntheticEventSettleDelayUs(
+                forBundleId: "com.google.Chrome",
+                addressBarDetected: true),
+            0
+        )
+    }
+
     func testStrictAddressBarDetectionRejectsGenericTextFieldOutsideWebArea() {
         XCTAssertFalse(
             PHTVAccessibilityService.addressBarClassification(
