@@ -60,6 +60,12 @@ __pycache__/
 # CMake / Native build outputs
 /build/
 /build-*/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+compile_commands.json
+.ninja_deps
+.ninja_log
 
 # Visual Studio / .NET
 **/bin/
@@ -76,3 +82,10 @@ AppPackages/
 *.msix
 *.msixbundle
 *.snk
+
+# Linux packages and native artifacts
+*.deb
+*.rpm
+*.AppImage
+*.ddeb
+*.debug

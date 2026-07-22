@@ -122,6 +122,33 @@ if !contents(root.appendingPathComponent(".gitignore")).components(separatedBy: 
     fail(".codex/ must stay ignored")
 }
 
+// Platform scaffolds must keep their baseline architecture, security, privacy,
+// testing and distribution contracts. This prevents a partial rename or cleanup
+// from silently leaving a platform without its required operating documentation.
+let requiredPlatformDocuments = [
+    "Shared/README.md",
+    "Shared/PHTVCore/README.md",
+    "Shared/Contracts/README.md",
+    "Shared/TestVectors/README.md",
+    "Windows/README.md",
+    "Windows/docs/ARCHITECTURE.md",
+    "Windows/docs/SECURITY.md",
+    "Windows/docs/PRIVACY.md",
+    "Windows/docs/TESTING.md",
+    "Windows/docs/DISTRIBUTION.md",
+    "Linux/README.md",
+    "Linux/docs/ARCHITECTURE.md",
+    "Linux/docs/COMPATIBILITY.md",
+    "Linux/docs/SECURITY.md",
+    "Linux/docs/PRIVACY.md",
+    "Linux/docs/TESTING.md",
+    "Linux/docs/DISTRIBUTION.md",
+]
+for relativePath in requiredPlatformDocuments
+where !fileManager.fileExists(atPath: root.appendingPathComponent(relativePath).path) {
+    fail("Missing required platform document: \(relativePath)")
+}
+
 if failures.isEmpty {
     print("Repository policy checks passed")
 } else {

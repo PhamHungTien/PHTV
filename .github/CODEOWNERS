@@ -7,5 +7,11 @@
 /Windows/src/PHTV.Windows.IME/ @PhamHungTien
 /Windows/docs/SECURITY.md @PhamHungTien
 /Windows/docs/PRIVACY.md @PhamHungTien
+/Linux/src/PHTV.Linux.IBus/ @PhamHungTien
+/Linux/src/PHTV.Linux.Fcitx5/ @PhamHungTien
+/Linux/docs/SECURITY.md @PhamHungTien
+/Linux/docs/PRIVACY.md @PhamHungTien
+/Shared/PHTVCore/ @PhamHungTien
+/Shared/Contracts/ @PhamHungTien
 /docs/appcast*.xml @PhamHungTien
 /scripts/tools/ @PhamHungTien

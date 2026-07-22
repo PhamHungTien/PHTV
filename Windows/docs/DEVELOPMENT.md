@@ -38,7 +38,7 @@ hoặc binary đã ký.
 ## Quy trình thay đổi
 
 1. Viết hoặc cập nhật test vector độc lập nền tảng.
-2. Thay đổi `PHTV.Core` mà không thêm import hệ điều hành.
+2. Thay đổi `Shared/PHTVCore` mà không thêm import hệ điều hành.
 3. Kiểm tra C ABI và memory ownership bằng sanitizer/test lặp.
 4. Thay đổi adapter TSF hoặc WinUI ở project tương ứng.
 5. Chạy test matrix trong [TESTING.md](TESTING.md).
@@ -66,4 +66,3 @@ hoặc binary đã ký.
 Khi có project thật, repository sẽ cung cấp một entrypoint PowerShell hoặc Swift
 chạy được trên Windows cho các lệnh `doctor`, `build`, `test`, `package`. Không
 ghi các lệnh giả vào tài liệu trước khi script đó tồn tại và được CI kiểm chứng.
-

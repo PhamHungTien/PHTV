@@ -28,9 +28,11 @@
 
 **Tự động cập nhật** - Nhận phiên bản mới ngay khi ra mắt với Sparkle framework. Không cần tải lại thủ công.
 
-> **Windows:** phiên bản native dùng WinUI 3, TSF và Swift Core đang ở giai đoạn
-> thiết kế nền móng, chưa có binary để tải. Xem kiến trúc và roadmap tại
-> [Windows/README.md](Windows/README.md).
+> **Các nền tảng đang phát triển:** phiên bản
+> [Windows](Windows/README.md) dùng WinUI 3/TSF và phiên bản
+> [Linux](Linux/README.md) dùng IBus/Fcitx 5/GTK 4 đang ở giai đoạn thiết kế nền
+> móng, chưa có binary để tải. Cả hai sẽ dùng chung engine tại
+> [Shared](Shared/README.md).
 
 ## 🚀 Quick Start
 

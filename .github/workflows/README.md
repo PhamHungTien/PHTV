@@ -43,6 +43,13 @@ Phiên bản Windows hiện chỉ có kiến trúc và tài liệu trong `Window
 project có thể build. Chỉ thêm Windows CI sau khi Swift Core và TSF PoC tồn tại;
 workflow khi đó phải dùng Windows runner và không làm thay đổi pipeline macOS.
 
+## Linux workflows
+
+Phiên bản Linux hiện chỉ có kiến trúc và tài liệu trong `Linux/`, chưa có target
+có thể build. Linux CI sẽ được thêm khi `Shared/PHTVCore` build được trên Linux
+và IBus PoC tồn tại; tiếp theo mới mở rộng ma trận Fcitx 5, Wayland/X11 và package
+tests. Không thêm workflow chỉ kiểm tra placeholder.
+
 ## Secrets bắt buộc
 
 - `CERTIFICATES_P12`

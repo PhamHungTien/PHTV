@@ -55,8 +55,8 @@ Tạo [issue mới](https://github.com/PhamHungTien/PHTV/issues/new) với thôn
 - Tiêu đề rõ ràng
 - Cách tái hiện (bước chi tiết)
 - Hành vi mong đợi vs thực tế
-- macOS version & PHTV version
-- Trạng thái Accessibility/Input Monitoring nếu lỗi liên quan đến gõ phím
+- Hệ điều hành/desktop/input framework và phiên bản PHTV
+- Trạng thái quyền hoặc backend IME nếu lỗi liên quan đến gõ phím
 - Screenshot/video (nếu có)
 
 ## Đề Xuất Tính Năng
@@ -111,8 +111,13 @@ PHTV/
 │   └── PHTV.xcodeproj/     # Xcode project
 ├── Windows/                # Nền móng phiên bản Windows (TSF + WinUI 3)
 │   ├── docs/               # Kiến trúc, roadmap, test, security, release
-│   ├── src/                # Hợp đồng cho Core, IME và companion app
+│   ├── src/                # TSF IME và companion app
 │   └── tests/              # Test vectors/integration tests dự kiến
+├── Linux/                  # Nền móng Linux (IBus + Fcitx 5 + GTK 4)
+│   ├── docs/               # Kiến trúc, compatibility, security, packaging
+│   ├── src/                # IBus/Fcitx adapters và Settings app
+│   └── tests/              # Backend/application/package tests dự kiến
+├── Shared/                 # Engine/contracts/test vectors xuyên nền tảng
 ├── docs/                   # Tài liệu, kiến trúc, hình ảnh
 ├── scripts/                # Local dev entrypoint và build tools
 │   └── tools/              # Build tools (generate_dict_binary.swift, etc.)
