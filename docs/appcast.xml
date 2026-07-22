@@ -7,6 +7,35 @@
         <language>vi</language>
         <!-- Most recent version first -->
         <item>
+            <title>3.4.6</title>
+            <pubDate>Wed, 22 Jul 2026 16:49:57 +0700</pubDate>
+            <sparkle:version>313</sparkle:version>
+            <sparkle:shortVersionString>3.4.6</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[
+                <h2>PHTV 3.4.6</h2>
+                <h3>Tổng quan</h3>
+                <p>PHTV 3.4.6 tiếp tục hoàn thiện khả năng nhập liệu trong ô Quest của Qoder, đặc biệt khi chuyển tiếp giữa từ tiếng Anh và tiếng Việt. Phiên bản này tập trung đồng bộ quá trình xoá, khôi phục từ tiếng Anh và nhập ký tự tiếp theo để nội dung luôn xuất hiện đúng tại vị trí con trỏ.</p>
+                <h3>Fixed and Improved</h3>
+                <ul>
+                <li><strong>Ổn định từ tiếng Anh trong Qoder Quest (#216)</strong>
+                <ul>
+                <li>Khắc phục hiện tượng từ tiếng Anh như <code>scenario</code> bị mất ký tự sau khi nhấn Space hoặc bắt đầu nhập từ tiếp theo.</li>
+                <li>Ngăn con trỏ nhảy ngược về từ vừa nhập, tránh nội dung mới ghi đè hoặc xen vào giữa từ tiếng Anh đã hoàn thành.</li>
+                <li>Đồng bộ thứ tự xoá, gửi lại chuỗi Unicode và phím phân cách trong luồng tự động khôi phục tiếng Anh dành riêng cho Qoder.</li>
+                <li>Giữ nguyên cơ chế nhập liệu chuyên dụng của vùng code Monaco và Terminal tích hợp trong Qoder.</li>
+                </ul>
+                </li>
+                </ul>
+                <h3>Ghi chú nâng cấp</h3>
+                <ul>
+                <li>Không cần cấp thêm quyền hoặc thiết lập lại PHTV sau khi cập nhật.</li>
+                <li>Thiết lập, macro, lịch sử Clipboard và quy tắc theo ứng dụng được giữ nguyên.</li>
+                </ul>
+            ]]></description>
+            <enclosure url="https://github.com/PhamHungTien/PHTV/releases/download/v3.4.6/PHTV-3.4.6-arm64.dmg" length="9030451" type="application/octet-stream" sparkle:edSignature="poJfqsavs2DqErl47Xbwp5QlFppCtpm6erCbZKXNLhljcUXfbPeoP4AOqbZa4pJDgtb6FT2JvhpjbNDg6gPcAQ=="/>
+        </item>
+        <item>
             <title>3.4.5</title>
             <pubDate>Wed, 22 Jul 2026 15:47:45 +0700</pubDate>
             <sparkle:version>312</sparkle:version>
@@ -457,14 +486,6 @@
                 <p>Tính năng Lau bàn phím cần đủ hai quyền nhập liệu của PHTV: <strong>Accessibility</strong> và <strong>Input Monitoring</strong>. Nếu nút Bắt đầu bị khóa, hãy mở Cài đặt PHTV và cấp đủ quyền theo hướng dẫn.</p>
             ]]></description>
             <enclosure url="https://github.com/PhamHungTien/PHTV/releases/download/v3.1.7/PHTV-3.1.7-arm64.dmg" length="9347270" type="application/octet-stream" sparkle:edSignature="xEz+7VwfScSxvxSK7sRx3Y3J0N6G+imNzwGpYBPLQaCULQkIKw1Jci5Mi0WISh/hL/YhgaOZaHQA8O4HuopXCQ=="/>
-        </item>
-        <item>
-            <title>3.1.6</title>
-            <pubDate>Wed, 20 May 2026 15:03:13 +0000</pubDate>
-            <sparkle:version>283</sparkle:version>
-            <sparkle:shortVersionString>3.1.6</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <enclosure url="https://github.com/PhamHungTien/PHTV/releases/download/v3.1.6/PHTV-3.1.6-arm64.dmg" length="9303761" type="application/octet-stream" sparkle:edSignature="IeQBZOBBmFNHJRMCf7yVDY73FMAiqDlUiUmXYjxVaKjOhnhcDgF00/ibR8P6heioEnfZWf6OspDOIrWq+MIcCw=="/>
         </item>
         <item>
             <title>2.8.9</title>
