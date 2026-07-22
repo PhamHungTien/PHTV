@@ -7,6 +7,40 @@
         <language>vi</language>
         <!-- Intel (x86_64) feed — Most recent version first -->
         <item>
+            <title>3.4.5</title>
+            <pubDate>Wed, 22 Jul 2026 15:44:56 +0700</pubDate>
+            <sparkle:version>312</sparkle:version>
+            <sparkle:shortVersionString>3.4.5</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[
+                <h2>PHTV 3.4.5</h2>
+                <h3>Tổng quan</h3>
+                <p>PHTV 3.4.5 tiếp tục hoàn thiện khả năng gõ tiếng Việt trong ô Quest của Qoder. Phiên bản này tập trung xử lý thứ tự xoá và chèn ký tự của giao diện Chromium, giúp câu dài và các từ có nhiều lần biến đổi dấu được nhập ổn định hơn.</p>
+                <h3>Fixed and Improved</h3>
+                <ul>
+                <li><strong>Ổn định nhập liệu trong Qoder Quest (#216)</strong>
+                <ul>
+                <li>Khắc phục hiện tượng mất ký tự, thiếu dấu hoặc đảo thứ tự chữ khi gõ nhanh các từ như <code>tiếng</code>, <code>Việt</code> và các câu tiếng Việt dài.</li>
+                <li>Loại bỏ cơ chế ký tự đệm và thao tác vùng chọn Accessibility không phù hợp với ô Quest, tránh Qoder phát sinh các lần xoá ngoài ý muốn.</li>
+                <li>Gửi thao tác xoá và chuỗi Unicode theo nhịp riêng cho Qoder, bảo đảm giao dịch sửa dấu hoàn tất trước khi nhận phím vật lý tiếp theo.</li>
+                <li>Giới hạn thay đổi trong ô Quest; vùng code Monaco và Terminal tích hợp vẫn giữ nguyên cơ chế tương thích chuyên dụng hiện có.</li>
+                </ul>
+                </li>
+                </ul>
+                <h3>Chất lượng</h3>
+                <ul>
+                <li>Bổ sung kiểm thử hồi quy cho nhận diện ô Quest, kế hoạch xoá/chèn và phạm vi áp dụng, tránh ảnh hưởng Chrome, Dia, Notion cùng các IDE khác.</li>
+                <li>Toàn bộ <strong>426/426 tests</strong> đạt trên macOS 27 beta.</li>
+                </ul>
+                <h3>Ghi chú nâng cấp</h3>
+                <ul>
+                <li>Không cần cấp thêm quyền hoặc thiết lập lại PHTV sau khi cập nhật.</li>
+                <li>Thiết lập, macro, lịch sử Clipboard và quy tắc theo ứng dụng được giữ nguyên.</li>
+                </ul>
+            ]]></description>
+            <enclosure url="https://github.com/PhamHungTien/PHTV/releases/download/v3.4.5/PHTV-3.4.5-intel.dmg" length="9295616" type="application/octet-stream" sparkle:edSignature="iHrnYDuABdOOlMpB3lI1+DmQYBEy/98WSXAvGrHnCPkL9eiAh3kKElVQIuipQ8nSAVbZ8xsL7vnWfbbj+eP+Cg=="/>
+        </item>
+        <item>
             <title>3.4.4</title>
             <pubDate>Wed, 22 Jul 2026 13:40:35 +0700</pubDate>
             <sparkle:version>311</sparkle:version>
@@ -431,27 +465,6 @@
             <sparkle:shortVersionString>3.1.6</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
             <enclosure url="https://github.com/PhamHungTien/PHTV/releases/download/v3.1.6/PHTV-3.1.6-intel.dmg" length="9527588" type="application/octet-stream" sparkle:edSignature="TUxf3O9ZckFVBVYbziv6PdipMHEjb/E+S069lptuhBX/O3AkVw798a6+OD4hB2pV2bmwDXHESM3Dkrs9gVt6DQ=="/>
-        </item>
-        <item>
-            <title>3.1.5</title>
-            <pubDate>Wed, 20 May 2026 07:38:16 +0000</pubDate>
-            <sparkle:version>282</sparkle:version>
-            <sparkle:shortVersionString>3.1.5</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[
-                <h2>PHTV 3.1.5</h2>
-                <p>PHTV 3.1.5 là bản cập nhật quan trọng về phân phối và bảo mật. Từ phiên bản này, PHTV được build và ký bằng tài khoản Apple Developer với chứng chỉ Developer ID, giúp macOS nhận diện ứng dụng rõ ràng hơn và giảm cảnh báo khi cài đặt.</p>
-                <h3>Điểm nổi bật</h3>
-                <ul>
-                    <li><strong>Ký bằng Apple Developer</strong>: PHTV nay được ký bằng chứng chỉ Developer ID Application, giúp ứng dụng có danh tính rõ ràng hơn với macOS.</li>
-                    <li><strong>Hỗ trợ notarization cho macOS</strong>: Workflow phát hành đã sẵn sàng submit DMG lên Apple notarization và staple ticket sau khi Apple xác thực thành công.</li>
-                    <li><strong>Cải thiện quy trình release</strong>: Kiểm tra chữ ký ứng dụng, entitlements và quyền cần thiết của app trong workflow phát hành.</li>
-                </ul>
-                <h3>Lưu ý sau khi cập nhật</h3>
-                <p>Do danh tính ký số của ứng dụng thay đổi, macOS có thể yêu cầu bạn cấp lại quyền Trợ năng một lần. Nếu PHTV không gõ được ngay sau khi cập nhật, hãy mở <strong>System Settings &gt; Privacy &amp; Security &gt; Accessibility</strong>, tắt rồi bật lại quyền cho PHTV, hoặc xóa PHTV cũ và thêm lại PHTV mới. Sau đó thoát hẳn PHTV và mở lại ứng dụng.</p>
-                <p>Nếu macOS vẫn giữ cache quyền cũ, hãy khởi động lại máy sau khi cấp lại quyền.</p>
-            ]]></description>
-            <enclosure url="https://github.com/PhamHungTien/PHTV/releases/download/v3.1.5/PHTV-3.1.5-intel.dmg" length="9517190" type="application/octet-stream" sparkle:edSignature="vWLo+ntGc6+bHzULqiHNoP9nsjAwFiVQhtE24Zjnt1hJt/DQ0NPP+Nrk//WDmKCyCwRJTnjRF6DMb8qQ9zrLAg=="/>
         </item>
         <item>
             <title>2.8.9</title>
