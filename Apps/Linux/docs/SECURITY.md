@@ -1,6 +1,6 @@
 # Bảo mật PHTV for Linux
 
-Tài liệu này bổ sung [SECURITY.md](../../SECURITY.md).
+Tài liệu này bổ sung [SECURITY.md](../../../SECURITY.md).
 
 ## Ranh giới tin cậy
 
@@ -38,4 +38,3 @@ không tự upload; báo lỗi phải do người dùng chủ động và có h�
 - package upgrade/downgrade/tamper tests;
 - D-Bus spoofing, disconnect và malformed reply;
 - dependency/license/secret scan trước release.
-

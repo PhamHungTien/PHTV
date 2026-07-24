@@ -7,7 +7,7 @@
 - golden vectors Telex/VNI/Unicode/Auto English/macro/session;
 - UTF-8/UTF-16, struct layout, null/buffer limit và memory ownership;
 - fuzz event sequence, concurrent contexts và load/unload Swift runtime;
-- cùng output với macOS/Windows cho input trung lập.
+- cùng output với macOS và Windows cho input trung lập.
 
 ### IBus integration
 
@@ -58,4 +58,3 @@
 - Package cài/upgrade/uninstall đạt trên distro matrix.
 - Không có raw-input permission hoặc network trong IM component.
 - Log/artifact đã kiểm tra không chứa key, preedit hay surrounding text.
-

@@ -83,8 +83,8 @@ jobs:
           swift scripts/tools/generate_dict_binary.swift --strict-check-sources
           swift scripts/tools/generate_dict_binary.swift
           git diff --exit-code -- \
-            macOS/PHTV/Resources/Dictionaries/en_dict.bin \
-            macOS/PHTV/Resources/Dictionaries/vi_dict.bin
+            Apps/macOS/PHTV/Resources/Dictionaries/en_dict.bin \
+            Apps/macOS/PHTV/Resources/Dictionaries/vi_dict.bin
 
       - name: Run full XCTest suite
         run: |
@@ -93,7 +93,7 @@ jobs:
           defaults delete com.phamhungtien.phtv >/dev/null 2>&1 || true
           rm -rf "$RESULT_BUNDLE"
           xcodebuild \
-            -project macOS/PHTV.xcodeproj \
+            -project Apps/macOS/PHTV.xcodeproj \
             -scheme PHTV \
             -configuration Debug \
             -destination 'platform=macOS' \
@@ -189,7 +189,7 @@ jobs:
         run: |
           set -euo pipefail
           swift scripts/tools/generate_dict_binary.swift
-          if ! git diff --exit-code -- macOS/PHTV/Resources/Dictionaries/en_dict.bin macOS/PHTV/Resources/Dictionaries/vi_dict.bin; then
+          if ! git diff --exit-code -- Apps/macOS/PHTV/Resources/Dictionaries/en_dict.bin Apps/macOS/PHTV/Resources/Dictionaries/vi_dict.bin; then
             echo "❌ Dictionary binaries are stale. Re-run swift scripts/tools/generate_dict_binary.swift and commit the updated .bin files."
             exit 1
           fi
@@ -264,7 +264,7 @@ jobs:
           echo "keychain=$KEYCHAIN_PATH" >> "$GITHUB_OUTPUT"
 
       - name: Verify dependencies
-        working-directory: macOS
+        working-directory: Apps/macOS
         run: |
           echo "🔍 Verifying SPM dependencies..."
           # Resolve packages to check versions
@@ -273,7 +273,7 @@ jobs:
           echo "✅ Dependencies verified"
 
       - name: Build (${{ matrix.arch }})
-        working-directory: macOS
+        working-directory: Apps/macOS
         env:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
@@ -414,7 +414,7 @@ jobs:
           plutil -p "$ENTITLEMENTS_PLIST"
 
       - name: Verify app bundle metadata
-        working-directory: macOS
+        working-directory: Apps/macOS
         run: |
           VERSION="${{ steps.version.outputs.version }}"
           BUILD_NUMBER="${{ steps.set_versions.outputs.build_number }}"
@@ -441,7 +441,7 @@ jobs:
 
       - name: Create DMG (${{ matrix.arch }})
         id: dmg
-        working-directory: macOS
+        working-directory: Apps/macOS
         run: |
           VERSION="${{ steps.version.outputs.version }}"
           APP_PATH="./build-${{ matrix.arch }}/Build/Products/Release/PHTV.app"
@@ -576,7 +576,7 @@ jobs:
           echo "✅ DMG created: $DMG_NAME ($SIZE bytes)"
 
       - name: Notarize and staple DMG (${{ matrix.arch }})
-        working-directory: macOS
+        working-directory: Apps/macOS
         env:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
@@ -669,7 +669,7 @@ jobs:
           echo "✅ DMG notarized and stapled: $DMG_NAME"
 
       - name: Generate Sparkle appcast (${{ matrix.arch }})
-        working-directory: macOS
+        working-directory: Apps/macOS
         env:
           SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
         run: |
@@ -691,8 +691,8 @@ jobs:
           # Seed that working filename from the architecture-specific feed, then rename afterward.
           if git show origin/main:docs/$APPCAST_FILE > "$APPCAST_WORK_FILE" 2>/dev/null; then
             echo "✅ Using latest docs/$APPCAST_FILE from origin/main"
-          elif [ -f "../docs/$APPCAST_FILE" ]; then
-            cp "../docs/$APPCAST_FILE" "$APPCAST_WORK_FILE"
+          elif [ -f "../../docs/$APPCAST_FILE" ]; then
+            cp "../../docs/$APPCAST_FILE" "$APPCAST_WORK_FILE"
             echo "⚠️  Falling back to docs/$APPCAST_FILE from current checkout"
           else
             echo "ℹ️  $APPCAST_FILE not found — generate_appcast will create it fresh"
@@ -720,20 +720,20 @@ jobs:
             cp "$APPCAST_WORK_FILE" "$APPCAST_OUTPUT_FILE"
           fi
 
-          cp "$APPCAST_OUTPUT_FILE" "../docs/$APPCAST_FILE"
+          cp "$APPCAST_OUTPUT_FILE" "../../docs/$APPCAST_FILE"
 
-          ../scripts/tools/release_notes.swift inject-appcast \
-            --changelog ../CHANGELOG.md \
+          ../../scripts/tools/release_notes.swift inject-appcast \
+            --changelog ../../CHANGELOG.md \
             --version "$VERSION" \
-            --appcast "../docs/$APPCAST_FILE"
+            --appcast "../../docs/$APPCAST_FILE"
 
-          ../scripts/tools/release_notes.swift validate-item \
+          ../../scripts/tools/release_notes.swift validate-item \
             --version "$VERSION" \
             --build "${{ steps.set_versions.outputs.build_number }}" \
             --archive "$DMG_NAME" \
-            --appcast "../docs/$APPCAST_FILE"
+            --appcast "../../docs/$APPCAST_FILE"
 
-          if ! grep -q "sparkle:edSignature" ../docs/$APPCAST_FILE; then
+          if ! grep -q "sparkle:edSignature" ../../docs/$APPCAST_FILE; then
             echo "❌ Error: docs/$APPCAST_FILE has no sparkle:edSignature"
             exit 1
           fi
@@ -743,7 +743,7 @@ jobs:
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
           name: dmg-${{ matrix.arch }}
-          path: macOS/${{ steps.dmg.outputs.name }}
+          path: Apps/macOS/${{ steps.dmg.outputs.name }}
           retention-days: 1
 
       - name: Upload appcast artifact
@@ -759,7 +759,7 @@ jobs:
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
           name: build-log-${{ matrix.arch }}
-          path: macOS/build-${{ matrix.arch }}.log
+          path: Apps/macOS/build-${{ matrix.arch }}.log
           retention-days: 7
 
       - name: Cleanup signing keychain
@@ -845,7 +845,7 @@ jobs:
           cp /tmp/phtv-appcast-arm64/appcast.xml       docs/appcast.xml
           cp /tmp/phtv-appcast-intel/appcast-intel.xml docs/appcast-intel.xml
           scripts/tools/release_notes.swift sync-xcode-version \
-            --project macOS/PHTV.xcodeproj/project.pbxproj \
+            --project Apps/macOS/PHTV.xcodeproj/project.pbxproj \
             --version "${{ needs.build.outputs.version }}" \
             --build "${{ needs.build.outputs.build_number }}"
 
@@ -855,7 +855,7 @@ jobs:
           git add \
             docs/appcast.xml \
             docs/appcast-intel.xml \
-            macOS/PHTV.xcodeproj/project.pbxproj
+            Apps/macOS/PHTV.xcodeproj/project.pbxproj
 
           if git diff --staged --quiet; then
             echo "No appcast changes to commit."

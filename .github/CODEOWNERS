@@ -2,15 +2,15 @@
 * @PhamHungTien
 
 /.github/ @PhamHungTien
-/macOS/PHTV/PrivacyInfo.xcprivacy @PhamHungTien
-/macOS/PHTV/PHTV.entitlements @PhamHungTien
-/Windows/src/PHTV.Windows.IME/ @PhamHungTien
-/Windows/docs/SECURITY.md @PhamHungTien
-/Windows/docs/PRIVACY.md @PhamHungTien
-/Linux/src/PHTV.Linux.IBus/ @PhamHungTien
-/Linux/src/PHTV.Linux.Fcitx5/ @PhamHungTien
-/Linux/docs/SECURITY.md @PhamHungTien
-/Linux/docs/PRIVACY.md @PhamHungTien
+/Apps/macOS/PHTV/PrivacyInfo.xcprivacy @PhamHungTien
+/Apps/macOS/PHTV/PHTV.entitlements @PhamHungTien
+/Apps/Windows/src/PHTV.Windows.IME/ @PhamHungTien
+/Apps/Windows/docs/SECURITY.md @PhamHungTien
+/Apps/Windows/docs/PRIVACY.md @PhamHungTien
+/Apps/Linux/src/PHTV.Linux.IBus/ @PhamHungTien
+/Apps/Linux/src/PHTV.Linux.Fcitx5/ @PhamHungTien
+/Apps/Linux/docs/SECURITY.md @PhamHungTien
+/Apps/Linux/docs/PRIVACY.md @PhamHungTien
 /Shared/PHTVCore/ @PhamHungTien
 /Shared/Contracts/ @PhamHungTien
 /docs/appcast*.xml @PhamHungTien

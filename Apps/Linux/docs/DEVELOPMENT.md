@@ -21,11 +21,11 @@ và tài liệu backend trong [README](../README.md#tài-liệu-nền-tảng-ch�
 
 ```text
 Shared/PHTVCore/Package.swift       # Swift core
-Linux/CMakeLists.txt                # native adapters/settings
-Linux/src/PHTV.Linux.IBus/          # executable IBus engine
-Linux/src/PHTV.Linux.Fcitx5/        # shared-library addon
-Linux/src/PHTV.Linux.Settings/      # GTK/libadwaita app
-Linux/tests/                        # native/integration/package tests
+Apps/Linux/CMakeLists.txt                # native adapters/settings
+Apps/Linux/src/PHTV.Linux.IBus/          # executable IBus engine
+Apps/Linux/src/PHTV.Linux.Fcitx5/        # shared-library addon
+Apps/Linux/src/PHTV.Linux.Settings/      # GTK/libadwaita app
+Apps/Linux/tests/                        # native/integration/package tests
 ```
 
 CMake import Core qua C header + library artifact. Không để CMake tự tải
@@ -34,7 +34,7 @@ dependency không khóa phiên bản trong release build.
 ## Quy trình thay đổi
 
 1. Thêm golden vector hoặc test tái hiện ở `Shared/TestVectors`.
-2. Thay đổi Core và chạy cùng vector trên macOS/Linux.
+2. Thay đổi Core và chạy cùng vector trên macOS và Linux.
 3. Kiểm tra C ABI, UTF encoding và ownership.
 4. Thay đổi đúng adapter IBus/Fcitx; không copy workaround giữa backend nếu API
    framework khác nhau.
@@ -55,4 +55,3 @@ dependency không khóa phiên bản trong release build.
 Khi có target thật, entrypoint `scripts/dev.swift` sẽ thêm `linux-doctor`,
 `linux-build`, `linux-test` và `linux-package`. Local tooling tiếp tục bằng Swift;
 không thêm script `.sh`/`.py` vào repository.
-

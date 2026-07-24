@@ -42,7 +42,7 @@ ra race condition, selection sai và khác biệt theo integrity level/AppContai
 ### Port toàn bộ engine sang C++ hoặc C# ngay lập tức
 
 Không chọn trước PoC vì làm mất khả năng dùng chung logic và tăng nguy cơ lệch
-hành vi giữa macOS/Windows. Nếu nhúng Swift không vượt cổng phát hành, một ADR
+hành vi giữa macOS và Windows. Nếu nhúng Swift không vượt cổng phát hành, một ADR
 mới sẽ đánh giá lại với số liệu PoC.
 
 ## Hệ quả
@@ -52,4 +52,3 @@ mới sẽ đánh giá lại với số liệu PoC.
   sớm.
 - UI macOS và Windows khác code nhưng dùng chung domain behavior/test vectors.
 - Tính năng Windows phải tuân theo TSF, không sao chép cơ học CGEvent/AX.
-

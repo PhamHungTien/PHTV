@@ -40,7 +40,7 @@ PHTV.Linux.Settings (C++ + GTK 4/libadwaita)
 ## Cấu trúc thư mục
 
 ```text
-Linux/
+Apps/Linux/
 ├── README.md
 ├── docs/
 │   ├── ARCHITECTURE.md
@@ -60,7 +60,7 @@ Linux/
 ```
 
 Engine, contracts và golden vectors dùng chung nằm tại
-[Shared/README.md](../Shared/README.md).
+[Shared/README.md](../../Shared/README.md).
 
 ## Nền tảng mục tiêu ban đầu
 
@@ -91,4 +91,3 @@ không dùng “latest” trong pipeline phát hành tái lập.
 - [Fcitx 5 input method addon](https://fcitx-im.org/wiki/Develop_an_simple_input_method)
 - [GTK 4](https://docs.gtk.org/gtk4/)
 - [libadwaita](https://gnome.pages.gitlab.gnome.org/libadwaita/)
-

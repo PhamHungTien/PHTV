@@ -9,15 +9,19 @@ on:
     branches:
       - main
     paths:
+      - "Apps/Windows/**"
       - "Shared/PHTVCore/**"
       - "Shared/Contracts/**"
+      - "Shared/TestVectors/**"
       - ".github/workflows/windows-core.yml"
   pull_request:
     branches:
       - main
     paths:
+      - "Apps/Windows/**"
       - "Shared/PHTVCore/**"
       - "Shared/Contracts/**"
+      - "Shared/TestVectors/**"
       - ".github/workflows/windows-core.yml"
   workflow_dispatch:
 

@@ -35,7 +35,7 @@ tách UX update khỏi package sở hữu backend.
 
 ## Version và update
 
-Semantic version sản phẩm có thể đồng bộ với macOS/Windows khi tính năng tương
+Semantic version sản phẩm có thể đồng bộ với macOS và Windows khi tính năng tương
 ứng phát hành; package revision theo distro độc lập. PHTV không tự cập nhật bằng
 Sparkle hoặc binary downloader trên Linux—package manager là nguồn cập nhật.
 
@@ -44,4 +44,3 @@ Sparkle hoặc binary downloader trên Linux—package manager là nguồn cập
 Gỡ package phải xóa engine/addon metadata và binary nhưng giữ dữ liệu cá nhân
 trừ khi người dùng chọn purge. Sau gỡ, IBus/Fcitx restart/reload phải có hướng
 dẫn rõ và không để input source hỏng trong session kế tiếp.
-

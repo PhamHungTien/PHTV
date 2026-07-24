@@ -3,6 +3,11 @@ public enum PHTVLanguageMode: UInt32, Sendable {
     case vietnamese = 1
 }
 
+public enum PHTVInputMethod: UInt32, Sendable {
+    case telex = 0
+    case vni = 1
+}
+
 public enum PHTVAppRule: UInt32, Sendable {
     case inherit = 0
     case preferEnglish = 1
@@ -25,15 +30,18 @@ public struct PHTVInputContextFlags: OptionSet, Sendable {
 public struct PHTVInputContext: Equatable, Sendable {
     public let languageMode: PHTVLanguageMode
     public let appRule: PHTVAppRule
+    public let inputMethod: PHTVInputMethod
     public let flags: PHTVInputContextFlags
 
     public init(
         languageMode: PHTVLanguageMode,
         appRule: PHTVAppRule = .inherit,
+        inputMethod: PHTVInputMethod = .telex,
         flags: PHTVInputContextFlags = []
     ) {
         self.languageMode = languageMode
         self.appRule = appRule
+        self.inputMethod = inputMethod
         self.flags = flags
     }
 }

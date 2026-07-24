@@ -27,7 +27,7 @@ Packages/
 SourcePackages/
 
 # Pin the app's package graph for reproducible builds.
-!macOS/PHTV.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved
+!Apps/macOS/PHTV.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved
 
 # Certificates
 *.p12

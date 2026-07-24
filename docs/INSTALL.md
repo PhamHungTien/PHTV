@@ -89,7 +89,7 @@ brew uninstall --zap --cask phtv
 ```bash
 git clone https://github.com/PhamHungTien/PHTV.git
 cd PHTV
-xcodebuild -project macOS/PHTV.xcodeproj \
+xcodebuild -project Apps/macOS/PHTV.xcodeproj \
   -scheme PHTV \
   -configuration Debug \
   -destination 'platform=macOS' \
@@ -99,7 +99,7 @@ xcodebuild -project macOS/PHTV.xcodeproj \
 Chạy test:
 
 ```bash
-xcodebuild test -project macOS/PHTV.xcodeproj \
+xcodebuild test -project Apps/macOS/PHTV.xcodeproj \
   -scheme PHTV \
   -configuration Debug \
   -destination 'platform=macOS'

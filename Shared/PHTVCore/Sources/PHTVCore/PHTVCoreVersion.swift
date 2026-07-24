@@ -10,7 +10,9 @@ public struct PHTVCoreCapabilities: OptionSet, Sendable {
     }
 
     public static let sessionABI = Self(rawValue: 1 << 0)
-    public static let vietnameseEngine = Self(rawValue: 1 << 1)
+    public static let telexEngine = Self(rawValue: 1 << 1)
+    public static let vniEngine = Self(rawValue: 1 << 2)
+    public static let vietnameseEngine: Self = [.telexEngine, .vniEngine]
 
-    public static let current: Self = [.sessionABI]
+    public static let current: Self = [.sessionABI, .telexEngine, .vniEngine]
 }

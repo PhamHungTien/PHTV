@@ -39,7 +39,8 @@ Hai kiến trúc dùng DMG và appcast riêng; đây không phải một Univers
 
 ## Windows Core CI (`windows-core.yml`)
 
-Chạy khi portable Core hoặc C contract thay đổi và có thể chạy thủ công:
+Chạy khi `Apps/Windows`, portable Core, C contract hoặc golden vectors thay đổi;
+cũng có thể chạy thủ công:
 
 1. dùng Windows Server 2025 x64;
 2. cài đúng Swift 6.3.3 từ package chính thức `Swift.Toolchain`;
@@ -52,7 +53,7 @@ tương ứng tồn tại và chạy được trên máy Windows thật.
 
 ## Linux workflows
 
-Phiên bản Linux hiện chỉ có kiến trúc và tài liệu trong `Linux/`, chưa có target
+Phiên bản Linux hiện chỉ có kiến trúc và tài liệu trong `Apps/Linux/`, chưa có target
 có thể build. Linux CI sẽ được thêm khi `Shared/PHTVCore` build được trên Linux
 và IBus PoC tồn tại; tiếp theo mới mở rộng ma trận Fcitx 5, Wayland/X11 và package
 tests. Không thêm workflow chỉ kiểm tra placeholder.

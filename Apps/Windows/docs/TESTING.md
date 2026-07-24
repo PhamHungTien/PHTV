@@ -26,10 +26,11 @@ chứa dữ liệu người dùng thật.
 - Swift runtime load/unload;
 - tương thích ngược giữa app, IME và Core khác build number.
 
-Baseline hiện tại chạy unit test Swift và `PHTVCoreABISmoke` viết bằng C trên
-macOS CI lẫn Windows Core CI. Baseline mới xác nhận ABI version 1, capability,
-validation struct và vòng đời session pass-through; chưa xác nhận hành vi engine
-tiếng Việt hoặc TSF.
+Baseline hiện tại chạy unit test Swift, golden vectors Telex/VNI và
+`PHTVCoreABISmoke` viết bằng C trên macOS CI lẫn Windows Core CI. Nó xác nhận ABI
+version 1, capability, validation struct, rollback khi buffer thiếu, vòng đời
+session và một lát cắt Unicode tiếng Việt; chưa xác nhận TSF hoặc toàn bộ feature
+parity với engine macOS.
 
 ### 3. TSF integration tests
 

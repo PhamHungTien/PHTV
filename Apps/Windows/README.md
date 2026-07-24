@@ -1,7 +1,8 @@
 # PHTV for Windows
 
-> Trạng thái: **đang triển khai Portable Core**. C ABI dùng cho Windows đã build
-> và có contract test; chưa có TSF IME, giao diện WinUI hay installer để cài.
+> Trạng thái: **đang triển khai Portable Core**. Unicode Telex/VNI và C ABI dùng
+> cho Windows đã có golden/contract test; chưa có TSF IME, giao diện WinUI hay
+> installer để cài.
 
 PHTV for Windows là nhánh sản phẩm Windows của PHTV. Mục tiêu là dùng lại engine
 Swift và dữ liệu ngôn ngữ hiện có, đồng thời tích hợp đúng chuẩn Windows bằng
@@ -12,7 +13,7 @@ Text Services Framework (TSF) và cung cấp giao diện quản lý native bằn
 - Bộ gõ chạy offline; không ghi hoặc truyền nội dung người dùng nhập.
 - TSF là đường nhập liệu chính. Không dùng global keyboard hook + `SendInput`
   làm kiến trúc mặc định.
-- Engine không phụ thuộc giao diện hoặc API riêng của macOS/Windows.
+- Engine không phụ thuộc giao diện hoặc API riêng của macOS hay Windows.
 - Ứng dụng WinUI không bắt phím; TSF không thực hiện cập nhật hoặc truy cập mạng.
 - Mọi tính năng tương thích ứng dụng phải có phạm vi rõ ràng và regression test.
 
@@ -38,7 +39,7 @@ Chi tiết và các ranh giới an toàn nằm trong
 ## Cấu trúc thư mục
 
 ```text
-Windows/
+Apps/Windows/
 ├── README.md
 ├── docs/
 │   ├── ARCHITECTURE.md
@@ -56,12 +57,13 @@ Windows/
 └── tests/                  # Test vectors và integration tests Windows
 ```
 
-Engine và test vector dùng chung nằm tại [Shared/README.md](../Shared/README.md),
+Engine và test vector dùng chung nằm tại
+[Shared/README.md](../../Shared/README.md),
 không được copy vào từng nền tảng.
 
 Các thư mục `src/` hiện chỉ có tài liệu hợp đồng thành phần. Swift package dùng
 chung đã tồn tại tại
-[`Shared/PHTVCore`](../Shared/PHTVCore/README.md). Project Visual Studio sẽ được
+[`Shared/PHTVCore`](../../Shared/PHTVCore/README.md). Project Visual Studio sẽ được
 tạo ở giai đoạn TSF PoC theo các cổng trong [ROADMAP.md](docs/ROADMAP.md).
 
 ## Nền tảng mục tiêu ban đầu

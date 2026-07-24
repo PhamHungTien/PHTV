@@ -5,7 +5,7 @@ import PackageDescription
 let package = Package(
     name: "PHTVCore",
     platforms: [
-        .macOS(.v13),
+        .macOS(.v13)
     ],
     products: [
         .library(name: "PHTVCore", type: .dynamic, targets: ["PHTVCore"]),

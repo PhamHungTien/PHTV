@@ -22,7 +22,10 @@ enum {
 typedef uint64_t phtv_core_capabilities_t;
 enum {
     PHTV_CORE_CAPABILITY_SESSION_ABI = UINT64_C(1) << 0,
-    PHTV_CORE_CAPABILITY_VIETNAMESE_ENGINE = UINT64_C(1) << 1
+    PHTV_CORE_CAPABILITY_TELEX_ENGINE = UINT64_C(1) << 1,
+    PHTV_CORE_CAPABILITY_VNI_ENGINE = UINT64_C(1) << 2,
+    PHTV_CORE_CAPABILITY_VIETNAMESE_ENGINE =
+        PHTV_CORE_CAPABILITY_TELEX_ENGINE | PHTV_CORE_CAPABILITY_VNI_ENGINE
 };
 
 typedef uint32_t phtv_core_event_kind_t;
@@ -44,6 +47,12 @@ typedef uint32_t phtv_core_language_mode_t;
 enum {
     PHTV_CORE_LANGUAGE_ENGLISH = 0,
     PHTV_CORE_LANGUAGE_VIETNAMESE = 1
+};
+
+typedef uint32_t phtv_core_input_method_t;
+enum {
+    PHTV_CORE_INPUT_TELEX = 0,
+    PHTV_CORE_INPUT_VNI = 1
 };
 
 typedef uint32_t phtv_core_app_rule_t;
@@ -97,7 +106,7 @@ typedef struct phtv_core_input_context {
     uint32_t struct_size;
     phtv_core_language_mode_t language_mode;
     phtv_core_app_rule_t app_rule;
-    uint32_t reserved0;
+    phtv_core_input_method_t input_method;
     phtv_core_context_flag_t flags;
     uint64_t reserved[3];
 } phtv_core_input_context_t;

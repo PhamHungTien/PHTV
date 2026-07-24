@@ -4,6 +4,7 @@ private enum CABI {
     static let ok: Int32 = 0
     static let invalidArgument: Int32 = 1
     static let unsupportedABI: Int32 = 2
+    static let bufferTooSmall: Int32 = 3
 }
 
 @c(phtv_core_abi_version)
@@ -96,14 +97,17 @@ public func phtvCoreSessionHandleEvent(
         return CABI.unsupportedABI
     }
 
-    guard replacementCapacityUTF16 == 0 || replacementUTF16 != nil else {
+    guard replacementCapacityUTF16 >= 0,
+        replacementCapacityUTF16 == 0 || replacementUTF16 != nil
+    else {
         return CABI.invalidArgument
     }
 
     guard
         let eventKind = PHTVKeyEventKind(rawValue: event.pointee.kind),
         let languageMode = PHTVLanguageMode(rawValue: context.pointee.language_mode),
-        let appRule = PHTVAppRule(rawValue: context.pointee.app_rule)
+        let appRule = PHTVAppRule(rawValue: context.pointee.app_rule),
+        let inputMethod = PHTVInputMethod(rawValue: context.pointee.input_method)
     else {
         return CABI.invalidArgument
     }
@@ -126,21 +130,35 @@ public func phtvCoreSessionHandleEvent(
     let swiftContext = PHTVInputContext(
         languageMode: languageMode,
         appRule: appRule,
+        inputMethod: inputMethod,
         flags: PHTVInputContextFlags(rawValue: context.pointee.flags)
     )
     let coreSession = Unmanaged<PHTVCoreSession>
         .fromOpaque(session)
         .takeUnretainedValue()
+    let checkpoint = coreSession.checkpoint()
     let plan = coreSession.handle(event: swiftEvent, context: swiftContext)
+    let replacement = Array(plan.replacement.utf16)
 
     outPlan.pointee.action = plan.action.rawValue
     outPlan.pointee.delete_before_utf16 = plan.deleteBeforeUTF16
     outPlan.pointee.delete_after_utf16 = plan.deleteAfterUTF16
-    outPlan.pointee.replacement_length_utf16 = UInt32(plan.replacement.utf16.count)
+    outPlan.pointee.replacement_length_utf16 = UInt32(replacement.count)
     outPlan.pointee.reserved0 = 0
     outPlan.pointee.flags = plan.flags.rawValue
     outPlan.pointee.session_generation = plan.sessionGeneration
     outPlan.pointee.reserved = (0, 0)
+
+    guard replacement.count <= replacementCapacityUTF16 else {
+        coreSession.restore(checkpoint)
+        return CABI.bufferTooSmall
+    }
+
+    if let replacementUTF16 {
+        for (index, codeUnit) in replacement.enumerated() {
+            replacementUTF16[index] = codeUnit
+        }
+    }
 
     return CABI.ok
 }

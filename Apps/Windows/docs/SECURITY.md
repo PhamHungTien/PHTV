@@ -1,6 +1,6 @@
 # Bảo mật PHTV for Windows
 
-Tài liệu này bổ sung cho [chính sách bảo mật chung](../../SECURITY.md). Báo cáo
+Tài liệu này bổ sung cho [chính sách bảo mật chung](../../../SECURITY.md). Báo cáo
 bảo mật dùng kênh riêng được nêu trong tài liệu đó, không mở public issue.
 
 ## Ranh giới tin cậy
@@ -43,4 +43,3 @@ bộ nhớ ứng dụng đích nên không tự động tải lên. Người dù
 - cài/upgrade/uninstall bằng tài khoản không phải Administrator;
 - kiểm tra AppContainer, ứng dụng elevated và integrity-level boundary;
 - quét secret, dependency và binary trước release.
-

@@ -660,9 +660,9 @@ private func resolveResourcesDirectory(scriptDir: URL) -> URL {
         .deletingLastPathComponent() // repo root
 
     let candidates = [
-        repoRoot.appendingPathComponent("macOS/PHTV/Resources/Dictionaries"),
+        repoRoot.appendingPathComponent("Apps/macOS/PHTV/Resources/Dictionaries"),
         repoRoot.appendingPathComponent("scripts/Resources/Dictionaries"),
-        repoRoot.appendingPathComponent("macOS/PHTV/Resources")
+        repoRoot.appendingPathComponent("Apps/macOS/PHTV/Resources")
     ]
 
     if let existing = candidates.first(where: { fileManager.fileExists(atPath: $0.path) }) {

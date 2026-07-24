@@ -92,31 +92,19 @@ Format: `<type>: <mô tả>`
 
 ```
 PHTV/
-├── macOS/                  # Ứng dụng native đang phát hành cho macOS
-│   ├── PHTV/
-│   │   ├── App/            # AppDelegate và vòng đời ứng dụng
-│   │   ├── Engine/         # Engine xử lý tiếng Việt (Swift)
-│   │   ├── Input/          # EventTap, Hotkey, xử lý phím
-│   │   ├── Context/        # App context, Smart Switch
-│   │   ├── System/         # Permission, TCC, Safe Mode, binary integrity
-│   │   ├── Manager/        # PHTVManager (public API)
-│   │   ├── Models/         # Data models
-│   │   ├── State/          # Observable state (SwiftUI)
-│   │   ├── Data/           # Persistence, API clients
-│   │   ├── Services/       # Business logic độc lập với UI
-│   │   ├── UI/             # SwiftUI views và components
-│   │   ├── Utilities/      # Tiện ích dùng chung
-│   │   └── Resources/      # Từ điển, localization, assets
-│   ├── Tests/              # Engine regression tests
-│   └── PHTV.xcodeproj/     # Xcode project
-├── Windows/                # Nền móng phiên bản Windows (TSF + WinUI 3)
-│   ├── docs/               # Kiến trúc, roadmap, test, security, release
-│   ├── src/                # TSF IME và companion app
-│   └── tests/              # Test vectors/integration tests dự kiến
-├── Linux/                  # Nền móng Linux (IBus + Fcitx 5 + GTK 4)
-│   ├── docs/               # Kiến trúc, compatibility, security, packaging
-│   ├── src/                # IBus/Fcitx adapters và Settings app
-│   └── tests/              # Backend/application/package tests dự kiến
+├── Apps/                       # Sản phẩm và adapter riêng từng hệ điều hành
+│   ├── macOS/                  # Swift/SwiftUI app đang phát hành
+│   │   ├── PHTV/               # App, Engine, Input, UI và Resources
+│   │   ├── Tests/              # XCTest regression tests
+│   │   └── PHTV.xcodeproj/     # Xcode project
+│   ├── Windows/                # TSF + WinUI 3
+│   │   ├── docs/
+│   │   ├── src/
+│   │   └── tests/
+│   └── Linux/                  # IBus + Fcitx 5 + GTK 4
+│       ├── docs/
+│       ├── src/
+│       └── tests/
 ├── Shared/                 # Engine/contracts/test vectors xuyên nền tảng
 ├── docs/                   # Tài liệu, kiến trúc, hình ảnh
 ├── scripts/                # Local dev entrypoint và build tools

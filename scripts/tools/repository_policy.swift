@@ -37,7 +37,7 @@ for workflow in files(under: root.appendingPathComponent(".github/workflows"), e
 }
 
 // Sparkle lockfile must be checked in and exact.
-let resolvedURL = root.appendingPathComponent("macOS/PHTV.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved")
+let resolvedURL = root.appendingPathComponent("Apps/macOS/PHTV.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved")
 do {
     let data = try Data(contentsOf: resolvedURL)
     let object = try JSONSerialization.jsonObject(with: data) as? [String: Any]
@@ -53,7 +53,7 @@ do {
 
 // Privacy declarations for the online Picker boundary.
 do {
-    let data = try Data(contentsOf: root.appendingPathComponent("macOS/PHTV/PrivacyInfo.xcprivacy"))
+    let data = try Data(contentsOf: root.appendingPathComponent("Apps/macOS/PHTV/PrivacyInfo.xcprivacy"))
     let plist = try PropertyListSerialization.propertyList(from: data, format: nil) as? [String: Any]
     let entries = plist?["NSPrivacyCollectedDataTypes"] as? [[String: Any]] ?? []
     let declared = Set(entries.compactMap { $0["NSPrivacyCollectedDataType"] as? String })
@@ -65,7 +65,7 @@ do {
     if !expected.isSubset(of: declared) { fail("PrivacyInfo.xcprivacy is missing Picker data declarations") }
 } catch { fail("PrivacyInfo.xcprivacy: \(error)") }
 
-let swiftFiles = files(under: root.appendingPathComponent("macOS/PHTV"), extension: "swift")
+let swiftFiles = files(under: root.appendingPathComponent("Apps/macOS/PHTV"), extension: "swift")
 let allSwift = swiftFiles.map(contents).joined(separator: "\n")
 let nslogCount = allSwift.components(separatedBy: "NSLog(").count - 1
 let uncheckedCount = allSwift.components(separatedBy: "@unchecked Sendable").count - 1
@@ -80,10 +80,10 @@ for line in allSwift.components(separatedBy: .newlines) where line.contains("PHT
 }
 
 let sensitivePickerFiles = [
-    "macOS/PHTV/Data/KlipyAPIClient.swift", "macOS/PHTV/Services/MediaStorageHelper.swift",
-    "macOS/PHTV/UI/Picker/ContentViews/GIFOnlyView.swift",
-    "macOS/PHTV/UI/Picker/ContentViews/StickerOnlyView.swift",
-    "macOS/PHTV/UI/Picker/ContentViews/UnifiedContentView.swift",
+    "Apps/macOS/PHTV/Data/KlipyAPIClient.swift", "Apps/macOS/PHTV/Services/MediaStorageHelper.swift",
+    "Apps/macOS/PHTV/UI/Picker/ContentViews/GIFOnlyView.swift",
+    "Apps/macOS/PHTV/UI/Picker/ContentViews/StickerOnlyView.swift",
+    "Apps/macOS/PHTV/UI/Picker/ContentViews/UnifiedContentView.swift",
 ]
 for relativePath in sensitivePickerFiles {
     let logged = contents(root.appendingPathComponent(relativePath)).components(separatedBy: .newlines)
@@ -126,6 +126,7 @@ if !contents(root.appendingPathComponent(".gitignore")).components(separatedBy: 
 // testing and distribution contracts. This prevents a partial rename or cleanup
 // from silently leaving a platform without its required operating documentation.
 let requiredPlatformDocuments = [
+    "Apps/README.md",
     "Shared/README.md",
     "Shared/PHTVCore/README.md",
     "Shared/PHTVCore/Package.swift",
@@ -133,23 +134,28 @@ let requiredPlatformDocuments = [
     "Shared/Contracts/README.md",
     "Shared/TestVectors/README.md",
     ".github/workflows/windows-core.yml",
-    "Windows/README.md",
-    "Windows/docs/ARCHITECTURE.md",
-    "Windows/docs/SECURITY.md",
-    "Windows/docs/PRIVACY.md",
-    "Windows/docs/TESTING.md",
-    "Windows/docs/DISTRIBUTION.md",
-    "Linux/README.md",
-    "Linux/docs/ARCHITECTURE.md",
-    "Linux/docs/COMPATIBILITY.md",
-    "Linux/docs/SECURITY.md",
-    "Linux/docs/PRIVACY.md",
-    "Linux/docs/TESTING.md",
-    "Linux/docs/DISTRIBUTION.md",
+    "Apps/Windows/README.md",
+    "Apps/Windows/docs/ARCHITECTURE.md",
+    "Apps/Windows/docs/SECURITY.md",
+    "Apps/Windows/docs/PRIVACY.md",
+    "Apps/Windows/docs/TESTING.md",
+    "Apps/Windows/docs/DISTRIBUTION.md",
+    "Apps/Linux/README.md",
+    "Apps/Linux/docs/ARCHITECTURE.md",
+    "Apps/Linux/docs/COMPATIBILITY.md",
+    "Apps/Linux/docs/SECURITY.md",
+    "Apps/Linux/docs/PRIVACY.md",
+    "Apps/Linux/docs/TESTING.md",
+    "Apps/Linux/docs/DISTRIBUTION.md",
 ]
 for relativePath in requiredPlatformDocuments
 where !fileManager.fileExists(atPath: root.appendingPathComponent(relativePath).path) {
     fail("Missing required platform document: \(relativePath)")
+}
+
+for legacyDirectory in ["macOS", "Windows", "Linux"]
+where fileManager.fileExists(atPath: root.appendingPathComponent(legacyDirectory).path) {
+    fail("Legacy platform directory must be moved under Apps/: \(legacyDirectory)")
 }
 
 if failures.isEmpty {

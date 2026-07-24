@@ -15,9 +15,11 @@ Roadmap dùng cổng chất lượng thay cho ngày phát hành cố định. M�
 ## Giai đoạn 1 — Portable Core
 
 - [x] Tạo Swift package portable và session lifecycle không phụ thuộc macOS.
+- [x] Thêm lát cắt Unicode Telex/VNI portable đầu tiên.
 - [ ] Tách toàn bộ engine ngôn ngữ vào package portable.
 - [ ] Thay Carbon/ApplicationServices/Darwin bằng adapter hoặc API portable.
-- [ ] Đưa từ điển và test vector sang resource độc lập nền tảng.
+- [x] Tạo schema và baseline golden vectors Telex/VNI trung lập nền tảng.
+- [ ] Đưa từ điển và toàn bộ regression vectors sang resource độc lập nền tảng.
 - [x] Thiết kế `KeyEvent`, `InputContext`, `EditPlan` và C ABI version 1.
 - [x] Thêm C executable kiểm chứng symbol, layout và ownership session.
 - [ ] Build/test Core trên macOS và Windows x64 cho kết quả giống nhau.

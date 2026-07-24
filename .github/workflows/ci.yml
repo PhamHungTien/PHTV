@@ -51,13 +51,13 @@ jobs:
         run: |
           set -euo pipefail
           swift scripts/tools/generate_dict_binary.swift
-          if ! git diff --exit-code -- macOS/PHTV/Resources/Dictionaries/en_dict.bin macOS/PHTV/Resources/Dictionaries/vi_dict.bin; then
+          if ! git diff --exit-code -- Apps/macOS/PHTV/Resources/Dictionaries/en_dict.bin Apps/macOS/PHTV/Resources/Dictionaries/vi_dict.bin; then
             echo "❌ Dictionary binaries are stale. Re-run swift scripts/tools/generate_dict_binary.swift and commit the updated .bin files."
             exit 1
           fi
 
       - name: Build
-        working-directory: macOS
+        working-directory: Apps/macOS
         run: |
           set -o pipefail
           xcodebuild build \
@@ -87,7 +87,7 @@ jobs:
           rm -rf "$RESULT_BUNDLE"
 
           xcodebuild \
-            -project macOS/PHTV.xcodeproj \
+            -project Apps/macOS/PHTV.xcodeproj \
             -scheme PHTV \
             -configuration Debug \
             -destination "$DESTINATION" \
@@ -129,5 +129,5 @@ jobs:
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
           name: ci-build-log
-          path: macOS/build.log
+          path: Apps/macOS/build.log
           retention-days: 7
