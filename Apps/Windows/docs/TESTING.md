@@ -31,12 +31,15 @@ Baseline hiện tại chạy unit test Swift, golden vectors Telex/VNI và
 version 1, capability, validation struct, rollback khi buffer thiếu, vòng đời
 session và một lát cắt Unicode tiếng Việt. Windows CI còn build/chạy C++
 `PHTV.Windows.CoreBridge.Tests`, config schema/golden snapshot tests, native
-snapshot parser, TSF DLL và WinUI app; chưa
-xác nhận TSF runtime hoặc toàn bộ feature parity với engine macOS.
+snapshot parser, input-mode state machine, sensitive input scope policy, TSF DLL
+và WinUI app; chưa xác nhận TSF runtime hoặc toàn bộ feature parity với engine
+macOS.
 
 ### 3. TSF integration tests
 
 - activation/deactivation và language profile;
+- preserved key, input-mode compartment, external mode change và shortcut conflict;
+- password/private/PIN scope và lỗi property/lock/variant;
 - focus/document/context lifecycle;
 - composition start/update/commit/cancel;
 - selection, undo/redo, clipboard paste và IME switch;

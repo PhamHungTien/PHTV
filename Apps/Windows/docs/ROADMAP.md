@@ -32,6 +32,10 @@ phát hiện lỗi ownership tại C ABI.
 - [x] Tạo project C++ Core bridge, TSF DLL và native contract test.
 - [x] Tạo WinUI Settings project cùng config schema/atomic store ban đầu.
 - [x] Nối trạng thái Việt/Anh và Telex/VNI từ WinUI sang TSF bằng snapshot v1.
+- [x] Thêm source input-mode compartment, event sink và preserved key Việt/Anh.
+- [ ] Kiểm chứng đổi Việt/Anh, shortcut và commit composition trên Windows thật.
+- [x] Thêm guard password/private/PIN vào source TSF và native policy tests.
+- [ ] Kiểm chứng sensitive-scope pass-through trên WinUI, web và Office thật.
 - [ ] Đăng ký Text Input Processor per-user trên máy test.
 - [ ] Bật/tắt Việt–Anh và commit composition trong Notepad.
 - [ ] Kiểm chứng Office, Chromium/Electron, WinUI và AppContainer.

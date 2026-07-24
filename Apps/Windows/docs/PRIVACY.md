@@ -24,6 +24,11 @@ IME phải tôn trọng input scope/password field và không áp dụng tính n
 ngữ cảnh ở trường nhạy cảm. Companion app không được nhận bản sao của
 composition hoặc phím gõ từ DLL TSF.
 
+TSF hiện chặn `IS_PASSWORD`, `IS_PRIVATE` và toàn bộ numeric/alphanumeric PIN
+scope trước khi gọi Core. Nếu không thể đọc property/scope một cách hợp lệ, phím
+được trả về ứng dụng và composition state được reset; không log giá trị scope
+kèm nội dung hay selection.
+
 ## Tính năng mạng
 
 Updater chỉ kiểm tra metadata/binary phát hành. GIF/Sticker, telemetry hoặc crash
@@ -35,4 +40,3 @@ Không dùng nội dung gõ làm analytics, kể cả ở dạng hash.
 Báo lỗi chỉ gồm version, Windows build, kiến trúc, component, mã lỗi, thời lượng
 và danh tính ứng dụng tối thiểu khi người dùng chủ động gửi. Ảnh, video và crash
 dump do người dùng tự chọn và cần hướng dẫn xóa dữ liệu nhạy cảm.
-

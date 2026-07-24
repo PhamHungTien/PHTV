@@ -15,7 +15,7 @@ Mọi số nguyên dùng little-endian. Snapshot v1 dài chính xác 36 byte:
 | 8 | 2 | Format version | `1` |
 | 10 | 2 | Byte length | `36` |
 | 12 | 4 | Settings schema | `1` |
-| 16 | 8 | Revision | số tăng theo lần ghi |
+| 16 | 8 | Revision | generation thay đổi theo lần ghi |
 | 24 | 4 | Flags | bit 0: bật tiếng Việt |
 | 28 | 4 | Input method | `0`: Telex, `1`: VNI |
 | 32 | 4 | Checksum | FNV-1a 32-bit của byte `0..<32` |
@@ -50,5 +50,7 @@ app tái tạo nó khi Settings được mở.
 
 TSF v1 nạp snapshot trong lúc activation để không đọc file trên hot path của
 `ITfKeyEventSink`. Thay đổi có hiệu lực sau khi người dùng kích hoạt lại profile
-PHTV. Notification/TSF compartment để cập nhật tức thời sẽ được thêm sau khi
-kiểm chứng AppContainer và vòng đời COM trên máy Windows thật.
+PHTV. Giá trị Việt/Anh sau activation được đồng bộ qua thread input-mode
+compartment; WinUI wiring cho compartment và notification của các cấu hình khác
+chỉ được thêm sau khi kiểm chứng AppContainer và vòng đời COM trên máy Windows
+thật. Xem [INPUT_MODE.md](INPUT_MODE.md).

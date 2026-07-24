@@ -23,6 +23,7 @@ Các ranh giới cần threat model riêng:
 - IME chạy với quyền của tiến trình đích, không yêu cầu elevation thường xuyên.
 - Không tải DLL theo current working directory hoặc đường dẫn có thể ghi tùy ý.
 - Validate version, length, enum và encoding tại mọi biên ABI/IPC.
+- Fail-open về ứng dụng khi input scope nhạy cảm hoặc không thể xác minh.
 - Không ném exception qua COM/C ABI; trả mã lỗi xác định.
 - Ký Authenticode mọi EXE/DLL/installer phát hành.
 - Không chứa updater, HTTP client hoặc secret trong TSF DLL.

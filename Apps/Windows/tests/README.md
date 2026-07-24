@@ -6,8 +6,12 @@
   Telex, VNI, rule khóa tiếng Anh và ownership session.
 - `PHTV.Windows.Contracts.Tests`: kiểm tra config round-trip, normalization,
   duplicate rule, snapshot golden vector và từ chối schema tương lai.
+- `PHTV.Windows.InputModeState.Tests`: kiểm tra trạng thái khởi tạo, quy ước
+  open/close `VT_I4`, idempotence, toggle và generation khi trạng thái đổi.
 - `PHTV.Windows.SettingsSnapshot.Tests`: kiểm tra native parser từ chối snapshot
   thiếu byte, hỏng checksum, format/schema tương lai, flag và enum không hợp lệ.
+- `PHTV.Windows.InputScopePolicy.Tests`: khóa danh sách password/private/PIN và
+  bảo đảm một scope nhạy cảm luôn thắng trong mảng nhiều scope.
 
 ## Chưa triển khai
 

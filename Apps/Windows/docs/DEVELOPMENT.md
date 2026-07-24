@@ -3,7 +3,7 @@
 ## Trạng thái hiện tại
 
 Đã có solution, portable Core, native Core bridge, TSF DLL, WinUI Settings app và
-ba executable contract test. Đây là source của PoC, chưa phải binary cài đặt:
+năm executable contract test. Đây là source của PoC, chưa phải binary cài đặt:
 registration, composition và cleanup vẫn cần xác nhận trên Windows client thật.
 
 ## Yêu cầu dự kiến
@@ -56,6 +56,8 @@ Sau khi `swift build` tạo `PHTVCore.lib`/`PHTVCore.dll`, đặt
 `PHTVCoreLibraryDir` thành thư mục chứa hai file đó rồi chạy:
 
 ```text
+msbuild Apps\Windows\tests\PHTV.Windows.InputModeState.Tests\PHTV.Windows.InputModeState.Tests.vcxproj /m /p:Configuration=Release /p:Platform=x64
+msbuild Apps\Windows\tests\PHTV.Windows.InputScopePolicy.Tests\PHTV.Windows.InputScopePolicy.Tests.vcxproj /m /p:Configuration=Release /p:Platform=x64
 msbuild Apps\Windows\tests\PHTV.Windows.SettingsSnapshot.Tests\PHTV.Windows.SettingsSnapshot.Tests.vcxproj /m /p:Configuration=Release /p:Platform=x64
 msbuild Apps\Windows\tests\PHTV.Windows.CoreBridge.Tests\PHTV.Windows.CoreBridge.Tests.vcxproj /m /p:Configuration=Release /p:Platform=x64 /p:PHTVCoreLibraryDir="<core-dir>"
 msbuild Apps\Windows\src\PHTV.Windows.IME\PHTV.Windows.IME.vcxproj /m /p:Configuration=Release /p:Platform=x64 /p:PHTVCoreLibraryDir="<core-dir>"

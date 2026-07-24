@@ -1,3 +1,4 @@
+using System.Buffers.Binary;
 using System.Text;
 using System.Text.Json;
 using PHTV.Windows.Contracts.Configuration;
@@ -155,6 +156,44 @@ internal static class Program
         futureFormat[8] = 2;
         Assert(
             !PHTVRuntimeSettingsSnapshot.TryDecode(futureFormat, out _)
+        );
+
+        byte[] unknownFlags = (byte[])snapshot.Clone();
+        unknownFlags[24] = 2;
+        RefreshRuntimeSnapshotChecksum(unknownFlags);
+        Assert(
+            !PHTVRuntimeSettingsSnapshot.TryDecode(unknownFlags, out _)
+        );
+
+        byte[] unknownMethod = (byte[])snapshot.Clone();
+        unknownMethod[28] = 2;
+        RefreshRuntimeSnapshotChecksum(unknownMethod);
+        Assert(
+            !PHTVRuntimeSettingsSnapshot.TryDecode(unknownMethod, out _)
+        );
+
+        byte[] futureSchema = (byte[])snapshot.Clone();
+        futureSchema[12] = 2;
+        RefreshRuntimeSnapshotChecksum(futureSchema);
+        Assert(
+            !PHTVRuntimeSettingsSnapshot.TryDecode(futureSchema, out _)
+        );
+    }
+
+    private static void RefreshRuntimeSnapshotChecksum(Span<byte> contents)
+    {
+        const uint fnvOffsetBasis = 2166136261;
+        const uint fnvPrime = 16777619;
+        const int checksumOffset = 32;
+        uint checksum = fnvOffsetBasis;
+        foreach (byte value in contents[..checksumOffset])
+        {
+            checksum ^= value;
+            checksum = unchecked(checksum * fnvPrime);
+        }
+        BinaryPrimitives.WriteUInt32LittleEndian(
+            contents[checksumOffset..],
+            checksum
         );
     }
 

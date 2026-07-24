@@ -242,6 +242,25 @@ private:
             GUID_TFCAT_TIP_KEYBOARD,
             text_service_clsid
         ));
+        return result;
+    }
+
+    result = categories->RegisterCategory(
+        text_service_clsid,
+        GUID_TFCAT_TIPCAP_INPUTMODECOMPARTMENT,
+        text_service_clsid
+    );
+    if (FAILED(result)) {
+        static_cast<void>(categories->UnregisterCategory(
+            text_service_clsid,
+            GUID_TFCAT_TIPCAP_IMMERSIVESUPPORT,
+            text_service_clsid
+        ));
+        static_cast<void>(categories->UnregisterCategory(
+            text_service_clsid,
+            GUID_TFCAT_TIP_KEYBOARD,
+            text_service_clsid
+        ));
     }
     return result;
 }
@@ -258,6 +277,11 @@ private:
         return create_result;
     }
 
+    const HRESULT input_mode_result = categories->UnregisterCategory(
+        text_service_clsid,
+        GUID_TFCAT_TIPCAP_INPUTMODECOMPARTMENT,
+        text_service_clsid
+    );
     const HRESULT immersive_result = categories->UnregisterCategory(
         text_service_clsid,
         GUID_TFCAT_TIPCAP_IMMERSIVESUPPORT,
@@ -268,6 +292,9 @@ private:
         GUID_TFCAT_TIP_KEYBOARD,
         text_service_clsid
     );
+    if (FAILED(input_mode_result)) {
+        return input_mode_result;
+    }
     return FAILED(immersive_result) ? immersive_result : keyboard_result;
 }
 

@@ -45,7 +45,7 @@ cũng có thể chạy thủ công:
 
 1. dùng Windows Server 2025 x64;
 2. cài Swift 6.3.3, .NET 10 và dùng MSBuild v143;
-3. build/chạy C++ runtime snapshot parser tests;
+3. build/chạy C++ input-mode state, sensitive scope và snapshot parser tests;
 4. build/test `Shared/PHTVCore` và C ABI smoke executable;
 5. build/chạy C++ Core bridge cùng C# config/golden-vector tests;
 6. build TSF DLL và WinUI Settings app.

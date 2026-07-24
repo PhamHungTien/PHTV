@@ -81,8 +81,14 @@ Lát cắt hiện tại dùng JSON làm nguồn dữ liệu và một binary sna
 hot component. App ghi cả hai atomically; TSF kiểm tra magic, version, schema,
 enum và checksum rồi nạp snapshot khi activation. Contract byte-level được khóa
 bằng golden vector C#/C++ tại
-[SETTINGS_SNAPSHOT.md](SETTINGS_SNAPSHOT.md). Notification tức thời chưa được
-chọn trước khi có kết quả AppContainer trên máy Windows thật.
+[SETTINGS_SNAPSHOT.md](SETTINGS_SNAPSHOT.md).
+
+Sau activation, trạng thái Việt/Anh hiệu lực nằm trong thread compartment
+`GUID_COMPARTMENT_KEYBOARD_OPENCLOSE`. IME khai báo capability tương ứng, nhận
+thay đổi qua compartment event sink và đăng ký `Ctrl+Space` bằng TSF preserved
+key. Snapshot vẫn là nguồn khởi tạo; wiring WinUI/tray và notification cho các
+cấu hình còn lại chưa được chọn trước khi có kết quả AppContainer trên máy
+Windows thật. Xem [INPUT_MODE.md](INPUT_MODE.md).
 
 ## Quy tắc theo ứng dụng
 
@@ -96,6 +102,12 @@ Không dùng tiêu đề cửa sổ làm định danh chính. Quy tắc phải p
 - trường mật khẩu hoặc input scope nhạy cảm.
 
 Core chỉ nhận `InputContext`; việc thu thập context thuộc adapter Windows.
+
+Adapter TSF đọc `GUID_PROP_INPUTSCOPE` trên selection trong read edit session.
+Password/private/PIN hoặc lỗi đọc không xác định đều pass-through và reset
+session; field không hỗ trợ property (`S_FALSE`/`E_NOTIMPL`) dùng policy thường.
+Không cache scope theo toàn document. Xem
+[INPUT_SCOPE_POLICY.md](INPUT_SCOPE_POLICY.md).
 
 ## Threading và hiệu năng
 

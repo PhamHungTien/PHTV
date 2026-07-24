@@ -50,6 +50,8 @@ Apps/Windows/
 │   ├── ARCHITECTURE.md
 │   ├── DEVELOPMENT.md
 │   ├── DISTRIBUTION.md
+│   ├── INPUT_MODE.md
+│   ├── INPUT_SCOPE_POLICY.md
 │   ├── PRIVACY.md
 │   ├── ROADMAP.md
 │   ├── SETTINGS_SNAPSHOT.md
@@ -65,6 +67,8 @@ Apps/Windows/
 └── tests/
     ├── PHTV.Windows.Contracts.Tests/
     ├── PHTV.Windows.CoreBridge.Tests/
+    ├── PHTV.Windows.InputModeState.Tests/
+    ├── PHTV.Windows.InputScopePolicy.Tests/
     └── PHTV.Windows.SettingsSnapshot.Tests/
 ```
 
@@ -79,6 +83,15 @@ session/composition. Settings app giữ JSON làm nguồn cấu hình và ghi th
 snapshot nhị phân atomically; TSF nạp snapshot khi activation để dùng đúng trạng
 thái Việt/Anh và Telex/VNI mà không parse JSON trong DLL nhập liệu. Xem
 [contract snapshot v1](docs/SETTINGS_SNAPSHOT.md).
+
+Trạng thái Việt/Anh hiệu lực được đưa vào thread input-mode compartment; TSF
+nhận `Ctrl+Space` bằng preserved key và reset composition/Core khi trạng thái
+đổi. Đây là source PoC, chưa phải xác nhận runtime. Xem
+[thiết kế input mode](docs/INPUT_MODE.md).
+
+Trước khi ăn một phím, TSF đọc `GUID_PROP_INPUTSCOPE` tại selection hiện tại và
+pass-through toàn bộ password/private/PIN scope hoặc lỗi đọc không xác định.
+Chi tiết nằm trong [sensitive input scope policy](docs/INPUT_SCOPE_POLICY.md).
 
 ## Nền tảng mục tiêu ban đầu
 
@@ -97,6 +110,8 @@ thái Việt/Anh và Telex/VNI mà không parse JSON trong DLL nhập liệu. Xe
 - [Thiết lập môi trường phát triển](docs/DEVELOPMENT.md)
 - [Roadmap và tiêu chí hoàn thành](docs/ROADMAP.md)
 - [Chiến lược kiểm thử](docs/TESTING.md)
+- [Trạng thái Việt/Anh và phím tắt TSF](docs/INPUT_MODE.md)
+- [Sensitive Input Scope Policy](docs/INPUT_SCOPE_POLICY.md)
 - [Runtime Settings Snapshot v1](docs/SETTINGS_SNAPSHOT.md)
 - [Bảo mật](docs/SECURITY.md)
 - [Quyền riêng tư](docs/PRIVACY.md)

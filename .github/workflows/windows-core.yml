@@ -87,6 +87,58 @@ jobs:
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@6fb02220983dee41ce7ae257b6f4d8f9bf5ed4ce # v2
 
+      - name: Build and run input mode state tests
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $project = "Apps/Windows/tests/PHTV.Windows.InputModeState.Tests/PHTV.Windows.InputModeState.Tests.vcxproj"
+          msbuild `
+            $project `
+            /m `
+            /p:Configuration=Release `
+            /p:Platform=x64
+
+          $testExecutable = Get-ChildItem `
+            -Path "Apps/Windows/tests/PHTV.Windows.InputModeState.Tests" `
+            -Filter "PHTV.Windows.InputModeState.Tests.exe" `
+            -File `
+            -Recurse |
+            Select-Object -First 1
+          if (-not $testExecutable) {
+            throw "Input mode state test executable was not produced."
+          }
+
+          & $testExecutable.FullName
+          if ($LASTEXITCODE -ne 0) {
+            throw "Input mode state tests failed with exit code $LASTEXITCODE."
+          }
+
+      - name: Build and run sensitive input scope policy tests
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $project = "Apps/Windows/tests/PHTV.Windows.InputScopePolicy.Tests/PHTV.Windows.InputScopePolicy.Tests.vcxproj"
+          msbuild `
+            $project `
+            /m `
+            /p:Configuration=Release `
+            /p:Platform=x64
+
+          $testExecutable = Get-ChildItem `
+            -Path "Apps/Windows/tests/PHTV.Windows.InputScopePolicy.Tests" `
+            -Filter "PHTV.Windows.InputScopePolicy.Tests.exe" `
+            -File `
+            -Recurse |
+            Select-Object -First 1
+          if (-not $testExecutable) {
+            throw "Input scope policy test executable was not produced."
+          }
+
+          & $testExecutable.FullName
+          if ($LASTEXITCODE -ne 0) {
+            throw "Input scope policy tests failed with exit code $LASTEXITCODE."
+          }
+
       - name: Build and run runtime settings snapshot tests
         shell: pwsh
         run: |
