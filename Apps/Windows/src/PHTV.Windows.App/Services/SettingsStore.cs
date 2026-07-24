@@ -40,9 +40,12 @@ internal sealed class SettingsStore
     {
         if (!File.Exists(settingsPath))
         {
-            var settings = new PHTVSettings();
-            await EnsureRuntimeSnapshotsAsync(settings, cancellationToken);
-            return settings;
+            var defaultSettings = new PHTVSettings();
+            await EnsureRuntimeSnapshotsAsync(
+                defaultSettings,
+                cancellationToken
+            );
+            return defaultSettings;
         }
 
         byte[] contents = await ReadBoundedFileAsync(
