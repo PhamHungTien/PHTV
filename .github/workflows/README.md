@@ -2,7 +2,9 @@
 
 ## macOS CI (`ci.yml`)
 
-Chạy trên mọi push/PR vào `main` với quyền `contents: read`:
+Chạy khi mã macOS, `Shared/`, tooling release hoặc metadata appcast/changelog
+liên quan thay đổi trên `main` (các thư mục build của nền tảng khác không kích
+hoạt job này) với quyền `contents: read`:
 
 1. chạy bộ tự kiểm tra release notes viết bằng Swift, repository policy,
    appcast, plist và privacy manifest;
@@ -43,14 +45,20 @@ Chạy khi `Apps/Windows`, portable Core, C contract hoặc golden vectors thay 
 kiểm tra thêm runtime settings snapshot C#/C++ trước khi build TSF;
 cũng có thể chạy thủ công:
 
-1. dùng Windows Server 2025 x64;
-2. cache/tải bộ cài Swift 6.3.3 chính thức, xác minh SHA-256, cài Python 3.10,
+1. kiểm tra nhanh solution/project boundary và từ chối artifact sinh tự động
+   (`bin/`, `obj/`, `.vs/`) bị commit;
+2. dùng Windows Server 2025 x64;
+3. cache/tải bộ cài Swift 6.3.3 chính thức, xác minh SHA-256, cài Python 3.10,
    .NET 10 và dùng MSBuild v143;
-3. build/chạy C++ input-mode state, sensitive scope và hai snapshot parser tests;
-4. build/test `Shared/PHTVCore` và C ABI smoke executable;
-5. build/chạy C++ Core bridge cùng C# config/golden-vector tests;
-6. build TSF DLL, kiểm tra vòng đời COM/profile/category trong runner cô lập;
-7. build WinUI Settings app.
+4. kiểm tra entrypoint Swift `scripts/windows.swift doctor`;
+5. build/chạy C++ input-mode state, sensitive scope và hai snapshot parser tests;
+6. build/test `Shared/PHTVCore` và C ABI smoke executable;
+7. build/chạy C++ Core bridge cùng C# config/golden-vector tests;
+8. build TSF DLL, kiểm tra vòng đời COM/profile/category trong runner cô lập;
+9. build WinUI Settings app.
+
+Thay đổi chỉ ở output cục bộ `bin/`, `obj/` hoặc `.vs/` được loại khỏi path
+filter; không làm CI chạy lại khi IDE tạo artifact tạm.
 
 Workflow không gọi `regsvr32`: một test host nạp DLL, gọi entrypoint
 registration, xác minh trạng thái rồi gỡ sạch. Nó chưa thay thế

@@ -53,6 +53,21 @@ toàn bộ vòng đời ABI tối thiểu. Nó không thay thế test TSF trên 
 
 ## Build Windows projects
 
+Entry point khuyến nghị là công cụ Swift ở thư mục gốc. Công cụ tự kiểm tra
+đường dẫn solution, phát hiện toolchain và chạy đúng thứ tự lệnh mà không phụ
+thuộc PowerShell hoặc file `.sh`:
+
+```text
+swift scripts/windows.swift doctor       # kiểm tra môi trường và cấu trúc repo
+swift scripts/windows.swift core-test    # chạy Core + C ABI smoke trên mọi host
+swift scripts/windows.swift build        # Windows: Core, native tests và WinUI
+swift scripts/windows.swift test         # Windows: Core tests và native tests
+```
+
+Trên macOS/Linux chỉ các lệnh `doctor`, `core-build` và `core-test` được kỳ vọng
+thành công; các lệnh native/WinUI sẽ dừng sớm với thông báo cần Windows runner.
+CI vẫn có thể gọi MSBuild trực tiếp để tách log từng bước.
+
 Sau khi `swift build` tạo `PHTVCore.lib`/`PHTVCore.dll`, đặt
 `PHTVCoreLibraryDir` thành thư mục chứa hai file đó rồi chạy:
 

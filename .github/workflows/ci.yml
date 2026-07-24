@@ -8,9 +8,25 @@ on:
   push:
     branches:
       - main
+    paths:
+      - "Apps/macOS/**"
+      - "Shared/**"
+      - "scripts/**"
+      - ".github/workflows/ci.yml"
+      - ".swift-format"
+      - "CHANGELOG.md"
+      - "docs/appcast*.xml"
   pull_request:
     branches:
       - main
+    paths:
+      - "Apps/macOS/**"
+      - "Shared/**"
+      - "scripts/**"
+      - ".github/workflows/ci.yml"
+      - ".swift-format"
+      - "CHANGELOG.md"
+      - "docs/appcast*.xml"
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -38,6 +54,9 @@ jobs:
 
       - name: Validate repository metadata
         run: scripts/dev.swift metadata-check
+
+      - name: Type-check Windows Swift entrypoint
+        run: swiftc -typecheck scripts/windows.swift
 
       - name: Test portable Core
         run: |

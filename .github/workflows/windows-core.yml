@@ -10,18 +10,26 @@ on:
       - main
     paths:
       - "Apps/Windows/**"
+      - "!Apps/Windows/**/bin/**"
+      - "!Apps/Windows/**/obj/**"
+      - "!Apps/Windows/**/.vs/**"
       - "Shared/PHTVCore/**"
       - "Shared/Contracts/**"
       - "Shared/TestVectors/**"
+      - "scripts/windows.swift"
       - ".github/workflows/windows-core.yml"
   pull_request:
     branches:
       - main
     paths:
       - "Apps/Windows/**"
+      - "!Apps/Windows/**/bin/**"
+      - "!Apps/Windows/**/obj/**"
+      - "!Apps/Windows/**/.vs/**"
       - "Shared/PHTVCore/**"
       - "Shared/Contracts/**"
       - "Shared/TestVectors/**"
+      - "scripts/windows.swift"
       - ".github/workflows/windows-core.yml"
   workflow_dispatch:
 
@@ -36,9 +44,58 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
+  layout:
+    name: Validate Windows project layout
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+
+      - name: Validate source and solution boundaries
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          required_files=(
+            "Apps/Windows/PHTV.Windows.slnx"
+            "Apps/Windows/global.json"
+            "Apps/Windows/Directory.Build.props"
+            "Apps/Windows/Directory.Packages.props"
+            "Apps/Windows/src/PHTV.Windows.App/PHTV.Windows.App.csproj"
+            "Apps/Windows/src/PHTV.Windows.Contracts/PHTV.Windows.Contracts.csproj"
+            "Apps/Windows/src/PHTV.Windows.CoreBridge/PHTV.Windows.CoreBridge.vcxproj"
+            "Apps/Windows/src/PHTV.Windows.IME/PHTV.Windows.IME.vcxproj"
+            "Apps/Windows/tests/PHTV.Windows.ApplicationRulesSnapshot.Tests/PHTV.Windows.ApplicationRulesSnapshot.Tests.vcxproj"
+            "Apps/Windows/tests/PHTV.Windows.Contracts.Tests/PHTV.Windows.Contracts.Tests.csproj"
+            "Apps/Windows/tests/PHTV.Windows.CoreBridge.Tests/PHTV.Windows.CoreBridge.Tests.vcxproj"
+            "Apps/Windows/tests/PHTV.Windows.InputModeState.Tests/PHTV.Windows.InputModeState.Tests.vcxproj"
+            "Apps/Windows/tests/PHTV.Windows.InputScopePolicy.Tests/PHTV.Windows.InputScopePolicy.Tests.vcxproj"
+            "Apps/Windows/tests/PHTV.Windows.Registration.Tests/PHTV.Windows.Registration.Tests.vcxproj"
+            "Apps/Windows/tests/PHTV.Windows.SettingsSnapshot.Tests/PHTV.Windows.SettingsSnapshot.Tests.vcxproj"
+          )
+
+          for path in "${required_files[@]}"; do
+            if [[ ! -f "$path" ]]; then
+              echo "Missing required Windows project file: $path" >&2
+              exit 1
+            fi
+          done
+
+          generated_paths=$(git ls-files | grep -E '(^|/)(bin|obj|\.vs)/' || true)
+          if [[ -n "$generated_paths" ]]; then
+            echo "Generated Windows artifacts must not be tracked:" >&2
+            printf '%s\n' "$generated_paths" >&2
+            exit 1
+          fi
+
+          echo "Windows solution and project layout is valid."
+
   core:
     name: Core, TSF & WinUI (Windows x64)
     runs-on: windows-2025
+    needs: layout
     timeout-minutes: 45
     env:
       SWIFT_INSTALLER_URL: https://download.swift.org/swift-6.3.3-release/windows10/swift-6.3.3-RELEASE/swift-6.3.3-RELEASE-windows10.exe
@@ -181,6 +238,9 @@ jobs:
 
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@6fb02220983dee41ce7ae257b6f4d8f9bf5ed4ce # v2
+
+      - name: Validate Swift Windows entrypoint
+        run: swift scripts/windows.swift doctor
 
       - name: Build and run input mode state tests
         shell: pwsh

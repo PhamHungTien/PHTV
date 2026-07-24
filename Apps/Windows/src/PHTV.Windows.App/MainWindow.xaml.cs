@@ -16,6 +16,7 @@ public sealed partial class MainWindow : Window
         applicationRuleItems = [];
     private PHTVSettings currentSettings = new();
     private bool isLoaded;
+    private bool settingsReady;
 
     public MainWindow()
     {
@@ -74,12 +75,21 @@ public sealed partial class MainWindow : Window
         }
         finally
         {
+            settingsReady = true;
             SetBusy(false);
         }
     }
 
     private async void OnSaveClicked(object sender, RoutedEventArgs e)
     {
+        // The Loaded handler is asynchronous.  Ignore an early click until
+        // the existing settings have been read so a fast launch cannot save
+        // defaults over the user's configuration.
+        if (!settingsReady)
+        {
+            return;
+        }
+
         SetBusy(true);
         StatusInfoBar.IsOpen = false;
 
@@ -262,8 +272,8 @@ public sealed partial class MainWindow : Window
 
     private void SetBusy(bool busy)
     {
-        SaveButton.IsEnabled = !busy;
-        AddApplicationButton.IsEnabled = !busy;
+        SaveButton.IsEnabled = !busy && settingsReady;
+        AddApplicationButton.IsEnabled = !busy && settingsReady;
         SaveProgress.IsActive = busy;
     }
 

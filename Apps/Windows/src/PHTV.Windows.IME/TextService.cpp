@@ -769,6 +769,8 @@ HRESULT TextService::apply_replacement(
     if (context == nullptr
         || plan.replacement.size() > static_cast<std::size_t>(LONG_MAX)
         || plan.delete_before_utf16
+            > static_cast<std::uint32_t>(LONG_MAX)
+        || plan.delete_after_utf16
             > static_cast<std::uint32_t>(LONG_MAX)) {
         return E_INVALIDARG;
     }
@@ -810,6 +812,26 @@ HRESULT TextService::apply_replacement(
     );
     if (FAILED(result) || shifted != requested_shift) {
         return FAILED(result) ? result : TF_E_INVALIDPOS;
+    }
+
+    // The core edit plan can replace text on either side of the caret.  The
+    // previous implementation only moved the start anchor, so a non-zero
+    // delete-after value was silently ignored and stale trailing text was
+    // left in the document.  Extend the end anchor after moving the start;
+    // this preserves the original caret position as the right edge.
+    if (plan.delete_after_utf16 != 0) {
+        LONG shifted_end{};
+        const LONG requested_end_shift =
+            static_cast<LONG>(plan.delete_after_utf16);
+        result = replacement_range->ShiftEnd(
+            edit_cookie,
+            requested_end_shift,
+            &shifted_end,
+            nullptr
+        );
+        if (FAILED(result) || shifted_end != requested_end_shift) {
+            return FAILED(result) ? result : TF_E_INVALIDPOS;
+        }
     }
 
     Microsoft::WRL::ComPtr<ITfContextComposition> composition_context;
