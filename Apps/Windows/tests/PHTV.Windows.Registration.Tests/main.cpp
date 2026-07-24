@@ -234,7 +234,11 @@ template <typename Function>
     if (result != ERROR_SUCCESS) {
         return HRESULT_FROM_WIN32(result);
     }
-    if (!value.empty() && value.back() == L'\0') {
+    if (byte_count % sizeof(wchar_t) != 0) {
+        return HRESULT_FROM_WIN32(ERROR_INVALID_DATA);
+    }
+    value.resize(byte_count / sizeof(wchar_t));
+    while (!value.empty() && value.back() == L'\0') {
         value.pop_back();
     }
     output = std::move(value);
