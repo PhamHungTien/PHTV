@@ -131,9 +131,14 @@ jobs:
             throw "Swift was installed, but swift.exe could not be located."
           }
 
-          $swift.Directory.FullName |
+          $swiftBin = $swift.Directory.FullName
+          $env:Path = "$swiftBin;$env:Path"
+          $swiftBin |
             Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
           & $swift.FullName --version
+          if ($LASTEXITCODE -ne 0) {
+            throw "swift --version failed with exit code $LASTEXITCODE."
+          }
 
       - name: Upload Swift installer log on failure
         if: failure()
