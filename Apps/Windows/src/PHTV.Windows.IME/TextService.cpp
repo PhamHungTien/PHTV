@@ -8,6 +8,7 @@
 #include <utility>
 
 #include <windows.h>
+#include <initguid.h>
 #include <inputscope.h>
 #include <oleauto.h>
 

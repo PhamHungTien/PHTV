@@ -1,4 +1,4 @@
-LIBRARY "PHTV.Windows.IME"
+LIBRARY "PHTV.Windows.IME.dll"
 EXPORTS
     DllCanUnloadNow PRIVATE
     DllGetClassObject PRIVATE
