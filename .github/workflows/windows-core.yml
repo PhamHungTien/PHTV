@@ -362,11 +362,31 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference = "Stop"
-          msbuild `
+          function Write-WorkflowError {
+            param(
+              [string]$Title,
+              [string[]]$Lines
+            )
+            $message = ($Lines | Select-Object -Last 30) -join "`n"
+            $message = $message.Replace("%", "%25")
+            $message = $message.Replace("`r", "%0D")
+            $message = $message.Replace("`n", "%0A")
+            Write-Output "::error title=${Title}::$message"
+          }
+
+          $buildOutput = & msbuild `
             "Apps/Windows/tests/PHTV.Windows.Registration.Tests/PHTV.Windows.Registration.Tests.vcxproj" `
             /m `
             /p:Configuration=Release `
-            /p:Platform=x64
+            /p:Platform=x64 2>&1
+          $buildExitCode = $LASTEXITCODE
+          $buildOutput | ForEach-Object { Write-Host $_ }
+          if ($buildExitCode -ne 0) {
+            Write-WorkflowError `
+              -Title "Registration test build failed" `
+              -Lines $buildOutput
+            exit $buildExitCode
+          }
 
           $testExecutable = Get-ChildItem `
             -Path "Apps/Windows/tests/PHTV.Windows.Registration.Tests" `
@@ -390,9 +410,14 @@ jobs:
 
           $coreDirectory = "${{ steps.core-artifacts.outputs.library-dir }}"
           $env:PATH = "$coreDirectory;$env:PATH"
-          & $testExecutable.FullName $tsfDll.FullName
-          if ($LASTEXITCODE -ne 0) {
-            throw "Registration lifecycle tests failed with exit code $LASTEXITCODE."
+          $testOutput = & $testExecutable.FullName $tsfDll.FullName 2>&1
+          $testExitCode = $LASTEXITCODE
+          $testOutput | ForEach-Object { Write-Host $_ }
+          if ($testExitCode -ne 0) {
+            Write-WorkflowError `
+              -Title "Registration lifecycle test failed" `
+              -Lines $testOutput
+            exit $testExitCode
           }
 
       - name: Run configuration contract tests

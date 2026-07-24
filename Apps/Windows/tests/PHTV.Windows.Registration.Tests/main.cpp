@@ -5,9 +5,9 @@
 #include <string_view>
 #include <utility>
 
+#include <windows.h>
 #include <msctf.h>
 #include <objbase.h>
-#include <windows.h>
 #include <wrl/client.h>
 
 #include "Guids.h"
