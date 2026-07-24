@@ -19,10 +19,12 @@ PoC nạp snapshot lúc activation và fallback an toàn về Việt + Telex n�
 thiếu/hỏng/tương lai. Chưa có notification cập nhật tức thời, chưa phát hành
 installer và chưa được chứng nhận trên Notepad/Office/Chromium.
 
-COM activation hiện được ghi dưới `HKCU\Software\Classes`; profile và category
-được quản lý qua API TSF chính thức. CI xác nhận transaction đăng ký/gỡ trong
-môi trường cô lập, không khẳng định cài đặt không quyền admin hoặc activation
-trên Windows client thật.
+COM activation hiện được ghi dưới `HKCU\Software\Classes`; profile được quản lý
+bằng `ITfInputProcessorProfileMgr` hiện đại và category qua API TSF chính thức.
+Profile không tự bật mặc định; onboarding/installer sau này phải xin hành động
+rõ ràng của người dùng. CI xác nhận transaction đăng ký/gỡ trong môi trường cô
+lập, không khẳng định cài đặt không quyền admin hoặc activation trên Windows
+client thật.
 
 Snapshot khởi tạo `GUID_COMPARTMENT_KEYBOARD_OPENCLOSE`; sau đó compartment là
 trạng thái Việt/Anh hiệu lực của session. `OnChange` chỉ đọc trạng thái và reset

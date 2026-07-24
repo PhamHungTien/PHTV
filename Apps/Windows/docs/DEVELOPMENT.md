@@ -74,6 +74,10 @@ hiện dấu vết cài đặt PHTV có sẵn và luôn cố gỡ phần nó v�
 Không chạy test registration hoặc gọi `regsvr32` trên máy làm việc chính; hãy
 dùng runner sạch hay VM/máy thử có snapshot phục hồi.
 
+Registration dùng `ITfInputProcessorProfileMgr`, API Microsoft khuyến nghị từ
+Windows Vista để đăng ký/gỡ và duyệt profile. Profile được đăng ký ở trạng thái
+chưa tự bật; bật profile thuộc luồng onboarding/installer có sự đồng ý.
+
 ## Quy trình thay đổi
 
 1. Viết hoặc cập nhật test vector độc lập nền tảng.

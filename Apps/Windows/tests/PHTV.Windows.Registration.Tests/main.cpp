@@ -246,9 +246,9 @@ template <typename Function>
 }
 
 [[nodiscard]] HRESULT profile_exists(bool& exists) {
-    ComPtr<ITfInputProcessorProfiles> profiles;
+    ComPtr<ITfInputProcessorProfileMgr> profiles;
     HRESULT result = CoCreateInstance(
-        CLSID_TF_InputProcessorProfiles,
+        CLSID_TF_InputProcessorProfileMgr,
         nullptr,
         CLSCTX_INPROC_SERVER,
         IID_PPV_ARGS(&profiles)
@@ -257,18 +257,15 @@ template <typename Function>
         return result;
     }
 
-    ComPtr<IEnumTfLanguageProfiles> enumerator;
-    result = profiles->EnumLanguageProfiles(
-        vietnamese_language,
-        &enumerator
-    );
+    ComPtr<IEnumTfInputProcessorProfiles> enumerator;
+    result = profiles->EnumProfiles(0, &enumerator);
     if (FAILED(result)) {
         return result;
     }
 
     exists = false;
     while (true) {
-        TF_LANGUAGEPROFILE profile{};
+        TF_INPUTPROCESSORPROFILE profile{};
         ULONG fetched{};
         result = enumerator->Next(1, &profile, &fetched);
         if (result == S_FALSE) {
@@ -280,7 +277,9 @@ template <typename Function>
         if (fetched != 1) {
             return E_UNEXPECTED;
         }
-        if (IsEqualCLSID(profile.clsid, text_service_clsid)
+        if (profile.dwProfileType == TF_PROFILETYPE_INPUTPROCESSOR
+            && profile.langid == vietnamese_language
+            && IsEqualCLSID(profile.clsid, text_service_clsid)
             && IsEqualGUID(profile.guidProfile, vietnamese_profile_guid)) {
             exists = true;
             return S_OK;

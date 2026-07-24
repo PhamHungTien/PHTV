@@ -161,12 +161,10 @@ private:
     return HRESULT_FROM_WIN32(status);
 }
 
-[[nodiscard]] HRESULT register_profile(
-    const std::wstring_view dll_path
-) noexcept {
-    Microsoft::WRL::ComPtr<ITfInputProcessorProfiles> profiles;
+[[nodiscard]] HRESULT register_profile() noexcept {
+    Microsoft::WRL::ComPtr<ITfInputProcessorProfileMgr> profiles;
     HRESULT result = CoCreateInstance(
-        CLSID_TF_InputProcessorProfiles,
+        CLSID_TF_InputProcessorProfileMgr,
         nullptr,
         CLSCTX_INPROC_SERVER,
         IID_PPV_ARGS(&profiles)
@@ -175,31 +173,26 @@ private:
         return result;
     }
 
-    result = profiles->Register(text_service_clsid);
-    if (FAILED(result)) {
-        return result;
-    }
-
-    result = profiles->AddLanguageProfile(
+    return profiles->RegisterProfile(
         text_service_clsid,
         vietnamese_language,
         vietnamese_profile_guid,
         service_name.data(),
         static_cast<ULONG>(service_name.size()),
-        dll_path.data(),
-        static_cast<ULONG>(dll_path.size()),
+        nullptr,
+        0,
+        0,
+        nullptr,
+        0,
+        FALSE,
         0
     );
-    if (FAILED(result)) {
-        static_cast<void>(profiles->Unregister(text_service_clsid));
-    }
-    return result;
 }
 
 [[nodiscard]] HRESULT unregister_profile() noexcept {
-    Microsoft::WRL::ComPtr<ITfInputProcessorProfiles> profiles;
+    Microsoft::WRL::ComPtr<ITfInputProcessorProfileMgr> profiles;
     const HRESULT create_result = CoCreateInstance(
-        CLSID_TF_InputProcessorProfiles,
+        CLSID_TF_InputProcessorProfileMgr,
         nullptr,
         CLSCTX_INPROC_SERVER,
         IID_PPV_ARGS(&profiles)
@@ -207,7 +200,12 @@ private:
     if (FAILED(create_result)) {
         return create_result;
     }
-    return profiles->Unregister(text_service_clsid);
+    return profiles->UnregisterProfile(
+        text_service_clsid,
+        vietnamese_language,
+        vietnamese_profile_guid,
+        0
+    );
 }
 
 [[nodiscard]] HRESULT register_categories() noexcept {
@@ -321,7 +319,7 @@ HRESULT register_server() noexcept {
             return result;
         }
 
-        result = register_profile(dll_path);
+        result = register_profile();
         if (FAILED(result)) {
             static_cast<void>(unregister_com_server());
             return result;
