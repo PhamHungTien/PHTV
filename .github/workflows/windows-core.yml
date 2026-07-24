@@ -140,8 +140,7 @@ jobs:
             $swiftBin
             $installedUserPath -split ";" |
               Where-Object {
-                -not [string]::IsNullOrWhiteSpace($_)
-                  -and (Test-Path $_)
+                (-not [string]::IsNullOrWhiteSpace($_)) -and (Test-Path $_)
               }
           ) | Select-Object -Unique
           $env:Path = "$($installedPathEntries -join ';');$env:Path"
