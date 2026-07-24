@@ -14,21 +14,21 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{3691995D-30E4-4162-B0DA-71BD42993964}</ProjectGuid>
-    <RootNamespace>PHTVWindowsIME</RootNamespace>
-    <ProjectName>PHTV.Windows.IME</ProjectName>
+    <ProjectGuid>{EEABCAEB-2D9F-49D0-BAA6-CC6B94311E83}</ProjectGuid>
+    <RootNamespace>PHTVWindowsSettingsSnapshotTests</RootNamespace>
+    <ProjectName>PHTV.Windows.SettingsSnapshot.Tests</ProjectName>
   </PropertyGroup>
 
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
-    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
@@ -39,7 +39,7 @@
 
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(PHTVRepositoryRoot)\Apps\Windows\src\PHTV.Windows.CoreBridge;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(PHTVRepositoryRoot)\Apps\Windows\src\PHTV.Windows.IME;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <WarningLevel>Level4</WarningLevel>
       <TreatWarningAsError>true</TreatWarningAsError>
@@ -48,37 +48,13 @@
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
       <PreprocessorDefinitions>WIN32_LEAN_AND_MEAN;NOMINMAX;UNICODE;_UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <Link>
-      <AdditionalLibraryDirectories>$(PHTVCoreLibraryDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>PHTVCore.lib;msctf.lib;ole32.lib;shell32.lib;advapi32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <ModuleDefinitionFile>PHTV.Windows.IME.def</ModuleDefinitionFile>
-      <DataExecutionPrevention>true</DataExecutionPrevention>
-      <RandomizedBaseAddress>true</RandomizedBaseAddress>
-    </Link>
   </ItemDefinitionGroup>
 
   <ItemGroup>
-    <ClInclude Include="Guids.h" />
-    <ClInclude Include="ModuleState.h" />
-    <ClInclude Include="SettingsSnapshot.h" />
-    <ClInclude Include="SettingsStore.h" />
-    <ClInclude Include="TextService.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="Module.cpp" />
-    <ClCompile Include="ModuleState.cpp" />
-    <ClCompile Include="Registration.cpp" />
-    <ClCompile Include="SettingsSnapshot.cpp" />
-    <ClCompile Include="SettingsStore.cpp" />
-    <ClCompile Include="TextService.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="PHTV.Windows.IME.def" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\PHTV.Windows.CoreBridge\PHTV.Windows.CoreBridge.vcxproj">
-      <Project>{EAE07381-1740-4E33-B0A9-A5890950DE0F}</Project>
-    </ProjectReference>
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="..\..\src\PHTV.Windows.IME\SettingsSnapshot.cpp">
+      <Link>SettingsSnapshot.cpp</Link>
+    </ClCompile>
   </ItemGroup>
 
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

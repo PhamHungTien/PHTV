@@ -77,6 +77,13 @@ thứ tự ưu tiên:
 
 Không đưa HTTP client, updater hoặc database lịch sử Clipboard vào DLL TSF.
 
+Lát cắt hiện tại dùng JSON làm nguồn dữ liệu và một binary snapshot 36 byte cho
+hot component. App ghi cả hai atomically; TSF kiểm tra magic, version, schema,
+enum và checksum rồi nạp snapshot khi activation. Contract byte-level được khóa
+bằng golden vector C#/C++ tại
+[SETTINGS_SNAPSHOT.md](SETTINGS_SNAPSHOT.md). Notification tức thời chưa được
+chọn trước khi có kết quả AppContainer trên máy Windows thật.
+
 ## Quy tắc theo ứng dụng
 
 Context Windows dùng executable identity, package family name và input scope.

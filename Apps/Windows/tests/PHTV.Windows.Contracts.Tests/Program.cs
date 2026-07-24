@@ -13,6 +13,8 @@ internal static class Program
             RoundTripKeepsSupportedSettings();
             NormalizationIsStableAndDeterministic();
             FutureSchemaIsRejected();
+            RuntimeSnapshotMatchesNativeGoldenVector();
+            RuntimeSnapshotRejectsCorruptionAndFutureFormats();
             Console.WriteLine("PHTV Windows configuration contract tests passed");
             return 0;
         }
@@ -100,6 +102,60 @@ internal static class Program
         {
             // Expected: readers fail closed instead of guessing a future schema.
         }
+    }
+
+    private static void RuntimeSnapshotMatchesNativeGoldenVector()
+    {
+        const ulong revision = 0x0102030405060708;
+        var settings = new PHTVSettings
+        {
+            VietnameseEnabled = false,
+            InputMethod = InputMethod.Vni,
+        };
+        byte[] expected = Convert.FromHexString(
+            "50485456434647000100240001000000"
+                + "08070605040302010000000001000000"
+                + "6C05A6E9"
+        );
+
+        byte[] encoded = PHTVRuntimeSettingsSnapshot.Encode(
+            settings,
+            revision
+        );
+        Assert(encoded.SequenceEqual(expected));
+        Assert(
+            PHTVRuntimeSettingsSnapshot.TryDecode(
+                expected,
+                out RuntimeSettingsSnapshot decoded
+            )
+        );
+        Assert(decoded.SchemaVersion == PHTVSettings.CurrentSchemaVersion);
+        Assert(decoded.Revision == revision);
+        Assert(!decoded.VietnameseEnabled);
+        Assert(decoded.InputMethod == InputMethod.Vni);
+    }
+
+    private static void RuntimeSnapshotRejectsCorruptionAndFutureFormats()
+    {
+        byte[] snapshot = PHTVRuntimeSettingsSnapshot.Encode(
+            new PHTVSettings(),
+            revision: 42
+        );
+
+        byte[] corrupted = (byte[])snapshot.Clone();
+        corrupted[24] ^= 1;
+        Assert(
+            !PHTVRuntimeSettingsSnapshot.TryDecode(corrupted, out _)
+        );
+        Assert(
+            !PHTVRuntimeSettingsSnapshot.TryDecode(snapshot.AsSpan(1), out _)
+        );
+
+        byte[] futureFormat = (byte[])snapshot.Clone();
+        futureFormat[8] = 2;
+        Assert(
+            !PHTVRuntimeSettingsSnapshot.TryDecode(futureFormat, out _)
+        );
     }
 
     private static void Assert(

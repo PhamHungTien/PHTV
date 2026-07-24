@@ -136,7 +136,7 @@
                                 Text="Quy tắc theo ứng dụng" />
                             <TextBlock
                                 Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                Text="Core đã hỗ trợ các trạng thái mặc định, ưu tiên tiếng Anh và khóa tiếng Anh. Trình quản lý danh sách sẽ được bật sau khi TSF đọc snapshot cấu hình an toàn."
+                                Text="Core đã hỗ trợ các trạng thái mặc định, ưu tiên tiếng Anh và khóa tiếng Anh. Trình quản lý danh sách sẽ được triển khai sau khi định danh ứng dụng được kiểm chứng trên TSF."
                                 TextWrapping="Wrap" />
                         </StackPanel>
                     </Border>

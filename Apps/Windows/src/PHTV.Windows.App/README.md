@@ -8,10 +8,12 @@ Companion app native viết bằng C# và WinUI 3.
 - bật/tắt tiếng Việt, chọn Telex/VNI;
 - config schema v1 dùng chung;
 - đọc/ghi `%LocalAppData%\PHTV\settings.json` atomically;
+- tạo `%LocalAppData%\PHTV\settings.snapshot` versioned/checksummed cho TSF;
 - không nhận hoặc ghi nội dung phím.
 
-TSF chưa đọc snapshot này nên UI đang là nền móng Settings thật, chưa phải control
-plane hoàn chỉnh của IME.
+TSF nạp snapshot khi được kích hoạt, vì vậy bật/tắt tiếng Việt và Telex/VNI đã
+đi qua control plane thật. Cập nhật tức thời khi TSF đang active và quy tắc theo
+ứng dụng vẫn thuộc các lát cắt tiếp theo.
 
 ## Trách nhiệm
 

@@ -9,6 +9,7 @@
 #include <windows.h>
 
 #include "ModuleState.h"
+#include "SettingsStore.h"
 
 namespace phtv::windows::ime {
 namespace {
@@ -250,6 +251,7 @@ HRESULT TextService::ActivateEx(
         return E_FAIL;
     }
 
+    settings_snapshot_ = load_user_settings_snapshot();
     thread_manager_ = thread_manager;
     client_id_ = client_id;
 
@@ -370,8 +372,13 @@ HRESULT TextService::OnKeyDown(
     }
 
     core::InputContext input_context;
-    input_context.language_mode = core::LanguageMode::vietnamese;
-    input_context.input_method = core::InputMethod::telex;
+    input_context.language_mode = settings_snapshot_.vietnamese_enabled
+        ? core::LanguageMode::vietnamese
+        : core::LanguageMode::english;
+    input_context.input_method =
+        settings_snapshot_.input_method == SnapshotInputMethod::vni
+        ? core::InputMethod::vni
+        : core::InputMethod::telex;
     input_context.flags = core::context_supports_composition;
 
     core::EditPlan plan;
@@ -550,6 +557,10 @@ bool TextService::could_process_key(
     const WPARAM virtual_key,
     const LPARAM key_data
 ) const noexcept {
+    if (!settings_snapshot_.vietnamese_enabled) {
+        return false;
+    }
+
     const std::uint32_t modifiers = current_modifiers();
     constexpr std::uint32_t shortcut_modifiers =
         core::modifier_control | core::modifier_alt | core::modifier_command;

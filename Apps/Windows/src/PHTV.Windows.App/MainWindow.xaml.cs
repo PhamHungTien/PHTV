@@ -9,6 +9,7 @@ namespace PHTV.Windows.App;
 public sealed partial class MainWindow : Window
 {
     private readonly SettingsStore settingsStore = new();
+    private PHTVSettings currentSettings = new();
     private bool isLoaded;
 
     public MainWindow()
@@ -31,12 +32,14 @@ public sealed partial class MainWindow : Window
         try
         {
             PHTVSettings settings = await settingsStore.LoadAsync();
+            currentSettings = settings;
             VietnameseEnabledSwitch.IsOn = settings.VietnameseEnabled;
             TelexOption.IsChecked = settings.InputMethod == InputMethod.Telex;
             VniOption.IsChecked = settings.InputMethod == InputMethod.Vni;
         }
         catch (Exception exception) when (
             exception is IOException
+                or InvalidDataException
                 or UnauthorizedAccessException
                 or System.Text.Json.JsonException
         )
@@ -48,6 +51,7 @@ public sealed partial class MainWindow : Window
             );
             VietnameseEnabledSwitch.IsOn = true;
             TelexOption.IsChecked = true;
+            currentSettings = new PHTVSettings();
         }
         finally
         {
@@ -60,7 +64,7 @@ public sealed partial class MainWindow : Window
         SetBusy(true);
         StatusInfoBar.IsOpen = false;
 
-        var settings = new PHTVSettings
+        PHTVSettings settings = currentSettings with
         {
             VietnameseEnabled = VietnameseEnabledSwitch.IsOn,
             InputMethod = VniOption.IsChecked == true
@@ -71,10 +75,11 @@ public sealed partial class MainWindow : Window
         try
         {
             await settingsStore.SaveAsync(settings);
+            currentSettings = settings.Normalize();
             ShowStatus(
                 InfoBarSeverity.Success,
                 "Đã lưu",
-                "Thiết lập sẽ được TSF nạp ở snapshot an toàn tiếp theo."
+                "Thiết lập sẽ có hiệu lực khi bạn kích hoạt lại bộ gõ PHTV."
             );
         }
         catch (Exception exception) when (

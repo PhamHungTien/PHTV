@@ -40,13 +40,15 @@ Hai kiến trúc dùng DMG và appcast riêng; đây không phải một Univers
 ## Windows CI (`windows-core.yml`)
 
 Chạy khi `Apps/Windows`, portable Core, C contract hoặc golden vectors thay đổi;
+kiểm tra thêm runtime settings snapshot C#/C++ trước khi build TSF;
 cũng có thể chạy thủ công:
 
 1. dùng Windows Server 2025 x64;
 2. cài Swift 6.3.3, .NET 10 và dùng MSBuild v143;
-3. build/test `Shared/PHTVCore` và C ABI smoke executable;
-4. build/chạy C++ Core bridge tests;
-5. build TSF DLL, config contract tests và WinUI Settings app.
+3. build/chạy C++ runtime snapshot parser tests;
+4. build/test `Shared/PHTVCore` và C ABI smoke executable;
+5. build/chạy C++ Core bridge cùng C# config/golden-vector tests;
+6. build TSF DLL và WinUI Settings app.
 
 Workflow chỉ build TSF; nó không gọi `regsvr32` trên runner và chưa thay thế
 Notepad/Office/Chromium integration tests hay installer lifecycle tests.

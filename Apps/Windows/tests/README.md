@@ -5,7 +5,9 @@
 - `PHTV.Windows.CoreBridge.Tests`: gọi Core qua wrapper C++ giống TSF, kiểm tra
   Telex, VNI, rule khóa tiếng Anh và ownership session.
 - `PHTV.Windows.Contracts.Tests`: kiểm tra config round-trip, normalization,
-  duplicate rule và từ chối schema tương lai.
+  duplicate rule, snapshot golden vector và từ chối schema tương lai.
+- `PHTV.Windows.SettingsSnapshot.Tests`: kiểm tra native parser từ chối snapshot
+  thiếu byte, hỏng checksum, format/schema tương lai, flag và enum không hợp lệ.
 
 ## Chưa triển khai
 

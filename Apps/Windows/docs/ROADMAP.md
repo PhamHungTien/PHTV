@@ -31,6 +31,7 @@ phát hiện lỗi ownership tại C ABI.
 
 - [x] Tạo project C++ Core bridge, TSF DLL và native contract test.
 - [x] Tạo WinUI Settings project cùng config schema/atomic store ban đầu.
+- [x] Nối trạng thái Việt/Anh và Telex/VNI từ WinUI sang TSF bằng snapshot v1.
 - [ ] Đăng ký Text Input Processor per-user trên máy test.
 - [ ] Bật/tắt Việt–Anh và commit composition trong Notepad.
 - [ ] Kiểm chứng Office, Chromium/Electron, WinUI và AppContainer.

@@ -6,6 +6,7 @@
 #include <wrl/client.h>
 
 #include "CoreBridge.h"
+#include "SettingsSnapshot.h"
 
 namespace phtv::windows::ime {
 
@@ -109,6 +110,7 @@ private:
     Microsoft::WRL::ComPtr<ITfComposition> composition_;
     TfClientId client_id_{TF_CLIENTID_NULL};
     core::Session core_session_;
+    SettingsSnapshot settings_snapshot_;
     bool active_{};
     bool ending_for_replacement_{};
 };

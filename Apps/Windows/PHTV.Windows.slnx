@@ -8,5 +8,6 @@
   <Folder Name="/tests/">
     <Project Path="tests/PHTV.Windows.CoreBridge.Tests/PHTV.Windows.CoreBridge.Tests.vcxproj" />
     <Project Path="tests/PHTV.Windows.Contracts.Tests/PHTV.Windows.Contracts.Tests.csproj" />
+    <Project Path="tests/PHTV.Windows.SettingsSnapshot.Tests/PHTV.Windows.SettingsSnapshot.Tests.vcxproj" />
   </Folder>
 </Solution>

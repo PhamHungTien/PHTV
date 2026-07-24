@@ -52,6 +52,7 @@ Apps/Windows/
 │   ├── DISTRIBUTION.md
 │   ├── PRIVACY.md
 │   ├── ROADMAP.md
+│   ├── SETTINGS_SNAPSHOT.md
 │   ├── SECURITY.md
 │   ├── TESTING.md
 │   └── adr/
@@ -63,7 +64,8 @@ Apps/Windows/
 │   └── PHTV.Windows.App/        # WinUI companion app
 └── tests/
     ├── PHTV.Windows.Contracts.Tests/
-    └── PHTV.Windows.CoreBridge.Tests/
+    ├── PHTV.Windows.CoreBridge.Tests/
+    └── PHTV.Windows.SettingsSnapshot.Tests/
 ```
 
 Engine và test vector dùng chung nằm tại
@@ -73,8 +75,10 @@ không được copy vào từng nền tảng.
 Swift package dùng chung nằm tại
 [`Shared/PHTVCore`](../../Shared/PHTVCore/README.md). TSF hiện đã nhận phím qua
 `ITfKeyEventSink`, gọi Core bằng C ABI và áp dụng replacement bằng TSF edit
-session/composition. Settings app đã đọc/ghi snapshot JSON atomically nhưng TSF
-chưa nạp snapshot đó; PoC hiện dùng trạng thái tiếng Việt + Telex mặc định.
+session/composition. Settings app giữ JSON làm nguồn cấu hình và ghi thêm runtime
+snapshot nhị phân atomically; TSF nạp snapshot khi activation để dùng đúng trạng
+thái Việt/Anh và Telex/VNI mà không parse JSON trong DLL nhập liệu. Xem
+[contract snapshot v1](docs/SETTINGS_SNAPSHOT.md).
 
 ## Nền tảng mục tiêu ban đầu
 
@@ -93,6 +97,7 @@ chưa nạp snapshot đó; PoC hiện dùng trạng thái tiếng Việt + Telex
 - [Thiết lập môi trường phát triển](docs/DEVELOPMENT.md)
 - [Roadmap và tiêu chí hoàn thành](docs/ROADMAP.md)
 - [Chiến lược kiểm thử](docs/TESTING.md)
+- [Runtime Settings Snapshot v1](docs/SETTINGS_SNAPSHOT.md)
 - [Bảo mật](docs/SECURITY.md)
 - [Quyền riêng tư](docs/PRIVACY.md)
 - [Đóng gói và phát hành](docs/DISTRIBUTION.md)

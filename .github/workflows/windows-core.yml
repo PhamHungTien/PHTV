@@ -87,6 +87,32 @@ jobs:
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@6fb02220983dee41ce7ae257b6f4d8f9bf5ed4ce # v2
 
+      - name: Build and run runtime settings snapshot tests
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $project = "Apps/Windows/tests/PHTV.Windows.SettingsSnapshot.Tests/PHTV.Windows.SettingsSnapshot.Tests.vcxproj"
+          msbuild `
+            $project `
+            /m `
+            /p:Configuration=Release `
+            /p:Platform=x64
+
+          $testExecutable = Get-ChildItem `
+            -Path "Apps/Windows/tests/PHTV.Windows.SettingsSnapshot.Tests" `
+            -Filter "PHTV.Windows.SettingsSnapshot.Tests.exe" `
+            -File `
+            -Recurse |
+            Select-Object -First 1
+          if (-not $testExecutable) {
+            throw "Runtime settings snapshot test executable was not produced."
+          }
+
+          & $testExecutable.FullName
+          if ($LASTEXITCODE -ne 0) {
+            throw "Runtime settings snapshot tests failed with exit code $LASTEXITCODE."
+          }
+
       - name: Build portable Core
         run: swift build --package-path Shared/PHTVCore
 
