@@ -257,34 +257,28 @@ template <typename Function>
         return result;
     }
 
-    ComPtr<IEnumTfInputProcessorProfiles> enumerator;
-    result = profiles->EnumProfiles(0, &enumerator);
+    TF_INPUTPROCESSORPROFILE profile{};
+    result = profiles->GetProfile(
+        TF_PROFILETYPE_INPUTPROCESSOR,
+        vietnamese_language,
+        text_service_clsid,
+        vietnamese_profile_guid,
+        nullptr,
+        &profile
+    );
+    if (result == E_FAIL) {
+        exists = false;
+        return S_OK;
+    }
     if (FAILED(result)) {
         return result;
     }
 
-    exists = false;
-    while (true) {
-        TF_INPUTPROCESSORPROFILE profile{};
-        ULONG fetched{};
-        result = enumerator->Next(1, &profile, &fetched);
-        if (result == S_FALSE) {
-            return S_OK;
-        }
-        if (FAILED(result)) {
-            return result;
-        }
-        if (fetched != 1) {
-            return E_UNEXPECTED;
-        }
-        if (profile.dwProfileType == TF_PROFILETYPE_INPUTPROCESSOR
-            && profile.langid == vietnamese_language
-            && IsEqualCLSID(profile.clsid, text_service_clsid)
-            && IsEqualGUID(profile.guidProfile, vietnamese_profile_guid)) {
-            exists = true;
-            return S_OK;
-        }
-    }
+    exists = profile.dwProfileType == TF_PROFILETYPE_INPUTPROCESSOR
+        && profile.langid == vietnamese_language
+        && IsEqualCLSID(profile.clsid, text_service_clsid)
+        && IsEqualGUID(profile.guidProfile, vietnamese_profile_guid);
+    return exists ? S_OK : E_UNEXPECTED;
 }
 
 [[nodiscard]] HRESULT category_exists(

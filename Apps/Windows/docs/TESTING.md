@@ -94,3 +94,7 @@ kiểm tra trước để không đè lên cài đặt có sẵn, gọi entrypoi
 nhận COM/profile/category, tạo COM text service, kiểm tra module reference được
 nhả, gỡ và xác nhận không còn dấu vết. Kết quả này không chứng minh profile xuất
 hiện trong language switcher hay nhập được trong ứng dụng desktop.
+
+Profile được kiểm tra bằng `ITfInputProcessorProfileMgr::GetProfile` với đầy đủ
+CLSID, LANGID và profile GUID. Không dùng danh sách profile đang khả dụng cho
+người dùng để suy ra registration của một profile chưa được bật mặc định.
