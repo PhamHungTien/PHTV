@@ -2,6 +2,18 @@
 
 Text Services Framework Text Input Processor viết bằng C++/WinRT.
 
+## Lát cắt hiện có
+
+- COM DLL/class factory và `ITfTextInputProcessorEx`;
+- `ITfKeyEventSink` với chuyển đổi layout Windows sang Unicode scalar;
+- C++ Core bridge gọi Swift C ABI v1;
+- synchronous TSF read/write edit session và composition replacement;
+- COM/TSF profile/category registration entrypoints;
+- fail-open: lỗi Core/edit session trả phím về ứng dụng thay vì nuốt phím.
+
+PoC hiện dùng tiếng Việt + Telex mặc định. Chưa đọc snapshot Settings, chưa phát
+hành installer và chưa được chứng nhận trên Notepad/Office/Chromium.
+
 ## Trách nhiệm
 
 - COM/TSF registration và language profile;
@@ -20,4 +32,3 @@ Text Services Framework Text Input Processor viết bằng C++/WinRT.
 
 Mọi fallback ngoài TSF phải được người dùng biết, có telemetry cục bộ không chứa
 payload và có ADR riêng.
-

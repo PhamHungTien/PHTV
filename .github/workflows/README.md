@@ -37,19 +37,19 @@ Luồng công việc:
 
 Hai kiến trúc dùng DMG và appcast riêng; đây không phải một Universal DMG.
 
-## Windows Core CI (`windows-core.yml`)
+## Windows CI (`windows-core.yml`)
 
 Chạy khi `Apps/Windows`, portable Core, C contract hoặc golden vectors thay đổi;
 cũng có thể chạy thủ công:
 
 1. dùng Windows Server 2025 x64;
-2. cài đúng Swift 6.3.3 từ package chính thức `Swift.Toolchain`;
-3. build và chạy unit test của `Shared/PHTVCore`;
-4. build/chạy một executable C thật để xác nhận symbol, layout và vòng đời C ABI.
+2. cài Swift 6.3.3, .NET 10 và dùng MSBuild v143;
+3. build/test `Shared/PHTVCore` và C ABI smoke executable;
+4. build/chạy C++ Core bridge tests;
+5. build TSF DLL, config contract tests và WinUI Settings app.
 
-Workflow này chỉ chứng minh nền móng Core/C ABI trên Windows. Nó chưa build
-WinUI 3, đăng ký TSF hoặc tạo installer; các job đó chỉ được thêm khi project
-tương ứng tồn tại và chạy được trên máy Windows thật.
+Workflow chỉ build TSF; nó không gọi `regsvr32` trên runner và chưa thay thế
+Notepad/Office/Chromium integration tests hay installer lifecycle tests.
 
 ## Linux workflows
 

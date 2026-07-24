@@ -2,15 +2,16 @@
 
 ## Trạng thái hiện tại
 
-Chưa có Visual Studio solution hoặc ứng dụng Windows để cài. Portable Core và C
-ABI đã là Swift package build được; Windows CI dùng nó để kiểm chứng toolchain,
-layout contract và vòng đời session trước khi TSF PoC được scaffold.
+Đã có solution, portable Core, native Core bridge, TSF DLL, WinUI Settings app và
+hai executable contract test. Đây là source của PoC, chưa phải binary cài đặt:
+registration, composition và cleanup vẫn cần xác nhận trên Windows client thật.
 
 ## Yêu cầu dự kiến
 
 - Windows 10 1809+ hoặc Windows 11, Developer Mode bật trên máy phát triển.
-- Visual Studio 2022 với MSVC x64/x86, C++/WinRT và Windows SDK.
-- .NET SDK tương ứng với Windows App SDK được khóa trong project.
+- Visual Studio 2026 18.0+ cho .NET 10 và solution đầy đủ.
+- MSVC v143 x64 cùng Windows SDK 10.0.26100.0.
+- .NET SDK 10.0.100 và Windows App SDK 2.3.1 stable.
 - Swift 6.3.3 chính thức cho Windows (`Swift.Toolchain`).
 - Git for Windows và PowerShell 7.
 
@@ -25,9 +26,9 @@ Tham khảo:
 Khi scaffold, solution phải giữ ranh giới sau:
 
 ```text
-PHTV.Windows.sln
+PHTV.Windows.slnx
 ├── PHTV.Windows.IME       # C++/WinRT TSF DLL
-├── PHTV.Windows.App       # C# WinUI 3 packaged app
+├── PHTV.Windows.App       # C# WinUI companion app
 ├── PHTV.Windows.Contracts # DTO/config schema, không phụ thuộc UI
 ├── PHTV.CoreBridge        # C header + import/static library cho Swift core
 └── *.Tests
@@ -48,6 +49,22 @@ swift run --package-path Shared/PHTVCore PHTVCoreABISmoke
 
 Lệnh cuối build một chương trình C liên kết với Swift dynamic library và gọi
 toàn bộ vòng đời ABI tối thiểu. Nó không thay thế test TSF trên Windows thật.
+
+## Build Windows projects
+
+Sau khi `swift build` tạo `PHTVCore.lib`/`PHTVCore.dll`, đặt
+`PHTVCoreLibraryDir` thành thư mục chứa hai file đó rồi chạy:
+
+```text
+msbuild Apps\Windows\tests\PHTV.Windows.CoreBridge.Tests\PHTV.Windows.CoreBridge.Tests.vcxproj /m /p:Configuration=Release /p:Platform=x64 /p:PHTVCoreLibraryDir="<core-dir>"
+msbuild Apps\Windows\src\PHTV.Windows.IME\PHTV.Windows.IME.vcxproj /m /p:Configuration=Release /p:Platform=x64 /p:PHTVCoreLibraryDir="<core-dir>"
+dotnet run --project Apps\Windows\tests\PHTV.Windows.Contracts.Tests\PHTV.Windows.Contracts.Tests.csproj --configuration Release
+dotnet build Apps\Windows\src\PHTV.Windows.App\PHTV.Windows.App.csproj --configuration Release --runtime win-x64 /p:Platform=x64
+```
+
+Workflow `windows-core.yml` là nguồn tham chiếu cho thứ tự build chính xác và
+không đăng ký TSF vào runner. Việc gọi `regsvr32` chỉ dành cho VM/máy thử có
+snapshot phục hồi, không chạy trên máy làm việc chính.
 
 ## Quy trình thay đổi
 
@@ -77,7 +94,7 @@ toàn bộ vòng đời ABI tối thiểu. Nó không thay thế test TSF trên 
 
 ## Công cụ build
 
-Ba lệnh SwiftPM phía trên là entrypoint đã được CI kiểm chứng cho Core. Khi có
-project TSF/WinUI thật, repository sẽ cung cấp một entrypoint Swift chạy được
-trên Windows cho các lệnh `doctor`, `build`, `test`, `package`. Không ghi lệnh
-giả vào tài liệu trước khi công cụ đó tồn tại.
+Các lệnh SwiftPM, MSBuild và dotnet phía trên là entrypoint hiện có. Trước khi
+đóng gói, repository vẫn cần một orchestration tool viết bằng Swift cho
+`doctor`, `build`, `test` và `package`; không dùng PowerShell script cục bộ để
+né quy tắc tooling Swift-only.

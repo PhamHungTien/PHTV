@@ -7,7 +7,7 @@ atomic, có chữ ký và có thể phục hồi khi một bước thất bại.
 
 ## Thành phần phát hành dự kiến
 
-- `PHTV.Windows.App` packaged app (WinUI 3);
+- `PHTV.Windows.App` WinUI app (PoC hiện build unpackaged, self-contained);
 - TSF DLL cho từng kiến trúc hỗ trợ;
 - Swift runtime/Core binary cần thiết;
 - resource từ điển và localization;
@@ -16,6 +16,10 @@ atomic, có chữ ký và có thể phục hồi khi một bước thất bại.
 Không quyết định MSIX/Store/bootstrapper cuối cùng trước khi PoC chứng minh cách
 đăng ký TSF, cập nhật và rollback đáp ứng yêu cầu Windows. Quyết định đó phải có
 ADR riêng.
+
+`WindowsPackageType=None` hiện là lựa chọn PoC có chủ đích để Settings app chạy
+độc lập với package identity trong khi kiểm chứng vòng đời TSF. Đây không phải
+quyết định distribution cuối cùng.
 
 ## Phiên bản
 
@@ -48,4 +52,3 @@ phụ thuộc kết quả PoC TSF và nhu cầu rollback.
 - Uninstall xóa TSF registration và file chương trình nhưng không tự xóa dữ liệu
   người dùng nếu chưa hỏi rõ.
 - Tài liệu phục hồi language profile hỏng phải có trước Beta công khai.
-

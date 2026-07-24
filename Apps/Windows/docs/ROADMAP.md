@@ -9,8 +9,8 @@ Roadmap dùng cổng chất lượng thay cho ngày phát hành cố định. M�
 - [x] Xác định ranh giới Swift Core/C ABI/TSF.
 - [x] Tạo tài liệu phát triển, kiểm thử, bảo mật và phát hành ban đầu.
 - [x] Khóa Swift 6.3.3 cho Windows Core CI.
-- [ ] Ghi nhận baseline test của engine macOS trước khi tách Core.
-- [ ] Chọn và khóa Windows SDK, Windows App SDK và .NET cho project native.
+- [x] Ghi nhận baseline test của engine macOS trước khi tách Core.
+- [x] Chọn và khóa Windows SDK, Windows App SDK và .NET cho project native.
 
 ## Giai đoạn 1 — Portable Core
 
@@ -29,6 +29,8 @@ phát hiện lỗi ownership tại C ABI.
 
 ## Giai đoạn 2 — TSF proof of concept
 
+- [x] Tạo project C++ Core bridge, TSF DLL và native contract test.
+- [x] Tạo WinUI Settings project cùng config schema/atomic store ban đầu.
 - [ ] Đăng ký Text Input Processor per-user trên máy test.
 - [ ] Bật/tắt Việt–Anh và commit composition trong Notepad.
 - [ ] Kiểm chứng Office, Chromium/Electron, WinUI và AppContainer.

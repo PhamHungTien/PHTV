@@ -39,7 +39,7 @@
 
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(PHTVRepositoryRoot)\Apps\Windows\src\PHTV.Windows.CoreBridge;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(PHTVRepositoryRoot)\Apps\Windows\src\PHTV.Windows.CoreBridge;$(PHTVCoreIncludeDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <WarningLevel>Level4</WarningLevel>
       <TreatWarningAsError>true</TreatWarningAsError>

@@ -2,6 +2,8 @@
 #include <iostream>
 #include <string_view>
 
+#include <PHTVCoreContracts.h>
+
 #include "CoreBridge.h"
 
 namespace core = phtv::windows::core;
@@ -43,8 +45,24 @@ int main() {
     bool passed = true;
     core::Session session;
 
+    const core::Status initialization_status = session.initialize();
+    if (initialization_status != core::Status::ok) {
+        std::cerr << "Core initialization status: "
+                  << static_cast<std::int32_t>(initialization_status)
+                  << "\nABI version: " << phtv_core_abi_version()
+                  << " (expected " << PHTV_CORE_ABI_VERSION << ')'
+                  << "\nCapabilities: " << phtv_core_capabilities()
+                  << "\nKey event size: " << phtv_core_key_event_size()
+                  << " (native " << sizeof(phtv_core_key_event_t) << ')'
+                  << "\nInput context size: "
+                  << phtv_core_input_context_size()
+                  << " (native " << sizeof(phtv_core_input_context_t) << ')'
+                  << "\nEdit plan size: " << phtv_core_edit_plan_size()
+                  << " (native " << sizeof(phtv_core_edit_plan_t) << ')'
+                  << '\n';
+    }
     passed &= expect(
-        session.initialize() == core::Status::ok,
+        initialization_status == core::Status::ok,
         "Core bridge initializes with ABI v1"
     );
 

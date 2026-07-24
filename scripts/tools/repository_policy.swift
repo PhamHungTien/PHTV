@@ -122,10 +122,10 @@ if !contents(root.appendingPathComponent(".gitignore")).components(separatedBy: 
     fail(".codex/ must stay ignored")
 }
 
-// Platform scaffolds must keep their baseline architecture, security, privacy,
-// testing and distribution contracts. This prevents a partial rename or cleanup
-// from silently leaving a platform without its required operating documentation.
-let requiredPlatformDocuments = [
+// Platform scaffolds must keep their baseline architecture, build entrypoints,
+// security, privacy, testing and distribution contracts. This prevents a partial
+// rename or cleanup from silently leaving a platform incomplete.
+let requiredPlatformArtifacts = [
     "Apps/README.md",
     "Shared/README.md",
     "Shared/PHTVCore/README.md",
@@ -135,6 +135,16 @@ let requiredPlatformDocuments = [
     "Shared/TestVectors/README.md",
     ".github/workflows/windows-core.yml",
     "Apps/Windows/README.md",
+    "Apps/Windows/PHTV.Windows.slnx",
+    "Apps/Windows/Directory.Build.props",
+    "Apps/Windows/Directory.Packages.props",
+    "Apps/Windows/global.json",
+    "Apps/Windows/src/PHTV.Windows.Contracts/PHTV.Windows.Contracts.csproj",
+    "Apps/Windows/src/PHTV.Windows.CoreBridge/PHTV.Windows.CoreBridge.vcxproj",
+    "Apps/Windows/src/PHTV.Windows.IME/PHTV.Windows.IME.vcxproj",
+    "Apps/Windows/src/PHTV.Windows.App/PHTV.Windows.App.csproj",
+    "Apps/Windows/tests/PHTV.Windows.CoreBridge.Tests/PHTV.Windows.CoreBridge.Tests.vcxproj",
+    "Apps/Windows/tests/PHTV.Windows.Contracts.Tests/PHTV.Windows.Contracts.Tests.csproj",
     "Apps/Windows/docs/ARCHITECTURE.md",
     "Apps/Windows/docs/SECURITY.md",
     "Apps/Windows/docs/PRIVACY.md",
@@ -148,9 +158,9 @@ let requiredPlatformDocuments = [
     "Apps/Linux/docs/TESTING.md",
     "Apps/Linux/docs/DISTRIBUTION.md",
 ]
-for relativePath in requiredPlatformDocuments
+for relativePath in requiredPlatformArtifacts
 where !fileManager.fileExists(atPath: root.appendingPathComponent(relativePath).path) {
-    fail("Missing required platform document: \(relativePath)")
+    fail("Missing required platform artifact: \(relativePath)")
 }
 
 for legacyDirectory in ["macOS", "Windows", "Linux"]

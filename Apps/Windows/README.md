@@ -1,8 +1,9 @@
 # PHTV for Windows
 
-> Trạng thái: **đang triển khai Portable Core**. Unicode Telex/VNI và C ABI dùng
-> cho Windows đã có golden/contract test; chưa có TSF IME, giao diện WinUI hay
-> installer để cài.
+> Trạng thái: **đang triển khai TSF proof of concept**. Repository đã có Unicode
+> Telex/VNI portable, C ABI, C++ Core bridge, TSF DLL và WinUI Settings project.
+> Chưa có installer phát hành; việc đăng ký/kích hoạt và tương thích ứng dụng
+> vẫn phải được xác nhận trên máy Windows thật.
 
 PHTV for Windows là nhánh sản phẩm Windows của PHTV. Mục tiêu là dùng lại engine
 Swift và dữ liệu ngôn ngữ hiện có, đồng thời tích hợp đúng chuẩn Windows bằng
@@ -41,6 +42,10 @@ Chi tiết và các ranh giới an toàn nằm trong
 ```text
 Apps/Windows/
 ├── README.md
+├── PHTV.Windows.slnx
+├── Directory.Build.props
+├── Directory.Packages.props
+├── global.json
 ├── docs/
 │   ├── ARCHITECTURE.md
 │   ├── DEVELOPMENT.md
@@ -52,29 +57,35 @@ Apps/Windows/
 │   └── adr/
 │       └── 0001-native-windows-stack.md
 ├── src/
-│   ├── PHTV.Windows.IME/   # TSF Text Input Processor
-│   └── PHTV.Windows.App/   # WinUI 3 companion app
-└── tests/                  # Test vectors và integration tests Windows
+│   ├── PHTV.Windows.Contracts/  # config schema/version
+│   ├── PHTV.Windows.CoreBridge/ # C++ wrapper quanh Swift C ABI
+│   ├── PHTV.Windows.IME/        # TSF Text Input Processor
+│   └── PHTV.Windows.App/        # WinUI companion app
+└── tests/
+    ├── PHTV.Windows.Contracts.Tests/
+    └── PHTV.Windows.CoreBridge.Tests/
 ```
 
 Engine và test vector dùng chung nằm tại
 [Shared/README.md](../../Shared/README.md),
 không được copy vào từng nền tảng.
 
-Các thư mục `src/` hiện chỉ có tài liệu hợp đồng thành phần. Swift package dùng
-chung đã tồn tại tại
-[`Shared/PHTVCore`](../../Shared/PHTVCore/README.md). Project Visual Studio sẽ được
-tạo ở giai đoạn TSF PoC theo các cổng trong [ROADMAP.md](docs/ROADMAP.md).
+Swift package dùng chung nằm tại
+[`Shared/PHTVCore`](../../Shared/PHTVCore/README.md). TSF hiện đã nhận phím qua
+`ITfKeyEventSink`, gọi Core bằng C ABI và áp dụng replacement bằng TSF edit
+session/composition. Settings app đã đọc/ghi snapshot JSON atomically nhưng TSF
+chưa nạp snapshot đó; PoC hiện dùng trạng thái tiếng Việt + Telex mặc định.
 
 ## Nền tảng mục tiêu ban đầu
 
 - Windows 10 version 1809 trở lên và Windows 11.
 - Kiến trúc x64 trước; arm64 sau khi x64 đạt tiêu chí ổn định.
-- Swift 6.3.3 chính thức cho Windows ở giai đoạn Core hiện tại.
-- Visual Studio 2022, Windows SDK và Windows App SDK.
-
-Phiên bản SDK cụ thể phải được khóa trong source control khi project đầu tiên
-được tạo, không dùng mô tả “latest” trong build tái lập.
+- Swift 6.3.3 chính thức cho Windows.
+- .NET SDK 10.0.100 LTS, cho phép roll forward trong patch 10.0.
+- Windows App SDK 2.3.1 stable.
+- Windows SDK 10.0.26100.0 và MSVC v143 cho native component.
+- Visual Studio 2026 cho trải nghiệm solution đầy đủ; CI dùng MSBuild v143 và
+  .NET CLI độc lập để build tái lập.
 
 ## Tài liệu
 

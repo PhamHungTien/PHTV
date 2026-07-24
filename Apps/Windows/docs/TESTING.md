@@ -29,8 +29,9 @@ chứa dữ liệu người dùng thật.
 Baseline hiện tại chạy unit test Swift, golden vectors Telex/VNI và
 `PHTVCoreABISmoke` viết bằng C trên macOS CI lẫn Windows Core CI. Nó xác nhận ABI
 version 1, capability, validation struct, rollback khi buffer thiếu, vòng đời
-session và một lát cắt Unicode tiếng Việt; chưa xác nhận TSF hoặc toàn bộ feature
-parity với engine macOS.
+session và một lát cắt Unicode tiếng Việt. Windows CI còn build/chạy C++
+`PHTV.Windows.CoreBridge.Tests`, config schema tests, TSF DLL và WinUI app; chưa
+xác nhận TSF runtime hoặc toàn bộ feature parity với engine macOS.
 
 ### 3. TSF integration tests
 
