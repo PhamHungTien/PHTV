@@ -248,7 +248,7 @@ template <typename Function>
 [[nodiscard]] HRESULT profile_exists(bool& exists) {
     ComPtr<ITfInputProcessorProfileMgr> profiles;
     HRESULT result = CoCreateInstance(
-        CLSID_TF_InputProcessorProfileMgr,
+        CLSID_TF_InputProcessorProfiles,
         nullptr,
         CLSCTX_INPROC_SERVER,
         IID_PPV_ARGS(&profiles)

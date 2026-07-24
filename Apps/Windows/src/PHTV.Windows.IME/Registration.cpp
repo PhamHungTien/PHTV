@@ -164,7 +164,7 @@ private:
 [[nodiscard]] HRESULT register_profile() noexcept {
     Microsoft::WRL::ComPtr<ITfInputProcessorProfileMgr> profiles;
     HRESULT result = CoCreateInstance(
-        CLSID_TF_InputProcessorProfileMgr,
+        CLSID_TF_InputProcessorProfiles,
         nullptr,
         CLSCTX_INPROC_SERVER,
         IID_PPV_ARGS(&profiles)
@@ -192,7 +192,7 @@ private:
 [[nodiscard]] HRESULT unregister_profile() noexcept {
     Microsoft::WRL::ComPtr<ITfInputProcessorProfileMgr> profiles;
     const HRESULT create_result = CoCreateInstance(
-        CLSID_TF_InputProcessorProfileMgr,
+        CLSID_TF_InputProcessorProfiles,
         nullptr,
         CLSCTX_INPROC_SERVER,
         IID_PPV_ARGS(&profiles)
