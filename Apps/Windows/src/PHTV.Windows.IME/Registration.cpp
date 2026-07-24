@@ -315,6 +315,9 @@ HRESULT register_server() noexcept {
 
         result = register_com_server(dll_path);
         if (FAILED(result)) {
+            // A registry write can fail after the class key was created.
+            // Keep DllRegisterServer transactional even on that partial path.
+            static_cast<void>(unregister_com_server());
             return result;
         }
 

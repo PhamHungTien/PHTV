@@ -49,10 +49,13 @@ cũng có thể chạy thủ công:
 3. build/chạy C++ input-mode state, sensitive scope và hai snapshot parser tests;
 4. build/test `Shared/PHTVCore` và C ABI smoke executable;
 5. build/chạy C++ Core bridge cùng C# config/golden-vector tests;
-6. build TSF DLL và WinUI Settings app.
+6. build TSF DLL, kiểm tra vòng đời COM/profile/category trong runner cô lập;
+7. build WinUI Settings app.
 
-Workflow chỉ build TSF; nó không gọi `regsvr32` trên runner và chưa thay thế
-Notepad/Office/Chromium integration tests hay installer lifecycle tests.
+Workflow không gọi `regsvr32`: một test host nạp DLL, gọi entrypoint
+registration, xác minh trạng thái rồi gỡ sạch. Nó chưa thay thế
+Notepad/Office/Chromium integration tests, kiểm tra quyền cài đặt hay installer
+lifecycle tests trên Windows client thật.
 Nếu bước cài Swift lỗi, workflow tải lên log của installer trong bảy ngày.
 
 ## Linux workflows

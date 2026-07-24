@@ -3,7 +3,8 @@
 ## Trạng thái hiện tại
 
 Đã có solution, portable Core, native Core bridge, TSF DLL, WinUI Settings app và
-sáu executable contract test. Đây là source của PoC, chưa phải binary cài đặt:
+bảy executable contract/integration test. Đây là source của PoC, chưa phải
+binary cài đặt:
 registration, composition và cleanup vẫn cần xác nhận trên Windows client thật.
 
 ## Yêu cầu dự kiến
@@ -62,13 +63,16 @@ msbuild Apps\Windows\tests\PHTV.Windows.SettingsSnapshot.Tests\PHTV.Windows.Sett
 msbuild Apps\Windows\tests\PHTV.Windows.ApplicationRulesSnapshot.Tests\PHTV.Windows.ApplicationRulesSnapshot.Tests.vcxproj /m /p:Configuration=Release /p:Platform=x64
 msbuild Apps\Windows\tests\PHTV.Windows.CoreBridge.Tests\PHTV.Windows.CoreBridge.Tests.vcxproj /m /p:Configuration=Release /p:Platform=x64 /p:PHTVCoreLibraryDir="<core-dir>"
 msbuild Apps\Windows\src\PHTV.Windows.IME\PHTV.Windows.IME.vcxproj /m /p:Configuration=Release /p:Platform=x64 /p:PHTVCoreLibraryDir="<core-dir>"
+msbuild Apps\Windows\tests\PHTV.Windows.Registration.Tests\PHTV.Windows.Registration.Tests.vcxproj /m /p:Configuration=Release /p:Platform=x64
 dotnet run --project Apps\Windows\tests\PHTV.Windows.Contracts.Tests\PHTV.Windows.Contracts.Tests.csproj --configuration Release
 dotnet build Apps\Windows\src\PHTV.Windows.App\PHTV.Windows.App.csproj --configuration Release --runtime win-x64 /p:Platform=x64
 ```
 
 Workflow `windows-core.yml` là nguồn tham chiếu cho thứ tự build chính xác và
-không đăng ký TSF vào runner. Việc gọi `regsvr32` chỉ dành cho VM/máy thử có
-snapshot phục hồi, không chạy trên máy làm việc chính.
+có chạy vòng đời đăng ký/gỡ TSF trong runner cô lập. Test từ chối chạy nếu phát
+hiện dấu vết cài đặt PHTV có sẵn và luôn cố gỡ phần nó vừa tạo khi thất bại.
+Không chạy test registration hoặc gọi `regsvr32` trên máy làm việc chính; hãy
+dùng runner sạch hay VM/máy thử có snapshot phục hồi.
 
 ## Quy trình thay đổi
 

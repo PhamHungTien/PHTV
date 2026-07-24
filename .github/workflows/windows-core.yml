@@ -358,6 +358,43 @@ jobs:
             /p:Platform=x64 `
             /p:PHTVCoreLibraryDir="${{ steps.core-artifacts.outputs.library-dir }}"
 
+      - name: Verify isolated TSF registration lifecycle
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          msbuild `
+            "Apps/Windows/tests/PHTV.Windows.Registration.Tests/PHTV.Windows.Registration.Tests.vcxproj" `
+            /m `
+            /p:Configuration=Release `
+            /p:Platform=x64
+
+          $testExecutable = Get-ChildItem `
+            -Path "Apps/Windows/tests/PHTV.Windows.Registration.Tests" `
+            -Filter "PHTV.Windows.Registration.Tests.exe" `
+            -File `
+            -Recurse |
+            Select-Object -First 1
+          if (-not $testExecutable) {
+            throw "Registration lifecycle test executable was not produced."
+          }
+
+          $tsfDll = Get-ChildItem `
+            -Path "Apps/Windows/src/PHTV.Windows.IME" `
+            -Filter "PHTV.Windows.IME.dll" `
+            -File `
+            -Recurse |
+            Select-Object -First 1
+          if (-not $tsfDll) {
+            throw "TSF DLL was not produced."
+          }
+
+          $coreDirectory = "${{ steps.core-artifacts.outputs.library-dir }}"
+          $env:PATH = "$coreDirectory;$env:PATH"
+          & $testExecutable.FullName $tsfDll.FullName
+          if ($LASTEXITCODE -ne 0) {
+            throw "Registration lifecycle tests failed with exit code $LASTEXITCODE."
+          }
+
       - name: Run configuration contract tests
         run: >
           dotnet run

@@ -71,6 +71,7 @@ Apps/Windows/
     ├── PHTV.Windows.CoreBridge.Tests/
     ├── PHTV.Windows.InputModeState.Tests/
     ├── PHTV.Windows.InputScopePolicy.Tests/
+    ├── PHTV.Windows.Registration.Tests/
     └── PHTV.Windows.SettingsSnapshot.Tests/
 ```
 
@@ -99,6 +100,11 @@ WinUI đã có danh sách quy tắc theo ứng dụng với hai lựa chọn d�
 bằng tiếng Anh nhưng vẫn cho chuyển đổi, hoặc luôn dùng tiếng Anh. Danh sách
 được ghi thành snapshot có revision và TSF so khớp executable/package khi
 activation. Xem [quy tắc theo ứng dụng](docs/APPLICATION_RULES.md).
+
+Windows CI còn nạp TSF DLL trong runner cô lập, gọi trực tiếp entrypoint đăng
+ký/gỡ, tạo COM text service và xác nhận COM key, language profile cùng ba TSF
+category được tạo rồi xóa sạch. Test này bảo vệ vòng đời registration, nhưng
+không thay thế việc kích hoạt bộ gõ và nhập liệu trên Windows client thật.
 
 ## Nền tảng mục tiêu ban đầu
 

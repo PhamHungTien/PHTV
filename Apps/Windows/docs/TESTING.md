@@ -32,12 +32,14 @@ version 1, capability, validation struct, rollback khi buffer thiếu, vòng đ�
 session và một lát cắt Unicode tiếng Việt. Windows CI còn build/chạy C++
 `PHTV.Windows.CoreBridge.Tests`, config schema/golden snapshot tests, native
 snapshot parsers cho settings/quy tắc ứng dụng, input-mode state machine,
-sensitive input scope policy, TSF DLL và WinUI app; chưa xác nhận TSF runtime
-hoặc toàn bộ feature parity với engine macOS.
+sensitive input scope policy, TSF DLL, vòng đời đăng ký/gỡ cô lập và WinUI app.
+Nó chưa xác nhận activation/composition trong ứng dụng thật hoặc toàn bộ feature
+parity với engine macOS.
 
 ### 3. TSF integration tests
 
 - activation/deactivation và language profile;
+- COM/profile/category registration có rollback và uninstall sạch;
 - preserved key, input-mode compartment, external mode change và shortcut conflict;
 - executable/package rule, ưu tiên rule cụ thể và khóa `Ctrl+Space`;
 - password/private/PIN scope và lỗi property/lock/variant;
@@ -85,3 +87,10 @@ workaround phải có case tái hiện và test giới hạn phạm vi.
 - Build Release được ký và cài trên máy sạch.
 - Smoke test upgrade từ bản stable trước và uninstall sạch.
 - Log kiểm thử đã được kiểm tra không chứa nội dung nhập.
+
+`PHTV.Windows.Registration.Tests` là integration test có thay đổi trạng thái
+Windows tạm thời. Nó chỉ được chạy trên runner sạch hoặc VM dùng riêng: test
+kiểm tra trước để không đè lên cài đặt có sẵn, gọi entrypoint của TSF DLL, xác
+nhận COM/profile/category, tạo COM text service, kiểm tra module reference được
+nhả, gỡ và xác nhận không còn dấu vết. Kết quả này không chứng minh profile xuất
+hiện trong language switcher hay nhập được trong ứng dụng desktop.

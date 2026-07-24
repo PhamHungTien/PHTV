@@ -38,7 +38,8 @@ phát hiện lỗi ownership tại C ABI.
 - [ ] Kiểm chứng sensitive-scope pass-through trên WinUI, web và Office thật.
 - [x] Nối quy tắc mở/khóa tiếng Anh từ WinUI qua snapshot có revision đến TSF.
 - [ ] Kiểm chứng quy tắc executable/package và đổi focus trên Windows thật.
-- [ ] Đăng ký Text Input Processor per-user trên máy test.
+- [x] Kiểm thử đăng ký/gỡ và COM activation trên runner cô lập.
+- [ ] Xác nhận quyền cài đặt, language switcher và activation trên Windows thật.
 - [ ] Bật/tắt Việt–Anh và commit composition trong Notepad.
 - [ ] Kiểm chứng Office, Chromium/Electron, WinUI và AppContainer.
 - [ ] Kiểm chứng đóng gói Swift runtime, unload DLL và ký binary.

@@ -11,6 +11,7 @@
     <Project Path="tests/PHTV.Windows.Contracts.Tests/PHTV.Windows.Contracts.Tests.csproj" />
     <Project Path="tests/PHTV.Windows.InputModeState.Tests/PHTV.Windows.InputModeState.Tests.vcxproj" />
     <Project Path="tests/PHTV.Windows.InputScopePolicy.Tests/PHTV.Windows.InputScopePolicy.Tests.vcxproj" />
+    <Project Path="tests/PHTV.Windows.Registration.Tests/PHTV.Windows.Registration.Tests.vcxproj" />
     <Project Path="tests/PHTV.Windows.SettingsSnapshot.Tests/PHTV.Windows.SettingsSnapshot.Tests.vcxproj" />
   </Folder>
 </Solution>

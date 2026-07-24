@@ -9,6 +9,7 @@ Text Services Framework Text Input Processor viết bằng C++/WinRT.
 - C++ Core bridge gọi Swift C ABI v1;
 - synchronous TSF read/write edit session và composition replacement;
 - COM/TSF profile/category registration entrypoints;
+- rollback COM/profile/category và integration test gỡ sạch trên runner cô lập;
 - runtime settings snapshot v1 cho trạng thái Việt/Anh và Telex/VNI;
 - thread input-mode compartment, event sink và preserved key `Ctrl+Space`;
 - guard `GUID_PROP_INPUTSCOPE` cho password, private data và PIN;
@@ -17,6 +18,11 @@ Text Services Framework Text Input Processor viết bằng C++/WinRT.
 PoC nạp snapshot lúc activation và fallback an toàn về Việt + Telex nếu file
 thiếu/hỏng/tương lai. Chưa có notification cập nhật tức thời, chưa phát hành
 installer và chưa được chứng nhận trên Notepad/Office/Chromium.
+
+COM activation hiện được ghi dưới `HKCU\Software\Classes`; profile và category
+được quản lý qua API TSF chính thức. CI xác nhận transaction đăng ký/gỡ trong
+môi trường cô lập, không khẳng định cài đặt không quyền admin hoặc activation
+trên Windows client thật.
 
 Snapshot khởi tạo `GUID_COMPARTMENT_KEYBOARD_OPENCLOSE`; sau đó compartment là
 trạng thái Việt/Anh hiệu lực của session. `OnChange` chỉ đọc trạng thái và reset
