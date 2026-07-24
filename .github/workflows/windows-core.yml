@@ -146,6 +146,20 @@ jobs:
           $env:Path = "$($installedPathEntries -join ';');$env:Path"
           $installedPathEntries |
             Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+          $swiftSdk = Get-ChildItem `
+            -Path "$env:LOCALAPPDATA\Programs\Swift\Platforms" `
+            -Directory `
+            -Filter "Windows.sdk" `
+            -Recurse |
+            Select-Object -First 1
+          if (-not $swiftSdk) {
+            throw "Swift was installed, but Windows.sdk could not be located."
+          }
+          $env:SDKROOT = $swiftSdk.FullName
+          "SDKROOT=$($swiftSdk.FullName)" |
+            Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
           & $swift.FullName --version
           if ($LASTEXITCODE -ne 0) {
             throw "swift --version failed with exit code $LASTEXITCODE."
