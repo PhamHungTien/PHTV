@@ -374,7 +374,7 @@ TextService::~TextService() noexcept {
 }
 
 HRESULT TextService::QueryInterface(
-    const REFIID interface_id,
+    REFIID interface_id,
     void** const object
 ) noexcept {
     if (object == nullptr) {
@@ -687,7 +687,7 @@ HRESULT TextService::OnKeyUp(
 
 HRESULT TextService::OnPreservedKey(
     ITfContext* const context,
-    const REFGUID preserved_key,
+    REFGUID preserved_key,
     BOOL* const eaten
 ) noexcept {
     if (eaten == nullptr) {
@@ -732,7 +732,7 @@ HRESULT TextService::OnCompositionTerminated(
     return S_OK;
 }
 
-HRESULT TextService::OnChange(const REFGUID compartment) noexcept {
+HRESULT TextService::OnChange(REFGUID compartment) noexcept {
     if (!IsEqualGUID(
             compartment,
             GUID_COMPARTMENT_KEYBOARD_OPENCLOSE
@@ -1182,7 +1182,7 @@ void TextService::clear_runtime_state() noexcept {
 }
 
 HRESULT create_text_service(
-    const REFIID interface_id,
+    REFIID interface_id,
     void** const object
 ) noexcept {
     if (object == nullptr) {

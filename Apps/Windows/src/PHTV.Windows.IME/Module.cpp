@@ -19,7 +19,7 @@ public:
     }
 
     HRESULT STDMETHODCALLTYPE QueryInterface(
-        const REFIID interface_id,
+        REFIID interface_id,
         void** const object
     ) noexcept override {
         if (object == nullptr) {
@@ -51,7 +51,7 @@ public:
 
     HRESULT STDMETHODCALLTYPE CreateInstance(
         IUnknown* const outer,
-        const REFIID interface_id,
+        REFIID interface_id,
         void** const object
     ) noexcept override {
         if (outer != nullptr) {
@@ -101,8 +101,8 @@ STDAPI DllCanUnloadNow() {
 }
 
 STDAPI DllGetClassObject(
-    const REFCLSID class_id,
-    const REFIID interface_id,
+    REFCLSID class_id,
+    REFIID interface_id,
     void** const object
 ) {
     if (object == nullptr) {
