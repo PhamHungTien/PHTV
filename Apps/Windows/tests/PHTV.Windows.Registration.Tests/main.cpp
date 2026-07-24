@@ -1,5 +1,7 @@
 #include <array>
+#include <cstdint>
 #include <cstring>
+#include <iomanip>
 #include <iostream>
 #include <string>
 #include <string_view>
@@ -124,6 +126,22 @@ private:
         << std::dec
         << '\n';
     return false;
+}
+
+void report_utf16(
+    const char* const label,
+    const std::wstring_view value
+) {
+    std::cerr << label << " (" << value.size() << " UTF-16 units):";
+    for (const wchar_t code_unit : value) {
+        std::cerr
+            << ' '
+            << std::hex
+            << std::setw(4)
+            << std::setfill('0')
+            << static_cast<std::uint16_t>(code_unit);
+    }
+    std::cerr << std::dec << '\n';
 }
 
 template <typename Function>
@@ -361,8 +379,13 @@ template <typename Function>
     if (!expect_hresult(
             read_registry_string(class_path, nullptr, value),
             "read COM display name"
-        )
-        || !expect(value == service_name, "COM display name")) {
+        )) {
+        return false;
+    }
+    if (value != service_name) {
+        report_utf16("Actual COM display name", value);
+        report_utf16("Expected COM display name", service_name);
+        static_cast<void>(expect(false, "COM display name"));
         return false;
     }
 
