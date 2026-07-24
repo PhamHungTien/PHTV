@@ -39,6 +39,11 @@ jobs:
       - name: Validate repository metadata
         run: scripts/dev.swift metadata-check
 
+      - name: Test portable Core
+        run: |
+          swift test --package-path Shared/PHTVCore
+          swift run --package-path Shared/PHTVCore PHTVCoreABISmoke
+
       - name: Validate dictionary sources
         run: swift scripts/tools/generate_dict_binary.swift --strict-check-sources
 

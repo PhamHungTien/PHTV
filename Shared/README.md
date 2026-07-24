@@ -20,6 +20,7 @@ Shared/
 - Thay đổi contract/schema phải có version, migration và test tương thích.
 - Golden vectors là nguồn sự thật cho hành vi engine xuyên nền tảng.
 
-Đây mới là tài liệu hợp đồng ban đầu; package và schema chỉ được tạo khi giai
-đoạn tách Core bắt đầu.
-
+`PHTVCore` đã là Swift package build được với session contract, C ABI version 1
+và C smoke test. Engine tiếng Việt, schema cấu hình và golden vectors vẫn đang
+được tách theo từng cổng chất lượng; xem
+[`PHTVCore/README.md`](PHTVCore/README.md) để biết năng lực hiện có.

@@ -8,15 +8,18 @@ Roadmap dùng cổng chất lượng thay cho ngày phát hành cố định. M�
 - [x] Chọn WinUI 3 cho companion app và TSF cho IME.
 - [x] Xác định ranh giới Swift Core/C ABI/TSF.
 - [x] Tạo tài liệu phát triển, kiểm thử, bảo mật và phát hành ban đầu.
+- [x] Khóa Swift 6.3.3 cho Windows Core CI.
 - [ ] Ghi nhận baseline test của engine macOS trước khi tách Core.
-- [ ] Chọn và khóa Windows SDK, Windows App SDK, .NET và Swift toolchain.
+- [ ] Chọn và khóa Windows SDK, Windows App SDK và .NET cho project native.
 
 ## Giai đoạn 1 — Portable Core
 
-- [ ] Tách engine thành Swift package không phụ thuộc macOS.
+- [x] Tạo Swift package portable và session lifecycle không phụ thuộc macOS.
+- [ ] Tách toàn bộ engine ngôn ngữ vào package portable.
 - [ ] Thay Carbon/ApplicationServices/Darwin bằng adapter hoặc API portable.
 - [ ] Đưa từ điển và test vector sang resource độc lập nền tảng.
-- [ ] Thiết kế `EditPlan` và C ABI có version.
+- [x] Thiết kế `KeyEvent`, `InputContext`, `EditPlan` và C ABI version 1.
+- [x] Thêm C executable kiểm chứng symbol, layout và ownership session.
 - [ ] Build/test Core trên macOS và Windows x64 cho kết quả giống nhau.
 
 **Cổng:** toàn bộ golden vectors bằng nhau giữa hai nền tảng; sanitizer không
@@ -64,4 +67,3 @@ không sao chép workaround CGEvent/Accessibility sang TSF.
 - [ ] Kênh Stable/Beta, rollback và kiểm tra cập nhật.
 - [ ] Accessibility, localization và UX review.
 - [ ] Threat model và external security review cho DLL TSF/installer.
-

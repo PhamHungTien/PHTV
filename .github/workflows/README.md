@@ -37,11 +37,18 @@ Luồng công việc:
 
 Hai kiến trúc dùng DMG và appcast riêng; đây không phải một Universal DMG.
 
-## Windows workflows
+## Windows Core CI (`windows-core.yml`)
 
-Phiên bản Windows hiện chỉ có kiến trúc và tài liệu trong `Windows/`, chưa có
-project có thể build. Chỉ thêm Windows CI sau khi Swift Core và TSF PoC tồn tại;
-workflow khi đó phải dùng Windows runner và không làm thay đổi pipeline macOS.
+Chạy khi portable Core hoặc C contract thay đổi và có thể chạy thủ công:
+
+1. dùng Windows Server 2025 x64;
+2. cài đúng Swift 6.3.3 từ package chính thức `Swift.Toolchain`;
+3. build và chạy unit test của `Shared/PHTVCore`;
+4. build/chạy một executable C thật để xác nhận symbol, layout và vòng đời C ABI.
+
+Workflow này chỉ chứng minh nền móng Core/C ABI trên Windows. Nó chưa build
+WinUI 3, đăng ký TSF hoặc tạo installer; các job đó chỉ được thêm khi project
+tương ứng tồn tại và chạy được trên máy Windows thật.
 
 ## Linux workflows
 

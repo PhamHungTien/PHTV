@@ -128,8 +128,11 @@ if !contents(root.appendingPathComponent(".gitignore")).components(separatedBy: 
 let requiredPlatformDocuments = [
     "Shared/README.md",
     "Shared/PHTVCore/README.md",
+    "Shared/PHTVCore/Package.swift",
+    "Shared/PHTVCore/Sources/PHTVCoreContracts/include/PHTVCoreContracts.h",
     "Shared/Contracts/README.md",
     "Shared/TestVectors/README.md",
+    ".github/workflows/windows-core.yml",
     "Windows/README.md",
     "Windows/docs/ARCHITECTURE.md",
     "Windows/docs/SECURITY.md",

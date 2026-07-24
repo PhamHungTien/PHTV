@@ -29,9 +29,9 @@
 **Tự động cập nhật** - Nhận phiên bản mới ngay khi ra mắt với Sparkle framework. Không cần tải lại thủ công.
 
 > **Các nền tảng đang phát triển:** phiên bản
-> [Windows](Windows/README.md) dùng WinUI 3/TSF và phiên bản
-> [Linux](Linux/README.md) dùng IBus/Fcitx 5/GTK 4 đang ở giai đoạn thiết kế nền
-> móng, chưa có binary để tải. Cả hai sẽ dùng chung engine tại
+> [Windows](Windows/README.md) đã có nền móng Swift Core/C ABI và sẽ dùng WinUI
+> 3/TSF; phiên bản [Linux](Linux/README.md) dùng IBus/Fcitx 5/GTK 4 đang ở giai
+> đoạn thiết kế. Cả hai chưa có binary để tải và sẽ dùng chung engine tại
 > [Shared](Shared/README.md).
 
 ## 🚀 Quick Start

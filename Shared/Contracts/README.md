@@ -10,3 +10,8 @@ Khu vực dự kiến chứa các hợp đồng ổn định giữa engine và a
 Không để type Swift, C++ exception, COM object, GObject hoặc con trỏ framework đi
 qua biên contract. Bên cấp phát bộ nhớ phải cung cấp hàm giải phóng tương ứng.
 
+C ABI version 1 đang được triển khai cùng Swift package để SwiftPM có thể build,
+link và smoke-test trực tiếp:
+[`PHTVCoreContracts.h`](../PHTVCore/Sources/PHTVCoreContracts/include/PHTVCoreContracts.h).
+Thư mục này sẽ tiếp tục chứa các schema độc lập package như cấu hình, import và
+migration.

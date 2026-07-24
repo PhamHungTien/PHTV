@@ -1,7 +1,7 @@
 # PHTV for Windows
 
-> Trạng thái: **khởi tạo kiến trúc**. Thư mục này chưa chứa bản Windows có thể
-> build hoặc cài đặt.
+> Trạng thái: **đang triển khai Portable Core**. C ABI dùng cho Windows đã build
+> và có contract test; chưa có TSF IME, giao diện WinUI hay installer để cài.
 
 PHTV for Windows là nhánh sản phẩm Windows của PHTV. Mục tiêu là dùng lại engine
 Swift và dữ liệu ngôn ngữ hiện có, đồng thời tích hợp đúng chuẩn Windows bằng
@@ -59,15 +59,16 @@ Windows/
 Engine và test vector dùng chung nằm tại [Shared/README.md](../Shared/README.md),
 không được copy vào từng nền tảng.
 
-Các thư mục `src/` hiện chỉ có tài liệu hợp đồng thành phần. Project Visual
-Studio/SwiftPM sẽ chỉ được tạo sau khi PoC TSF vượt qua các cổng trong
-[ROADMAP.md](docs/ROADMAP.md).
+Các thư mục `src/` hiện chỉ có tài liệu hợp đồng thành phần. Swift package dùng
+chung đã tồn tại tại
+[`Shared/PHTVCore`](../Shared/PHTVCore/README.md). Project Visual Studio sẽ được
+tạo ở giai đoạn TSF PoC theo các cổng trong [ROADMAP.md](docs/ROADMAP.md).
 
 ## Nền tảng mục tiêu ban đầu
 
 - Windows 10 version 1809 trở lên và Windows 11.
 - Kiến trúc x64 trước; arm64 sau khi x64 đạt tiêu chí ổn định.
-- Swift toolchain chính thức cho Windows.
+- Swift 6.3.3 chính thức cho Windows ở giai đoạn Core hiện tại.
 - Visual Studio 2022, Windows SDK và Windows App SDK.
 
 Phiên bản SDK cụ thể phải được khóa trong source control khi project đầu tiên

@@ -2,15 +2,16 @@
 
 ## Trạng thái hiện tại
 
-Chưa có solution hoặc package có thể build. Tài liệu này xác định môi trường và
-quy trình sẽ áp dụng khi PoC đầu tiên được tạo trên máy Windows thật.
+Chưa có Visual Studio solution hoặc ứng dụng Windows để cài. Portable Core và C
+ABI đã là Swift package build được; Windows CI dùng nó để kiểm chứng toolchain,
+layout contract và vòng đời session trước khi TSF PoC được scaffold.
 
 ## Yêu cầu dự kiến
 
 - Windows 10 1809+ hoặc Windows 11, Developer Mode bật trên máy phát triển.
 - Visual Studio 2022 với MSVC x64/x86, C++/WinRT và Windows SDK.
 - .NET SDK tương ứng với Windows App SDK được khóa trong project.
-- Swift toolchain chính thức cho Windows.
+- Swift 6.3.3 chính thức cho Windows (`Swift.Toolchain`).
 - Git for Windows và PowerShell 7.
 
 Tham khảo:
@@ -34,6 +35,19 @@ PHTV.Windows.sln
 
 Không commit thư mục `bin/`, `obj/`, `.vs/`, `.build/`, package cache, chứng thư
 hoặc binary đã ký.
+
+## Build Core hiện tại
+
+Từ thư mục gốc repository:
+
+```text
+swift build --package-path Shared/PHTVCore
+swift test --package-path Shared/PHTVCore
+swift run --package-path Shared/PHTVCore PHTVCoreABISmoke
+```
+
+Lệnh cuối build một chương trình C liên kết với Swift dynamic library và gọi
+toàn bộ vòng đời ABI tối thiểu. Nó không thay thế test TSF trên Windows thật.
 
 ## Quy trình thay đổi
 
@@ -63,6 +77,7 @@ hoặc binary đã ký.
 
 ## Công cụ build
 
-Khi có project thật, repository sẽ cung cấp một entrypoint PowerShell hoặc Swift
-chạy được trên Windows cho các lệnh `doctor`, `build`, `test`, `package`. Không
-ghi các lệnh giả vào tài liệu trước khi script đó tồn tại và được CI kiểm chứng.
+Ba lệnh SwiftPM phía trên là entrypoint đã được CI kiểm chứng cho Core. Khi có
+project TSF/WinUI thật, repository sẽ cung cấp một entrypoint Swift chạy được
+trên Windows cho các lệnh `doctor`, `build`, `test`, `package`. Không ghi lệnh
+giả vào tài liệu trước khi công cụ đó tồn tại.
