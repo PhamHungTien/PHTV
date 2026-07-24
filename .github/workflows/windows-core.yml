@@ -132,8 +132,20 @@ jobs:
           }
 
           $swiftBin = $swift.Directory.FullName
-          $env:Path = "$swiftBin;$env:Path"
-          $swiftBin |
+          $installedUserPath = [Environment]::GetEnvironmentVariable(
+            "Path",
+            [EnvironmentVariableTarget]::User
+          )
+          $installedPathEntries = @(
+            $swiftBin
+            $installedUserPath -split ";" |
+              Where-Object {
+                -not [string]::IsNullOrWhiteSpace($_)
+                  -and (Test-Path $_)
+              }
+          ) | Select-Object -Unique
+          $env:Path = "$($installedPathEntries -join ';');$env:Path"
+          $installedPathEntries |
             Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
           & $swift.FullName --version
           if ($LASTEXITCODE -ne 0) {
