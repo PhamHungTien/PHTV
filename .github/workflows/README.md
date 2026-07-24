@@ -44,14 +44,16 @@ kiểm tra thêm runtime settings snapshot C#/C++ trước khi build TSF;
 cũng có thể chạy thủ công:
 
 1. dùng Windows Server 2025 x64;
-2. cài Swift 6.3.3, .NET 10 và dùng MSBuild v143;
-3. build/chạy C++ input-mode state, sensitive scope và snapshot parser tests;
+2. cache/tải bộ cài Swift 6.3.3 chính thức, xác minh SHA-256, cài Python 3.10,
+   .NET 10 và dùng MSBuild v143;
+3. build/chạy C++ input-mode state, sensitive scope và hai snapshot parser tests;
 4. build/test `Shared/PHTVCore` và C ABI smoke executable;
 5. build/chạy C++ Core bridge cùng C# config/golden-vector tests;
 6. build TSF DLL và WinUI Settings app.
 
 Workflow chỉ build TSF; nó không gọi `regsvr32` trên runner và chưa thay thế
 Notepad/Office/Chromium integration tests hay installer lifecycle tests.
+Nếu bước cài Swift lỗi, workflow tải lên log của installer trong bảy ngày.
 
 ## Linux workflows
 

@@ -5,6 +5,7 @@
 #include <msctf.h>
 #include <wrl/client.h>
 
+#include "ApplicationRulesSnapshot.h"
 #include "CoreBridge.h"
 #include "InputModeState.h"
 #include "SettingsSnapshot.h"
@@ -137,6 +138,9 @@ private:
     DWORD open_close_cookie_{TF_INVALID_COOKIE};
     core::Session core_session_;
     SettingsSnapshot settings_snapshot_;
+    SnapshotApplicationRule application_rule_{
+        SnapshotApplicationRule::inherit
+    };
     InputModeState input_mode_state_;
     WPARAM tested_virtual_key_{};
     LPARAM tested_key_data_{};

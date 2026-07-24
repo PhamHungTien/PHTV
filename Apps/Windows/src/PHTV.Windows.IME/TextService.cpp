@@ -11,6 +11,7 @@
 #include <inputscope.h>
 #include <oleauto.h>
 
+#include "ApplicationIdentity.h"
 #include "Guids.h"
 #include "InputScopePolicy.h"
 #include "ModuleState.h"
@@ -437,6 +438,17 @@ HRESULT TextService::ActivateEx(
     }
 
     settings_snapshot_ = load_user_settings_snapshot();
+    const ApplicationRulesSnapshot application_rules =
+        load_user_application_rules_snapshot(settings_snapshot_.revision);
+    const CurrentApplicationIdentity application_identity =
+        resolve_current_application_identity();
+    application_rule_ = application_identity.is_valid()
+        ? application_rule_for_identity(
+            application_rules,
+            application_identity.executable_identity,
+            application_identity.package_family_name
+        )
+        : SnapshotApplicationRule::inherit;
     thread_manager_ = thread_manager;
     client_id_ = client_id;
 
@@ -505,6 +517,7 @@ HRESULT TextService::Deactivate() noexcept {
     clear_runtime_state();
     thread_manager_.Reset();
     client_id_ = TF_CLIENTID_NULL;
+    application_rule_ = SnapshotApplicationRule::inherit;
     active_ = false;
     return cleanup_result;
 }
@@ -621,6 +634,20 @@ HRESULT TextService::OnKeyDown(
         settings_snapshot_.input_method == SnapshotInputMethod::vni
         ? core::InputMethod::vni
         : core::InputMethod::telex;
+    switch (application_rule_) {
+        case SnapshotApplicationRule::prefer_english:
+            input_context.application_rule =
+                core::ApplicationRule::prefer_english;
+            break;
+        case SnapshotApplicationRule::lock_english:
+            input_context.application_rule =
+                core::ApplicationRule::lock_english;
+            break;
+        case SnapshotApplicationRule::inherit:
+            input_context.application_rule =
+                core::ApplicationRule::inherit;
+            break;
+    }
     input_context.flags = core::context_supports_composition;
 
     core::EditPlan plan;
@@ -676,6 +703,11 @@ HRESULT TextService::OnPreservedKey(
         return S_OK;
     }
 
+    if (application_rule_ == SnapshotApplicationRule::lock_english) {
+        *eaten = TRUE;
+        return S_OK;
+    }
+
     if (SUCCEEDED(set_input_mode_enabled(
             input_mode_state_.toggled_value(),
             context
@@ -718,7 +750,11 @@ HRESULT TextService::OnChange(const REFGUID compartment) noexcept {
         return S_OK;
     }
 
-    if (input_mode_state_.apply_open_close_value(value.value().lVal)) {
+    const std::int32_t effective_value =
+        application_rule_ == SnapshotApplicationRule::lock_english
+        ? 0
+        : value.value().lVal;
+    if (input_mode_state_.apply_open_close_value(effective_value)) {
         reset_for_input_mode_change(active_context_.Get());
     }
     return S_OK;
@@ -835,7 +871,8 @@ bool TextService::could_process_key(
     const WPARAM virtual_key,
     const LPARAM key_data
 ) const noexcept {
-    if (!input_mode_state_.enabled()) {
+    if (!input_mode_state_.enabled()
+        || application_rule_ == SnapshotApplicationRule::lock_english) {
         return false;
     }
 
@@ -963,8 +1000,13 @@ bool TextService::input_scope_allows_processing(
 }
 
 HRESULT TextService::initialize_input_mode() noexcept {
+    const bool starts_in_english =
+        application_rule_ == SnapshotApplicationRule::prefer_english
+        || application_rule_ == SnapshotApplicationRule::lock_english;
     static_cast<void>(
-        input_mode_state_.set_enabled(settings_snapshot_.vietnamese_enabled)
+        input_mode_state_.set_enabled(
+            settings_snapshot_.vietnamese_enabled && !starts_in_english
+        )
     );
 
     Microsoft::WRL::ComPtr<ITfCompartmentMgr> compartment_manager;
@@ -1076,6 +1118,10 @@ HRESULT TextService::set_input_mode_enabled(
     const bool enabled,
     ITfContext* const context
 ) noexcept {
+    if (enabled
+        && application_rule_ == SnapshotApplicationRule::lock_english) {
+        return E_ACCESSDENIED;
+    }
     if (open_close_compartment_ == nullptr) {
         return E_UNEXPECTED;
     }

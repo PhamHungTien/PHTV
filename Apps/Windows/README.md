@@ -48,6 +48,7 @@ Apps/Windows/
 ├── global.json
 ├── docs/
 │   ├── ARCHITECTURE.md
+│   ├── APPLICATION_RULES.md
 │   ├── DEVELOPMENT.md
 │   ├── DISTRIBUTION.md
 │   ├── INPUT_MODE.md
@@ -65,6 +66,7 @@ Apps/Windows/
 │   ├── PHTV.Windows.IME/        # TSF Text Input Processor
 │   └── PHTV.Windows.App/        # WinUI companion app
 └── tests/
+    ├── PHTV.Windows.ApplicationRulesSnapshot.Tests/
     ├── PHTV.Windows.Contracts.Tests/
     ├── PHTV.Windows.CoreBridge.Tests/
     ├── PHTV.Windows.InputModeState.Tests/
@@ -93,6 +95,11 @@ Trước khi ăn một phím, TSF đọc `GUID_PROP_INPUTSCOPE` tại selection 
 pass-through toàn bộ password/private/PIN scope hoặc lỗi đọc không xác định.
 Chi tiết nằm trong [sensitive input scope policy](docs/INPUT_SCOPE_POLICY.md).
 
+WinUI đã có danh sách quy tắc theo ứng dụng với hai lựa chọn dễ phân biệt: mở
+bằng tiếng Anh nhưng vẫn cho chuyển đổi, hoặc luôn dùng tiếng Anh. Danh sách
+được ghi thành snapshot có revision và TSF so khớp executable/package khi
+activation. Xem [quy tắc theo ứng dụng](docs/APPLICATION_RULES.md).
+
 ## Nền tảng mục tiêu ban đầu
 
 - Windows 10 version 1809 trở lên và Windows 11.
@@ -113,6 +120,7 @@ Chi tiết nằm trong [sensitive input scope policy](docs/INPUT_SCOPE_POLICY.md
 - [Trạng thái Việt/Anh và phím tắt TSF](docs/INPUT_MODE.md)
 - [Sensitive Input Scope Policy](docs/INPUT_SCOPE_POLICY.md)
 - [Runtime Settings Snapshot v1](docs/SETTINGS_SNAPSHOT.md)
+- [Quy tắc ngôn ngữ theo ứng dụng](docs/APPLICATION_RULES.md)
 - [Bảo mật](docs/SECURITY.md)
 - [Quyền riêng tư](docs/PRIVACY.md)
 - [Đóng gói và phát hành](docs/DISTRIBUTION.md)

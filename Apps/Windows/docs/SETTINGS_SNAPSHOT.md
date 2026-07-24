@@ -48,6 +48,11 @@ App chuẩn hóa settings, ghi JSON atomically trước rồi ghi snapshot bằn
 file + replace + flush-to-disk. Nếu snapshot thiếu, hỏng hoặc không khớp JSON,
 app tái tạo nó khi Settings được mở.
 
+Quy tắc ứng dụng nằm trong snapshot có giới hạn riêng và dùng cùng revision.
+TSF chỉ áp dụng danh sách nếu revision khớp snapshot này, nhờ đó không bao giờ
+ghép trạng thái điều khiển mới với danh sách cũ. Xem
+[APPLICATION_RULES.md](APPLICATION_RULES.md).
+
 TSF v1 nạp snapshot trong lúc activation để không đọc file trên hot path của
 `ITfKeyEventSink`. Thay đổi có hiệu lực sau khi người dùng kích hoạt lại profile
 PHTV. Giá trị Việt/Anh sau activation được đồng bộ qua thread input-mode

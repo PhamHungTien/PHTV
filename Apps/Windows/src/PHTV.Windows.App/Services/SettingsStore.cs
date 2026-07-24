@@ -7,11 +7,14 @@ internal sealed class SettingsStore
     private const string ProductDirectoryName = "PHTV";
     private const string SettingsFileName = "settings.json";
     private const string RuntimeSnapshotFileName = "settings.snapshot";
+    private const string ApplicationRulesSnapshotFileName =
+        "application-rules.snapshot";
     private const int MaximumSettingsFileBytes = 1024 * 1024;
 
     private readonly string settingsDirectory;
     private readonly string settingsPath;
     private readonly string runtimeSnapshotPath;
+    private readonly string applicationRulesSnapshotPath;
     private static long nextRevision = DateTime.UtcNow.Ticks;
 
     internal SettingsStore()
@@ -25,6 +28,10 @@ internal sealed class SettingsStore
             settingsDirectory,
             RuntimeSnapshotFileName
         );
+        applicationRulesSnapshotPath = Path.Combine(
+            settingsDirectory,
+            ApplicationRulesSnapshotFileName
+        );
     }
 
     internal async Task<PHTVSettings> LoadAsync(
@@ -34,7 +41,7 @@ internal sealed class SettingsStore
         if (!File.Exists(settingsPath))
         {
             var settings = new PHTVSettings();
-            await EnsureRuntimeSnapshotAsync(settings, cancellationToken);
+            await EnsureRuntimeSnapshotsAsync(settings, cancellationToken);
             return settings;
         }
 
@@ -44,7 +51,7 @@ internal sealed class SettingsStore
             cancellationToken
         );
         PHTVSettings settings = PHTVSettingsSerializer.Deserialize(contents);
-        await EnsureRuntimeSnapshotAsync(settings, cancellationToken);
+        await EnsureRuntimeSnapshotsAsync(settings, cancellationToken);
         return settings;
     }
 
@@ -62,31 +69,45 @@ internal sealed class SettingsStore
             cancellationToken
         );
 
-        await WriteRuntimeSnapshotAsync(settings, cancellationToken);
+        await WriteRuntimeSnapshotsAsync(settings, cancellationToken);
     }
 
-    private async Task EnsureRuntimeSnapshotAsync(
+    private async Task EnsureRuntimeSnapshotsAsync(
         PHTVSettings settings,
         CancellationToken cancellationToken
     )
     {
-        if (File.Exists(runtimeSnapshotPath))
+        PHTVSettings normalized = settings.Normalize();
+        if (File.Exists(runtimeSnapshotPath)
+            && File.Exists(applicationRulesSnapshotPath))
         {
             try
             {
-                byte[] existing = await ReadBoundedFileAsync(
+                byte[] existingSettings = await ReadBoundedFileAsync(
                     runtimeSnapshotPath,
                     PHTVRuntimeSettingsSnapshot.ByteLength,
                     cancellationToken
                 );
-                if (existing.Length == PHTVRuntimeSettingsSnapshot.ByteLength
+                byte[] existingRules = await ReadBoundedFileAsync(
+                    applicationRulesSnapshotPath,
+                    PHTVApplicationRulesSnapshot.MaximumByteLength,
+                    cancellationToken
+                );
+                if (existingSettings.Length
+                        == PHTVRuntimeSettingsSnapshot.ByteLength
                     && PHTVRuntimeSettingsSnapshot.TryDecode(
-                        existing,
-                        out RuntimeSettingsSnapshot snapshot
+                        existingSettings,
+                        out RuntimeSettingsSnapshot settingsSnapshot
                     )
-                    && snapshot.VietnameseEnabled
-                        == settings.VietnameseEnabled
-                    && snapshot.InputMethod == settings.InputMethod)
+                    && PHTVApplicationRulesSnapshot.TryDecode(
+                        existingRules,
+                        out RuntimeApplicationRulesSnapshot rulesSnapshot
+                    )
+                    && settingsSnapshot.Revision == rulesSnapshot.Revision
+                    && settingsSnapshot.VietnameseEnabled
+                        == normalized.VietnameseEnabled
+                    && settingsSnapshot.InputMethod == normalized.InputMethod
+                    && RulesMatch(normalized, rulesSnapshot.Rules))
                 {
                     return;
                 }
@@ -100,10 +121,10 @@ internal sealed class SettingsStore
             }
         }
 
-        await WriteRuntimeSnapshotAsync(settings, cancellationToken);
+        await WriteRuntimeSnapshotsAsync(normalized, cancellationToken);
     }
 
-    private Task WriteRuntimeSnapshotAsync(
+    private async Task WriteRuntimeSnapshotsAsync(
         PHTVSettings settings,
         CancellationToken cancellationToken
     )
@@ -111,15 +132,51 @@ internal sealed class SettingsStore
         ulong revision = unchecked(
             (ulong)Interlocked.Increment(ref nextRevision)
         );
-        byte[] snapshot = PHTVRuntimeSettingsSnapshot.Encode(
+        byte[] settingsSnapshot = PHTVRuntimeSettingsSnapshot.Encode(
             settings,
             revision
         );
-        return WriteAtomicallyAsync(
+        byte[] rulesSnapshot = PHTVApplicationRulesSnapshot.Encode(
+            settings,
+            revision
+        );
+        await WriteAtomicallyAsync(
             runtimeSnapshotPath,
-            snapshot,
+            settingsSnapshot,
             cancellationToken
         );
+        await WriteAtomicallyAsync(
+            applicationRulesSnapshotPath,
+            rulesSnapshot,
+            cancellationToken
+        );
+    }
+
+    private static bool RulesMatch(
+        PHTVSettings settings,
+        IReadOnlyList<RuntimeApplicationRule> runtimeRules
+    )
+    {
+        ApplicationRule[] expected = settings.ApplicationRules
+            .Where(rule => rule.Rule != ApplicationLanguageRule.Inherit)
+            .ToArray();
+        if (expected.Length != runtimeRules.Count)
+        {
+            return false;
+        }
+
+        for (int index = 0; index < expected.Length; ++index)
+        {
+            ApplicationRule source = expected[index];
+            RuntimeApplicationRule runtime = runtimeRules[index];
+            if (source.ExecutableIdentity != runtime.ExecutableIdentity
+                || source.PackageFamilyName != runtime.PackageFamilyName
+                || source.Rule != runtime.Rule)
+            {
+                return false;
+            }
+        }
+        return true;
     }
 
     private static async Task WriteAtomicallyAsync(

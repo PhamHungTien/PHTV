@@ -36,6 +36,8 @@ phát hiện lỗi ownership tại C ABI.
 - [ ] Kiểm chứng đổi Việt/Anh, shortcut và commit composition trên Windows thật.
 - [x] Thêm guard password/private/PIN vào source TSF và native policy tests.
 - [ ] Kiểm chứng sensitive-scope pass-through trên WinUI, web và Office thật.
+- [x] Nối quy tắc mở/khóa tiếng Anh từ WinUI qua snapshot có revision đến TSF.
+- [ ] Kiểm chứng quy tắc executable/package và đổi focus trên Windows thật.
 - [ ] Đăng ký Text Input Processor per-user trên máy test.
 - [ ] Bật/tắt Việt–Anh và commit composition trong Notepad.
 - [ ] Kiểm chứng Office, Chromium/Electron, WinUI và AppContainer.
@@ -50,7 +52,7 @@ language profile hoặc COM registration hỏng.
 - [ ] Telex, VNI, Unicode và chuyển Việt–Anh.
 - [ ] WinUI Settings, tray, onboarding và trạng thái IME.
 - [ ] Tự khôi phục tiếng Anh, chính tả và từ điển cá nhân.
-- [ ] Quy tắc khóa/tự chuyển tiếng Anh theo ứng dụng.
+- [ ] Hoàn tất UX và runtime verification cho quy tắc tiếng Anh theo ứng dụng.
 - [ ] Import/export cấu hình có schema version.
 - [ ] Báo lỗi đã loại dữ liệu nhạy cảm.
 

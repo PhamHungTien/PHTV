@@ -39,28 +39,84 @@ jobs:
   core:
     name: Core, TSF & WinUI (Windows x64)
     runs-on: windows-2025
-    timeout-minutes: 30
+    timeout-minutes: 45
+    env:
+      SWIFT_INSTALLER_URL: https://download.swift.org/swift-6.3.3-release/windows10/swift-6.3.3-RELEASE/swift-6.3.3-RELEASE-windows10.exe
+      SWIFT_INSTALLER_SHA256: 235626548F249CD516D3D4D90EEE980DCCAD46F3822DAC1F8E3119B0FEDE94B7
 
     steps:
       - name: Checkout
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
 
+      - name: Cache Swift 6.3.3 installer
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: ${{ runner.temp }}\swift-6.3.3-windows10.exe
+          key: swift-6.3.3-windows-x64-235626548f249cd5
+
+      - name: Setup Python 3.10 for Swift
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: "3.10"
+
+      - name: Download and verify Swift 6.3.3
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $installer = Join-Path `
+            $env:RUNNER_TEMP `
+            "swift-6.3.3-windows10.exe"
+
+          if (-not (Test-Path $installer)) {
+            & curl.exe `
+              --fail `
+              --location `
+              --retry 5 `
+              --retry-all-errors `
+              --show-error `
+              --output $installer `
+              $env:SWIFT_INSTALLER_URL
+            if ($LASTEXITCODE -ne 0) {
+              throw "Swift download failed with exit code $LASTEXITCODE."
+            }
+          }
+
+          $actualHash = (Get-FileHash `
+            -Path $installer `
+            -Algorithm SHA256).Hash
+          if ($actualHash -ne $env:SWIFT_INSTALLER_SHA256) {
+            Remove-Item -Force $installer
+            throw "Swift installer SHA-256 mismatch."
+          }
+
       - name: Install Swift 6.3.3
         shell: pwsh
         run: |
           $ErrorActionPreference = "Stop"
-          winget install `
-            --id Swift.Toolchain `
-            --exact `
-            --version 6.3.3 `
-            --source winget `
-            --accept-source-agreements `
-            --accept-package-agreements `
-            --disable-interactivity
+          $installer = Join-Path `
+            $env:RUNNER_TEMP `
+            "swift-6.3.3-windows10.exe"
+          $installLog = Join-Path `
+            $env:RUNNER_TEMP `
+            "swift-6.3.3-install.log"
+          $process = Start-Process `
+            -FilePath $installer `
+            -ArgumentList @(
+              "/quiet",
+              "/norestart",
+              "/log",
+              $installLog
+            ) `
+            -Wait `
+            -PassThru
+          if ($process.ExitCode -notin @(0, 3010)) {
+            throw "Swift installer failed with exit code $($process.ExitCode)."
+          }
 
           $searchRoots = @(
             "$env:LOCALAPPDATA\Programs\Swift",
-            "$env:ProgramFiles\Swift"
+            "$env:ProgramFiles\Swift",
+            "C:\Library\Developer\Toolchains"
           ) | Where-Object { Test-Path $_ }
 
           $swift = Get-ChildItem `
@@ -78,6 +134,15 @@ jobs:
           $swift.Directory.FullName |
             Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
           & $swift.FullName --version
+
+      - name: Upload Swift installer log on failure
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: swift-installer-log
+          path: ${{ runner.temp }}\swift-6.3.3-install.log
+          if-no-files-found: ignore
+          retention-days: 7
 
       - name: Setup .NET 10
         uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5
@@ -163,6 +228,32 @@ jobs:
           & $testExecutable.FullName
           if ($LASTEXITCODE -ne 0) {
             throw "Runtime settings snapshot tests failed with exit code $LASTEXITCODE."
+          }
+
+      - name: Build and run application rules snapshot tests
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $project = "Apps/Windows/tests/PHTV.Windows.ApplicationRulesSnapshot.Tests/PHTV.Windows.ApplicationRulesSnapshot.Tests.vcxproj"
+          msbuild `
+            $project `
+            /m `
+            /p:Configuration=Release `
+            /p:Platform=x64
+
+          $testExecutable = Get-ChildItem `
+            -Path "Apps/Windows/tests/PHTV.Windows.ApplicationRulesSnapshot.Tests" `
+            -Filter "PHTV.Windows.ApplicationRulesSnapshot.Tests.exe" `
+            -File `
+            -Recurse |
+            Select-Object -First 1
+          if (-not $testExecutable) {
+            throw "Application rules snapshot test executable was not produced."
+          }
+
+          & $testExecutable.FullName
+          if ($LASTEXITCODE -ne 0) {
+            throw "Application rules snapshot tests failed with exit code $LASTEXITCODE."
           }
 
       - name: Build portable Core

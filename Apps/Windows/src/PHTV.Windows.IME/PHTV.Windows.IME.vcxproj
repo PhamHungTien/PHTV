@@ -58,6 +58,8 @@
   </ItemDefinitionGroup>
 
   <ItemGroup>
+    <ClInclude Include="ApplicationIdentity.h" />
+    <ClInclude Include="ApplicationRulesSnapshot.h" />
     <ClInclude Include="Guids.h" />
     <ClInclude Include="InputModeState.h" />
     <ClInclude Include="InputScopePolicy.h" />
@@ -67,6 +69,8 @@
     <ClInclude Include="TextService.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="ApplicationIdentity.cpp" />
+    <ClCompile Include="ApplicationRulesSnapshot.cpp" />
     <ClCompile Include="InputModeState.cpp" />
     <ClCompile Include="Module.cpp" />
     <ClCompile Include="ModuleState.cpp" />

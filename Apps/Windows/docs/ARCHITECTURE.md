@@ -83,6 +83,12 @@ enum và checksum rồi nạp snapshot khi activation. Contract byte-level đư�
 bằng golden vector C#/C++ tại
 [SETTINGS_SNAPSHOT.md](SETTINGS_SNAPSHOT.md).
 
+Danh sách quy tắc ứng dụng dùng snapshot có giới hạn riêng và cùng revision với
+snapshot điều khiển. TSF chỉ áp dụng danh sách khi hai revision khớp, rồi so
+khớp executable base name và package family của process hiện tại. Thiết kế,
+binary layout và fail-safe nằm tại
+[APPLICATION_RULES.md](APPLICATION_RULES.md).
+
 Sau activation, trạng thái Việt/Anh hiệu lực nằm trong thread compartment
 `GUID_COMPARTMENT_KEYBOARD_OPENCLOSE`. IME khai báo capability tương ứng, nhận
 thay đổi qua compartment event sink và đăng ký `Ctrl+Space` bằng TSF preserved
@@ -102,6 +108,11 @@ Không dùng tiêu đề cửa sổ làm định danh chính. Quy tắc phải p
 - trường mật khẩu hoặc input scope nhạy cảm.
 
 Core chỉ nhận `InputContext`; việc thu thập context thuộc adapter Windows.
+
+Source hiện tại đã nối hai hành vi `preferEnglish` và `lockEnglish` từ WinUI qua
+snapshot đến TSF. `preferEnglish` khởi tạo tiếng Anh nhưng vẫn cho phép
+`Ctrl+Space`; `lockEnglish` luôn pass-through và chặn bật tiếng Việt. Đây vẫn là
+source PoC cho tới khi được kiểm chứng activation/focus trên máy Windows thật.
 
 Adapter TSF đọc `GUID_PROP_INPUTSCOPE` trên selection trong read edit session.
 Password/private/PIN hoặc lỗi đọc không xác định đều pass-through và reset
