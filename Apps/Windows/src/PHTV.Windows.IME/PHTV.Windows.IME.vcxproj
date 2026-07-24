@@ -50,7 +50,7 @@
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>$(PHTVCoreLibraryDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>PHTVCore.lib;msctf.lib;ole32.lib;oleaut32.lib;shell32.lib;advapi32.lib;uuid.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>PHTVCore.lib;ole32.lib;oleaut32.lib;shell32.lib;advapi32.lib;uuid.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ModuleDefinitionFile>PHTV.Windows.IME.def</ModuleDefinitionFile>
       <DataExecutionPrevention>true</DataExecutionPrevention>
       <RandomizedBaseAddress>true</RandomizedBaseAddress>
