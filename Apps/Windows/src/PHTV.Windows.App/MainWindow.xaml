@@ -1,0 +1,191 @@
+<Window
+    x:Class="PHTV.Windows.App.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    Title="PHTV"
+    mc:Ignorable="d">
+
+    <NavigationView
+        x:Name="Navigation"
+        IsBackButtonVisible="Collapsed"
+        IsSettingsVisible="False"
+        PaneDisplayMode="Left"
+        OpenPaneLength="220"
+        SelectionChanged="OnNavigationSelectionChanged">
+        <NavigationView.MenuItems>
+            <NavigationViewItem
+                x:Name="OverviewItem"
+                Content="Tổng quan"
+                Icon="Home"
+                Tag="overview" />
+            <NavigationViewItem
+                Content="Kiểu gõ"
+                Icon="Keyboard"
+                Tag="typing" />
+            <NavigationViewItem
+                Content="Ứng dụng"
+                Icon="AllApps"
+                Tag="applications" />
+            <NavigationViewItem
+                Content="Thông tin"
+                Icon="Info"
+                Tag="about" />
+        </NavigationView.MenuItems>
+
+        <ScrollViewer>
+            <Grid
+                x:Name="RootContent"
+                MaxWidth="760"
+                Padding="32,24,32,40"
+                HorizontalAlignment="Stretch"
+                Loaded="OnRootLoaded">
+                <StackPanel Spacing="20">
+                    <StackPanel Spacing="4">
+                        <TextBlock
+                            x:Name="PageTitle"
+                            Style="{ThemeResource TitleTextBlockStyle}"
+                            Text="Tổng quan" />
+                        <TextBlock
+                            x:Name="PageDescription"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            Text="Thiết lập bộ gõ tiếng Việt trên Windows."
+                            TextWrapping="Wrap" />
+                    </StackPanel>
+
+                    <InfoBar
+                        x:Name="StatusInfoBar"
+                        IsClosable="False"
+                        IsOpen="False" />
+
+                    <Border
+                        x:Name="OverviewCard"
+                        Padding="20"
+                        Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                        BorderThickness="1"
+                        CornerRadius="8">
+                        <Grid ColumnSpacing="20">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Spacing="6">
+                                <TextBlock
+                                    FontSize="16"
+                                    FontWeight="SemiBold"
+                                    Text="Gõ tiếng Việt" />
+                                <TextBlock
+                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                    Text="Bật hoặc tắt xử lý tiếng Việt cho phiên người dùng hiện tại."
+                                    TextWrapping="Wrap" />
+                            </StackPanel>
+                            <ToggleSwitch
+                                x:Name="VietnameseEnabledSwitch"
+                                Grid.Column="1"
+                                AutomationProperties.Name="Gõ tiếng Việt"
+                                OffContent="Tắt"
+                                OnContent="Bật" />
+                        </Grid>
+                    </Border>
+
+                    <Border
+                        x:Name="TypingCard"
+                        Padding="20"
+                        Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                        BorderThickness="1"
+                        CornerRadius="8">
+                        <StackPanel Spacing="14">
+                            <StackPanel Spacing="6">
+                                <TextBlock
+                                    FontSize="16"
+                                    FontWeight="SemiBold"
+                                    Text="Kiểu gõ" />
+                                <TextBlock
+                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                    Text="Chọn quy tắc nhập dấu quen thuộc với bạn."
+                                    TextWrapping="Wrap" />
+                            </StackPanel>
+                            <RadioButtons x:Name="InputMethodOptions">
+                                <RadioButton
+                                    x:Name="TelexOption"
+                                    Content="Telex"
+                                    Tag="telex" />
+                                <RadioButton
+                                    x:Name="VniOption"
+                                    Content="VNI"
+                                    Tag="vni" />
+                            </RadioButtons>
+                        </StackPanel>
+                    </Border>
+
+                    <Border
+                        x:Name="ApplicationsCard"
+                        Padding="20"
+                        Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                        BorderThickness="1"
+                        CornerRadius="8"
+                        Visibility="Collapsed">
+                        <StackPanel Spacing="8">
+                            <TextBlock
+                                FontSize="16"
+                                FontWeight="SemiBold"
+                                Text="Quy tắc theo ứng dụng" />
+                            <TextBlock
+                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                Text="Core đã hỗ trợ các trạng thái mặc định, ưu tiên tiếng Anh và khóa tiếng Anh. Trình quản lý danh sách sẽ được bật sau khi TSF đọc snapshot cấu hình an toàn."
+                                TextWrapping="Wrap" />
+                        </StackPanel>
+                    </Border>
+
+                    <Border
+                        x:Name="AboutCard"
+                        Padding="20"
+                        Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                        BorderThickness="1"
+                        CornerRadius="8"
+                        Visibility="Collapsed">
+                        <StackPanel Spacing="8">
+                            <TextBlock
+                                FontSize="16"
+                                FontWeight="SemiBold"
+                                Text="PHTV for Windows" />
+                            <TextBlock
+                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                Text="Bản phát triển đầu tiên dùng WinUI và Text Services Framework. Toàn bộ xử lý ngôn ngữ diễn ra ngoại tuyến."
+                                TextWrapping="Wrap" />
+                            <TextBlock
+                                Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                                Text="Không ghi lại nội dung bạn nhập."
+                                TextWrapping="Wrap" />
+                        </StackPanel>
+                    </Border>
+
+                    <Grid x:Name="SaveBar" ColumnSpacing="12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <ProgressRing
+                            x:Name="SaveProgress"
+                            Grid.Column="1"
+                            Width="20"
+                            Height="20"
+                            IsActive="False" />
+                        <Button
+                            x:Name="SaveButton"
+                            Grid.Column="2"
+                            Click="OnSaveClicked"
+                            Content="Lưu thay đổi"
+                            Style="{ThemeResource AccentButtonStyle}" />
+                    </Grid>
+                </StackPanel>
+            </Grid>
+        </ScrollViewer>
+    </NavigationView>
+</Window>

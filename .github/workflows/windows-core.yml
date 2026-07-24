@@ -2,7 +2,7 @@
 # Author: Phạm Hùng Tiến
 # Copyright © 2026 Phạm Hùng Tiến. All rights reserved.
 
-name: Windows Core CI
+name: Windows CI
 
 on:
   push:
@@ -37,7 +37,7 @@ env:
 
 jobs:
   core:
-    name: Swift Core & C ABI (Windows x64)
+    name: Core, TSF & WinUI (Windows x64)
     runs-on: windows-2025
     timeout-minutes: 30
 
@@ -79,6 +79,14 @@ jobs:
             Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
           & $swift.FullName --version
 
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5
+        with:
+          global-json-file: Apps/Windows/global.json
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@6fb02220983dee41ce7ae257b6f4d8f9bf5ed4ce # v2
+
       - name: Build portable Core
         run: swift build --package-path Shared/PHTVCore
 
@@ -87,3 +95,80 @@ jobs:
 
       - name: Verify exported C ABI
         run: swift run --package-path Shared/PHTVCore PHTVCoreABISmoke
+
+      - name: Locate portable Core artifacts
+        id: core-artifacts
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $library = Get-ChildItem `
+            -Path "Shared/PHTVCore/.build" `
+            -Filter "PHTVCore.lib" `
+            -File `
+            -Recurse |
+            Select-Object -First 1
+
+          if (-not $library) {
+            throw "PHTVCore.lib was not produced by SwiftPM."
+          }
+
+          $dll = Join-Path $library.Directory.FullName "PHTVCore.dll"
+          if (-not (Test-Path $dll)) {
+            throw "PHTVCore.dll was not produced beside the import library."
+          }
+
+          "library-dir=$($library.Directory.FullName)" |
+            Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+
+      - name: Build and run native Core bridge tests
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $coreDirectory = "${{ steps.core-artifacts.outputs.library-dir }}"
+          msbuild `
+            "Apps/Windows/tests/PHTV.Windows.CoreBridge.Tests/PHTV.Windows.CoreBridge.Tests.vcxproj" `
+            /m `
+            /p:Configuration=Release `
+            /p:Platform=x64 `
+            /p:PHTVCoreLibraryDir="$coreDirectory"
+
+          $testExecutable = Get-ChildItem `
+            -Path "Apps/Windows/tests/PHTV.Windows.CoreBridge.Tests" `
+            -Filter "PHTV.Windows.CoreBridge.Tests.exe" `
+            -File `
+            -Recurse |
+            Select-Object -First 1
+          if (-not $testExecutable) {
+            throw "Native Core bridge test executable was not produced."
+          }
+
+          $env:PATH = "$coreDirectory;$env:PATH"
+          & $testExecutable.FullName
+          if ($LASTEXITCODE -ne 0) {
+            throw "Native Core bridge tests failed with exit code $LASTEXITCODE."
+          }
+
+      - name: Build TSF Text Input Processor
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          msbuild `
+            "Apps/Windows/src/PHTV.Windows.IME/PHTV.Windows.IME.vcxproj" `
+            /m `
+            /p:Configuration=Release `
+            /p:Platform=x64 `
+            /p:PHTVCoreLibraryDir="${{ steps.core-artifacts.outputs.library-dir }}"
+
+      - name: Run configuration contract tests
+        run: >
+          dotnet run
+          --project Apps/Windows/tests/PHTV.Windows.Contracts.Tests/PHTV.Windows.Contracts.Tests.csproj
+          --configuration Release
+
+      - name: Build WinUI Settings app
+        run: >
+          dotnet build
+          Apps/Windows/src/PHTV.Windows.App/PHTV.Windows.App.csproj
+          --configuration Release
+          --runtime win-x64
+          /p:Platform=x64

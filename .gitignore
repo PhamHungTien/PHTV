@@ -70,6 +70,7 @@ compile_commands.json
 # Visual Studio / .NET
 **/bin/
 **/obj/
+**/x64/
 *.user
 *.suo
 *.VC.db
