@@ -157,7 +157,10 @@ final class PHTVCharacterOutputService: NSObject {
         }
 
         if PHTVEngineRuntimeFacade.engineDataMatchedMacroSnippetType() == EngineMacroSnippetType.systemTextReplacement,
-           PHTVSystemTextReplacementService.shouldDeferToNativeTextReplacement(forBundleId: effectiveTarget) {
+           PHTVSystemTextReplacementService.shouldDeferToNativeTextReplacement(
+               forBundleId: effectiveTarget,
+               document: PHTVAccessibilityService.focusedWindowDocumentForFrontmostAppValue(),
+               windowTitle: PHTVAccessibilityService.focusedWindowTitleForFrontmostAppValue()) {
             PHTVEngineDataBridge.startNewSession()
             #if DEBUG
             NSLog("[Macro] Deferring macOS Text Replacement to native app handling for target='%@'",

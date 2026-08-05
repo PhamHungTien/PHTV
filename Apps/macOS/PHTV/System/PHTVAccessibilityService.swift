@@ -678,6 +678,18 @@ final class PHTVAccessibilityService: NSObject {
         return stringAttribute(focusedWindow, kAXDocumentAttribute)
     }
 
+    /// Read-only context accessors used by input policies. They intentionally
+    /// expose only URL/title metadata, never field contents or selected text.
+    @objc(focusedWindowDocumentForFrontmostAppValue)
+    class func focusedWindowDocumentForFrontmostAppValue() -> String? {
+        focusedWindowDocumentForFrontmostApp()
+    }
+
+    @objc(focusedWindowTitleForFrontmostAppValue)
+    class func focusedWindowTitleForFrontmostAppValue() -> String? {
+        focusedWindowTitleForFrontmostApp()
+    }
+
     /// Firefox usually exposes the active web page URL on AXWebArea rather
     /// than on AXWindow.AXDocument. Walk from the actual editor to that web
     /// area so a Notion page does not depend on the localized window title.

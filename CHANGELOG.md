@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **Trùng nội dung khi dùng macOS Text Replacement trong web AI (#219)**
+  - Các shortcut Text Replacement trên Kimi, Grok, Gemini và một số trang chat
+    AI được chuyển giao cho cơ chế thay thế native của macOS để tránh PHTV và
+    trình duyệt cùng chèn nội dung một lần nữa.
+  - Các trình duyệt và ứng dụng web khác vẫn giữ fallback PHTV hiện có; Zalo,
+    Teams, Terminal và IDE không thay đổi hành vi.
+
 ## [3.4.6] - 2026-07-22
 
 ### Tổng quan

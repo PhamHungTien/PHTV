@@ -219,4 +219,35 @@ final class SystemTextReplacementServiceTests: XCTestCase {
             )
         )
     }
+
+    func testIssue219KnownAIWebContextsDeferToNativeReplacement() {
+        XCTAssertTrue(
+            PHTVSystemTextReplacementService.shouldDeferToNativeTextReplacement(
+                forBundleId: "com.google.Chrome",
+                document: "https://gemini.google.com/app/abc",
+                windowTitle: nil
+            )
+        )
+        XCTAssertTrue(
+            PHTVSystemTextReplacementService.shouldDeferToNativeTextReplacement(
+                forBundleId: "org.mozilla.firefox",
+                document: nil,
+                windowTitle: "Grok — x.com"
+            )
+        )
+        XCTAssertTrue(
+            PHTVSystemTextReplacementService.shouldDeferToNativeTextReplacement(
+                forBundleId: "com.apple.Safari",
+                document: "https://chat.kimi.com/",
+                windowTitle: nil
+            )
+        )
+        XCTAssertFalse(
+            PHTVSystemTextReplacementService.shouldDeferToNativeTextReplacement(
+                forBundleId: "com.google.Chrome",
+                document: "https://example.com/",
+                windowTitle: "Example"
+            )
+        )
+    }
 }

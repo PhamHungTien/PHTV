@@ -462,17 +462,40 @@ final class PHTVAppDetectionService: NSObject {
         strictAddressBarDetectionApps.contains(bundleId)
     }
 
-    // Native Text Replacements are inconsistent in browser content-editable
-    // fields and chat editors such as Zalo and Microsoft Teams. PHTV owns
-    // imported replacements there so behavior does not vary by field or
-    // website and the consumed trigger cannot expand twice.
+    // Native Text Replacements are still inconsistent in most browser
+    // content-editable fields and chat editors. Known AI web contexts are
+    // handled as a narrow exception below after issue #219.
     @objc class func supportsNativeSystemTextReplacements(_ bundleId: String?) -> Bool {
+        supportsNativeSystemTextReplacements(
+            bundleId,
+            document: nil,
+            windowTitle: nil
+        )
+    }
+
+    /// Some web chat editors now apply macOS Text Replacements themselves.
+    /// When PHTV also expands the imported shortcut, the two asynchronous
+    /// transactions overlap and duplicate part of the expansion (issue #219).
+    /// Keep the existing browser fallback by default, but hand off these
+    /// known native-compatible AI web contexts to macOS.
+    @objc(supportsNativeSystemTextReplacements:document:windowTitle:)
+    class func supportsNativeSystemTextReplacements(
+        _ bundleId: String?,
+        document: String?,
+        windowTitle: String?
+    ) -> Bool {
         guard let normalized = normalizeBundleId(bundleId) else {
             return false
         }
 
-        if isBrowserApp(normalized) ||
-           isZaloApp(normalized) ||
+        if isBrowserApp(normalized) {
+            return supportsNativeTextReplacementInKnownWebContext(
+                document: document,
+                windowTitle: windowTitle
+            )
+        }
+
+        if isZaloApp(normalized) ||
            isMicrosoftTeamsApp(normalized) ||
            isTerminalApp(normalized) ||
            isIDEApp(normalized) ||
@@ -485,6 +508,48 @@ final class PHTVAppDetectionService: NSObject {
         }
 
         return true
+    }
+
+    private static let nativeTextReplacementWebHosts: Set<String> = [
+        "kimi.com",
+        "kimi.ai",
+        "grok.com",
+        "gemini.google.com",
+        "chatgpt.com",
+        "claude.ai",
+        "perplexity.ai"
+    ]
+
+    private static let nativeTextReplacementWebTitleTokens: Set<String> = [
+        "kimi",
+        "grok",
+        "gemini",
+        "chatgpt",
+        "claude",
+        "perplexity"
+    ]
+
+    private class func supportsNativeTextReplacementInKnownWebContext(
+        document: String?,
+        windowTitle: String?
+    ) -> Bool {
+        if let document,
+           let host = URL(string: document)?.host?.lowercased() {
+            if nativeTextReplacementWebHosts.contains(host) ||
+               nativeTextReplacementWebHosts.contains(where: {
+                   host.hasSuffix(".\($0)")
+               }) {
+                return true
+            }
+        }
+
+        guard let windowTitle else {
+            return false
+        }
+        let tokens = windowTitle
+            .lowercased()
+            .split { !$0.isLetter && !$0.isNumber }
+        return tokens.contains { nativeTextReplacementWebTitleTokens.contains(String($0)) }
     }
 
     @objc class func containsUnicodeCompound(_ bundleId: String?) -> Bool {

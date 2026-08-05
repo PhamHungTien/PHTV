@@ -11,6 +11,7 @@ không đồng nghĩa đã tương tác thực tế với mọi phiên bản ứ
 | JetBrains editor | IntelliJ IDEA, Android Studio | Không coi editor là CLI; regression test cho profile | Không xuất hiện INSERT/DELETE, terminal tích hợp vẫn dùng CLI |
 | Notion | App native, Firefox, Chrome/Safari | `NotionCodeBlockPolicyTests`, strategy tests | Văn bản thường và code block, URL workspace thật |
 | Chat/Electron | Zalo, Microsoft Teams, Slack, Discord | Text Replacement/strategy/profile tests | Chat, search box, macro ngắn và Unicode dài |
+| AI web chat | Kimi, Grok, Gemini và các trang tương tự | Text Replacement host/title policy tests | Shortcut native trong ô chat, không lặp hoặc mất phần đầu nội dung |
 | Trình duyệt/editor web | Firefox, Chrome, Safari, Edge | Browser/address-bar và compatibility strategy tests | Address bar, form, contenteditable, autocomplete |
 | Google Workspace | Sheets, Docs | Google Sheets context và backspace-plan tests | Autocomplete, `dd`, macro, chuyển ô |
 | Video editor | DaVinci Resolve | Bundle/profile low-latency tests | Space playback và ô title/subtitle |

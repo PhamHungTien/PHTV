@@ -132,6 +132,18 @@ final class PHTVSystemTextReplacementService: NSObject {
         PHTVAppDetectionService.supportsNativeSystemTextReplacements(bundleId)
     }
 
+    class func shouldDeferToNativeTextReplacement(
+        forBundleId bundleId: String?,
+        document: String?,
+        windowTitle: String?
+    ) -> Bool {
+        PHTVAppDetectionService.supportsNativeSystemTextReplacements(
+            bundleId,
+            document: document,
+            windowTitle: windowTitle
+        )
+    }
+
     class func rawReplacementItems(
         globalDefaults: UserDefaults = .standard
     ) -> [[String: Any]] {
