@@ -238,6 +238,7 @@ private func phtvEnglishBehavior(
 
     @objc func receiveWakeNote(_ note: Notification) {
         _ = note
+        StatusBarMenuManager.shared.recoverAfterSystemTransition()
         PHTVCacheStateService.invalidatePIDCache()
         PHTVCacheStateService.invalidateAppCharacteristicsCache()
         PHTVAccessibilityService.invalidateContextDetectionCaches()
@@ -263,6 +264,7 @@ private func phtvEnglishBehavior(
 
     @objc func receiveSleepNote(_ note: Notification) {
         _ = note
+        StatusBarMenuManager.shared.prepareForSystemTransition()
         cancelEventTapRecovery(reason: "willSleep")
         stopHealthCheckMonitoring()
         _ = PHTVManager.stopEventTap()
@@ -272,6 +274,7 @@ private func phtvEnglishBehavior(
     @objc func receiveSessionResignActive(_ note: Notification) {
         _ = note
         NSLog("[Session] Did resign active — suspending event tap and monitoring")
+        StatusBarMenuManager.shared.prepareForSystemTransition()
         cancelEventTapRecovery(reason: "sessionResignActive")
         stopHealthCheckMonitoring()
         stopAccessibilityMonitoring()
@@ -283,6 +286,7 @@ private func phtvEnglishBehavior(
     @objc func receiveSessionBecomeActive(_ note: Notification) {
         _ = note
         NSLog("[Session] Did become active — resuming event tap and monitoring")
+        StatusBarMenuManager.shared.recoverAfterSystemTransition()
         PHTVCacheStateService.invalidatePIDCache()
         PHTVCacheStateService.invalidateAppCharacteristicsCache()
         PHTVAccessibilityService.invalidateContextDetectionCaches()
@@ -502,6 +506,12 @@ private func phtvEnglishBehavior(
             },
             makeNotificationTask(center: workspaceCenter, name: NSWorkspace.willSleepNotification) { appDelegate, notification in
                 appDelegate.receiveSleepNote(notification)
+            },
+            makeNotificationTask(center: workspaceCenter, name: NSWorkspace.screensDidSleepNotification) { appDelegate, notification in
+                appDelegate.receiveSleepNote(notification)
+            },
+            makeNotificationTask(center: workspaceCenter, name: NSWorkspace.screensDidWakeNotification) { appDelegate, notification in
+                appDelegate.receiveWakeNote(notification)
             },
             makeNotificationTask(center: workspaceCenter, name: NSWorkspace.sessionDidResignActiveNotification) { appDelegate, notification in
                 appDelegate.receiveSessionResignActive(notification)

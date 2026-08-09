@@ -21,6 +21,8 @@ final class StatusBarMenuManager: NSObject, NSMenuDelegate {
     private let iconCache = NSCache<NSString, NSImage>()
     private var notificationTasks: [Task<Void, Never>] = []
     private var didSetupIconObservers = false
+    private var wakeRecoveryTask: Task<Void, Never>?
+    private var isSuspendedForSystemTransition = false
 
     private var appState: AppState { AppState.shared }
 
@@ -30,20 +32,52 @@ final class StatusBarMenuManager: NSObject, NSMenuDelegate {
     }
 
     func setup() {
+        guard !isSuspendedForSystemTransition else { return }
+
         if statusItem != nil {
             updateIcon()
             setupIconObserversIfNeeded()
             return
         }
 
-        statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
-        updateIcon()
-
         let menu = NSMenu()
         menu.delegate = self
-        statusItem?.menu = menu
+        // A fixed-width item avoids the variable-length status-item scene
+        // path that can crash while AppKit reconnects menu-bar scenes on
+        // macOS 27 (NSSceneStatusItem/NSRemoteView).
+        let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
+        item.menu = menu
+        statusItem = item
+        updateIcon()
 
         setupIconObserversIfNeeded()
+    }
+
+    /// Detach the status item before macOS tears down the menu-bar scene.
+    /// macOS 27 beta has an AppKit/ViewBridge crash when an existing
+    /// NSStatusItem is reconnected after sleep or a user-session transition.
+    func prepareForSystemTransition() {
+        wakeRecoveryTask?.cancel()
+        wakeRecoveryTask = nil
+        isSuspendedForSystemTransition = true
+
+        guard let item = statusItem else { return }
+        statusItem = nil
+        item.menu?.delegate = nil
+        item.menu = nil
+        NSStatusBar.system.removeStatusItem(item)
+    }
+
+    /// Recreate the status item only after the menu-bar scene has settled.
+    func recoverAfterSystemTransition() {
+        wakeRecoveryTask?.cancel()
+        wakeRecoveryTask = Task { @MainActor [weak self] in
+            // Let AppKit finish reconnecting the menu-bar/session scene first.
+            try? await Task.sleep(for: .milliseconds(750))
+            guard let self, !Task.isCancelled else { return }
+            self.isSuspendedForSystemTransition = false
+            self.setup()
+        }
     }
 
     private func setupIconObserversIfNeeded() {

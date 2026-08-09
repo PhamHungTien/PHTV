@@ -49,6 +49,12 @@
 	<string>Vietnamese input method with Telex, VNI support for macOS</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
+	<!-- Keep the always-on input method alive; it must not be reclaimed as an
+	     idle background app or terminated abruptly during logout/shutdown. -->
+	<key>NSSupportsAutomaticTermination</key>
+	<false/>
+	<key>NSSupportsSuddenTermination</key>
+	<false/>
 	<key>SUAllowsAutomaticUpdates</key>
 	<true/>
 	<key>SUAutomaticallyUpdate</key>
