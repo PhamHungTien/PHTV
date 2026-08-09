@@ -7,6 +7,51 @@
         <language>vi</language>
         <!-- Most recent version first -->
         <item>
+            <title>3.4.7</title>
+            <pubDate>Sun, 09 Aug 2026 15:06:58 +0700</pubDate>
+            <sparkle:version>314</sparkle:version>
+            <sparkle:shortVersionString>3.4.7</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[
+                <h2>PHTV 3.4.7</h2>
+                <h3>Tổng quan</h3>
+                <p>PHTV 3.4.7 tập trung vào độ ổn định khi chạy nền lâu ngày trên macOS 27 beta, đặc biệt là vòng đời biểu tượng trên menu bar khi máy ngủ, thức dậy hoặc chuyển phiên người dùng.</p>
+                <h3>Fixed and Improved</h3>
+                <ul>
+                <li><strong>Ngăn crash khi macOS khôi phục biểu tượng menu bar</strong>
+                <ul>
+                <li>Khắc phục đường đi dễ gây <code>SIGABRT</code> trong <code>NSSceneStatusItem</code>/ <code>NSRemoteView</code> khi AppKit kết nối lại status item sau sleep, khóa màn hình hoặc đổi phiên người dùng.</li>
+                <li>Chuyển status item sang kích thước cố định và tháo item trước khi hệ thống tạm dừng, sau đó tạo lại sau khi menu bar ổn định.</li>
+                <li>Áp dụng xử lý đồng nhất cho sleep hệ thống, sleep màn hình và thay đổi trạng thái phiên đăng nhập.</li>
+                </ul>
+                </li>
+                <li><strong>Giảm tình trạng PHTV tự bị tắt khi chạy nền</strong>
+                <ul>
+                <li>Tắt automatic termination và sudden termination cho ứng dụng bộ gõ luôn phải hoạt động nền.</li>
+                </ul>
+                </li>
+                <li><strong>Tránh trùng nội dung với macOS Text Replacement (#219)</strong>
+                <ul>
+                <li>Các shortcut Text Replacement trên Kimi, Grok, Gemini và một số trang chat AI được chuyển giao cho cơ chế thay thế native của macOS để tránh PHTV và trình duyệt cùng chèn nội dung một lần nữa.</li>
+                <li>Giữ nguyên toàn bộ prefix ASCII của shortcut ngay từ ký tự đầu tiên trong chế độ Tiếng Việt, vì vậy Text Replacement hoạt động đúng cả khi ký tự cuối viết thường; không còn phải chuyển sang Tiếng Anh hoặc viết hoa để “né” lỗi.</li>
+                <li>Các trình duyệt và ứng dụng web khác vẫn giữ fallback PHTV hiện có; Zalo, Teams, Terminal và IDE không thay đổi hành vi.</li>
+                </ul>
+                </li>
+                </ul>
+                <h3>Chất lượng</h3>
+                <ul>
+                <li>Universal Debug build thành công bằng Xcode beta với SDK macOS 27.</li>
+                <li>Kiểm tra Swift syntax, <code>Info.plist</code>, <code>git diff --check</code> và repository policy đều đạt.</li>
+                </ul>
+                <h3>Ghi chú nâng cấp</h3>
+                <ul>
+                <li>Không cần cấp thêm quyền hoặc thiết lập lại PHTV sau khi cập nhật.</li>
+                <li>Thiết lập, macro, lịch sử Clipboard và quy tắc theo ứng dụng được giữ nguyên.</li>
+                </ul>
+            ]]></description>
+            <enclosure url="https://github.com/PhamHungTien/PHTV/releases/download/v3.4.7/PHTV-3.4.7-arm64.dmg" length="9036091" type="application/octet-stream" sparkle:edSignature="3yyEQcb9Bg76VvRDI0i1V1io+rwo9LqygmYDf+qaXkOAeMDQ+tYK4HuGFO87DgnnUNVhyd9qyWpu/h1QQzFNAw=="/>
+        </item>
+        <item>
             <title>3.4.6</title>
             <pubDate>Wed, 22 Jul 2026 16:49:57 +0700</pubDate>
             <sparkle:version>313</sparkle:version>
@@ -464,28 +509,6 @@
                 <p>Các ảnh/file mới được copy sau khi cập nhật sẽ ổn định nhất vì PHTV có thêm dữ liệu/cache mới. Một số mục file rất cũ vẫn có thể không dán lại được nếu file gốc đã bị xoá và trước đó chưa có cache nội bộ.</p>
             ]]></description>
             <enclosure url="https://github.com/PhamHungTien/PHTV/releases/download/v3.1.8/PHTV-3.1.8-arm64.dmg" length="9363583" type="application/octet-stream" sparkle:edSignature="yqQ9G+gb2PjLkQSR7zl4Ux/T6YP7ggWrmmKLyxSof2y+Xi75zObt2IP4/r/4dYKtz1QrTIgZWVrdPNVQWRI6Bw=="/>
-        </item>
-        <item>
-            <title>3.1.7</title>
-            <pubDate>Thu, 21 May 2026 05:07:46 +0000</pubDate>
-            <sparkle:version>284</sparkle:version>
-            <sparkle:shortVersionString>3.1.7</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[
-                <h2>PHTV 3.1.7</h2>
-                <p>PHTV 3.1.7 thêm chế độ <strong>Lau bàn phím</strong>, giúp bạn tạm chặn phím bấm trong thời gian ngắn để vệ sinh bàn phím mà không cần thoát PHTV.</p>
-                <h3>Điểm nổi bật</h3>
-                <ul>
-                    <li><strong>Lau bàn phím</strong>: Mở trong Cài đặt hoặc từ menu bar <strong>Công cụ &gt; Lau bàn phím...</strong>.</li>
-                    <li><strong>Chọn thời lượng linh hoạt</strong>: 30 giây, 1 phút, 2 phút hoặc 5 phút.</li>
-                    <li><strong>Chặn phím an toàn</strong>: PHTV bỏ qua phím bấm trong lúc vệ sinh; chuột và trackpad vẫn dùng được để bấm Dừng.</li>
-                    <li><strong>Tự kết thúc</strong>: Chế độ tự tắt khi hết giờ để tránh bị kẹt.</li>
-                    <li><strong>Tài liệu rõ hơn</strong>: README, hướng dẫn cài đặt, FAQ, kiến trúc và bảo mật đã được cập nhật theo luồng quyền mới.</li>
-                </ul>
-                <h3>Lưu ý sau khi cập nhật</h3>
-                <p>Tính năng Lau bàn phím cần đủ hai quyền nhập liệu của PHTV: <strong>Accessibility</strong> và <strong>Input Monitoring</strong>. Nếu nút Bắt đầu bị khóa, hãy mở Cài đặt PHTV và cấp đủ quyền theo hướng dẫn.</p>
-            ]]></description>
-            <enclosure url="https://github.com/PhamHungTien/PHTV/releases/download/v3.1.7/PHTV-3.1.7-arm64.dmg" length="9347270" type="application/octet-stream" sparkle:edSignature="xEz+7VwfScSxvxSK7sRx3Y3J0N6G+imNzwGpYBPLQaCULQkIKw1Jci5Mi0WISh/hL/YhgaOZaHQA8O4HuopXCQ=="/>
         </item>
         <item>
             <title>2.8.9</title>
