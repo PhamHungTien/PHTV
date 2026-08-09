@@ -7,13 +7,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Fixed
-- **Trùng nội dung khi dùng macOS Text Replacement trong web AI (#219)**
+Chưa có thay đổi cho phiên bản kế tiếp.
+
+## [3.4.7] - 2026-08-09
+
+### Tổng quan
+PHTV 3.4.7 tập trung vào độ ổn định khi chạy nền lâu ngày trên macOS 27 beta,
+đặc biệt là vòng đời biểu tượng trên menu bar khi máy ngủ, thức dậy hoặc chuyển
+phiên người dùng.
+
+### Fixed and Improved
+- **Ngăn crash khi macOS khôi phục biểu tượng menu bar**
+  - Khắc phục đường đi dễ gây `SIGABRT` trong `NSSceneStatusItem`/
+    `NSRemoteView` khi AppKit kết nối lại status item sau sleep, khóa màn hình
+    hoặc đổi phiên người dùng.
+  - Chuyển status item sang kích thước cố định và tháo item trước khi hệ thống
+    tạm dừng, sau đó tạo lại sau khi menu bar ổn định.
+  - Áp dụng xử lý đồng nhất cho sleep hệ thống, sleep màn hình và thay đổi
+    trạng thái phiên đăng nhập.
+
+- **Giảm tình trạng PHTV tự bị tắt khi chạy nền**
+  - Tắt automatic termination và sudden termination cho ứng dụng bộ gõ luôn
+    phải hoạt động nền.
+
+- **Tránh trùng nội dung với macOS Text Replacement (#219)**
   - Các shortcut Text Replacement trên Kimi, Grok, Gemini và một số trang chat
     AI được chuyển giao cho cơ chế thay thế native của macOS để tránh PHTV và
     trình duyệt cùng chèn nội dung một lần nữa.
+  - Giữ nguyên toàn bộ prefix ASCII của shortcut ngay từ ký tự đầu tiên trong
+    chế độ Tiếng Việt, vì vậy Text Replacement hoạt động đúng cả khi ký tự cuối
+    viết thường; không còn phải chuyển sang Tiếng Anh hoặc viết hoa để “né” lỗi.
   - Các trình duyệt và ứng dụng web khác vẫn giữ fallback PHTV hiện có; Zalo,
     Teams, Terminal và IDE không thay đổi hành vi.
+
+### Chất lượng
+- Universal Debug build thành công bằng Xcode beta với SDK macOS 27.
+- Kiểm tra Swift syntax, `Info.plist`, `git diff --check` và repository policy
+  đều đạt.
+
+### Ghi chú nâng cấp
+- Không cần cấp thêm quyền hoặc thiết lập lại PHTV sau khi cập nhật.
+- Thiết lập, macro, lịch sử Clipboard và quy tắc theo ứng dụng được giữ nguyên.
 
 ## [3.4.6] - 2026-07-22
 

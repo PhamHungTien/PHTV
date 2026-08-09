@@ -56,6 +56,10 @@ private final class RuntimeSettingsStateBox: @unchecked Sendable {
     var fixRecommendBrowser: Int32 = Defaults.fixRecommendBrowser ? 1 : 0
     var useMacro: Int32 = 1
     var useMacroInEnglishMode: Int32 = 0
+    /// When enabled for a browser/editor that owns macOS Text Replacements,
+    /// the engine keeps matching system-replacement prefixes in raw form so
+    /// Telex cannot transform the shortcut before macOS expands it.
+    var nativeSystemTextReplacementMode: Int32 = 0
     var useSmartSwitchKey: Int32 = 1
     var autoCapsMacro: Int32 = 0
     var checkSpelling: Int32 = Defaults.checkSpelling ? 1 : 0
@@ -156,6 +160,11 @@ private var runtimeUseMacro: Int32 {
 private var runtimeUseMacroInEnglishMode: Int32 {
     get { withRuntimeSettings { $0.useMacroInEnglishMode } }
     set { withRuntimeSettings { $0.useMacroInEnglishMode = newValue } }
+}
+
+private var runtimeNativeSystemTextReplacementMode: Int32 {
+    get { withRuntimeSettings { $0.nativeSystemTextReplacementMode } }
+    set { withRuntimeSettings { $0.nativeSystemTextReplacementMode = newValue } }
 }
 
 private var runtimeUseSmartSwitchKey: Int32 {
@@ -628,6 +637,61 @@ private func findMacroContentForNormalizedKeys(
     return applyAutoCapsToMacroContent(baseContent, allCaps: allCaps, codeTable: codeTable)
 }
 
+private func nativeTextReplacementKeyMatchesPrefix(
+    _ macroKey: [UInt32],
+    candidate: ArraySlice<UInt32>,
+    codeTable: Int32
+) -> Bool {
+    guard macroKey.count >= candidate.count else { return false }
+
+    let candidateArray = Array(candidate)
+    let exactMatch = zip(macroKey.prefix(candidateArray.count), candidateArray)
+        .allSatisfy { $0 == $1 }
+    if exactMatch { return true }
+
+    // Auto-capitalization and a final Shift/Caps Lock must not prevent native
+    // Text Replacement from recognizing a lowercase shortcut.
+    var loweredCandidate = candidateArray
+    var changed = false
+    for index in loweredCandidate.indices {
+        guard let lowered = lowercasedMacroLookupCode(
+            loweredCandidate[index],
+            codeTable: codeTable
+        ) else { continue }
+        if lowered != loweredCandidate[index] { changed = true }
+        loweredCandidate[index] = lowered
+    }
+    guard changed else { return false }
+
+    return zip(macroKey.prefix(loweredCandidate.count), loweredCandidate)
+        .allSatisfy { $0 == $1 }
+}
+
+@_cdecl("phtvHasNativeTextReplacementPrefix")
+func phtvHasNativeTextReplacementPrefix(
+    _ normalizedKeyBuffer: UnsafePointer<UInt32>?,
+    _ keyCount: Int32
+) -> Int32 {
+    guard let normalizedKeyBuffer, keyCount > 0 else { return 0 }
+    let candidate = Array(UnsafeBufferPointer(start: normalizedKeyBuffer, count: Int(keyCount)))
+    let codeTable = PHTVEngineRuntimeFacade.currentCodeTable()
+
+    macroLookupState.lock.lock()
+    defer { macroLookupState.lock.unlock() }
+
+    let map = macroLookupState.mapLocked(forCodeTable: codeTable)
+    for (macroKey, entry) in map where entry.snippetType == EngineMacroSnippetType.systemTextReplacement {
+        if nativeTextReplacementKeyMatchesPrefix(
+            macroKey,
+            candidate: candidate[candidate.startIndex..<candidate.endIndex],
+            codeTable: codeTable
+        ) {
+            return 1
+        }
+    }
+    return 0
+}
+
 @_cdecl("phtvLoadMacroMapFromBinary")
 func phtvLoadMacroMapFromBinary(
     _ data: UnsafePointer<UInt8>?,
@@ -757,6 +821,11 @@ func phtvRuntimeDoubleSpacePeriodEnabled() -> Int32 {
 @_cdecl("phtvRuntimeUseMacroEnabled")
 func phtvRuntimeUseMacroEnabled() -> Int32 {
     runtimeUseMacro
+}
+
+@_cdecl("phtvRuntimeNativeSystemTextReplacementEnabled")
+func phtvRuntimeNativeSystemTextReplacementEnabled() -> Int32 {
+    runtimeNativeSystemTextReplacementMode
 }
 
 @_cdecl("phtvRuntimeInputTypeValue")
@@ -1047,6 +1116,10 @@ final class PHTVEngineRuntimeFacade: NSObject {
 
     class func setUseMacroInEnglishMode(_ value: Int32) {
         runtimeUseMacroInEnglishMode = value
+    }
+
+    class func setNativeSystemTextReplacementMode(_ enabled: Bool) {
+        runtimeNativeSystemTextReplacementMode = enabled ? 1 : 0
     }
 
     class func autoCapsMacro() -> Int32 {

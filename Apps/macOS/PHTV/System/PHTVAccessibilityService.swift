@@ -116,6 +116,9 @@ final class PHTVAccessibilityService: NSObject {
         var lastAddressBarCheckTime: UInt64 = 0
         var lastNotionCodeBlockResult = false
         var lastNotionCodeBlockCheckTime: UInt64 = 0
+        var lastNativeTextReplacementBundleId: String?
+        var lastNativeTextReplacementResult = false
+        var lastNativeTextReplacementCheckTime: UInt64 = 0
     }
 
     private final class AccessibilityCacheStateBox: @unchecked Sendable {
@@ -842,6 +845,67 @@ final class PHTVAccessibilityService: NSObject {
         writeNotionCodeBlockCache(result: false, checkTime: 0)
     }
 
+    private class func readNativeTextReplacementCache() -> (
+        bundleId: String?,
+        result: Bool,
+        checkTime: UInt64
+    ) {
+        cacheState.withLock { state in
+            (
+                state.lastNativeTextReplacementBundleId,
+                state.lastNativeTextReplacementResult,
+                state.lastNativeTextReplacementCheckTime
+            )
+        }
+    }
+
+    private class func writeNativeTextReplacementCache(
+        bundleId: String?,
+        result: Bool,
+        checkTime: UInt64
+    ) {
+        cacheState.withLock { state in
+            state.lastNativeTextReplacementBundleId = bundleId
+            state.lastNativeTextReplacementResult = result
+            state.lastNativeTextReplacementCheckTime = checkTime
+        }
+    }
+
+    /// Resolves the native Text Replacement handoff once per short AX cache
+    /// window. This keeps the decision on the event-tap hot path cheap while
+    /// still following browser URL/title changes quickly.
+    @objc(nativeTextReplacementContextForBundleId:)
+    class func nativeTextReplacementContext(forBundleId bundleId: String?) -> Bool {
+        guard let bundleId, !bundleId.isEmpty else { return false }
+
+        if !PHTVAppDetectionService.isBrowserApp(bundleId) {
+            return PHTVSystemTextReplacementService.shouldDeferToNativeTextReplacement(
+                forBundleId: bundleId
+            )
+        }
+
+        let now = mach_absolute_time()
+        let cache = readNativeTextReplacementCache()
+        let elapsedMs = cache.checkTime > 0
+            ? PHTVTimingService.machTimeToMs(now - cache.checkTime)
+            : UInt64.max
+        if cache.bundleId == bundleId, elapsedMs < 150 {
+            return cache.result
+        }
+
+        let result = PHTVSystemTextReplacementService.shouldDeferToNativeTextReplacement(
+            forBundleId: bundleId,
+            document: focusedWindowDocumentForFrontmostApp(),
+            windowTitle: focusedWindowTitleForFrontmostApp()
+        )
+        writeNativeTextReplacementCache(bundleId: bundleId, result: result, checkTime: now)
+        return result
+    }
+
+    @objc class func invalidateNativeTextReplacementCache() {
+        writeNativeTextReplacementCache(bundleId: nil, result: false, checkTime: 0)
+    }
+
     @objc class func invalidateTerminalContextCaches() {
         cacheState.withLock { state in
             state.lastTerminalPanelResult = false
@@ -854,6 +918,7 @@ final class PHTVAccessibilityService: NSObject {
     @objc class func invalidateContextDetectionCaches() {
         invalidateAddressBarCache()
         invalidateNotionCodeBlockCache()
+        invalidateNativeTextReplacementCache()
         // Also reset terminal/Claude Code session caches so focus changes
         // are reflected on the next keypress (e.g., clicking into a new session).
         invalidateTerminalContextCaches()

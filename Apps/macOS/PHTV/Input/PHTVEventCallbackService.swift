@@ -598,6 +598,10 @@ final class PHTVEventCallbackService {
 
         // If is in English mode
         if currentLanguage == 0 {
+            // English mode already passes raw characters through; do not let
+            // a native-replacement flag from the previous Vietnamese target
+            // suppress a user macro in this mode.
+            PHTVEngineRuntimeFacade.setNativeSystemTextReplacementMode(false)
             if type == .keyDown {
                 let keyCode = UInt16(eventKeycode)
                 let hasShift = eventFlags.contains(.maskShift)
@@ -727,6 +731,16 @@ final class PHTVEventCallbackService {
         let spotlightActive = targetContext.spotlightActive
         let effectiveBundleId = targetContext.effectiveBundleId
         let appChars = targetContext.appCharacteristics
+
+        let nativeTextReplacementEnabled =
+            !contextSafeMode &&
+            PHTVSystemTextReplacementService.isEnabled() &&
+            PHTVAccessibilityService.nativeTextReplacementContext(
+                forBundleId: effectiveBundleId
+            )
+        PHTVEngineRuntimeFacade.setNativeSystemTextReplacementMode(
+            nativeTextReplacementEnabled
+        )
 
         if PHTVAppContextService.shouldDisableVietnamese(forBundleId: effectiveBundleId) {
             return Unmanaged.passRetained(event)
