@@ -29,6 +29,12 @@ struct PHTVApp: App {
             return
         }
 
+        // Swift cannot catch Objective-C NSException. Install the narrow
+        // macOS 27 AppKit workaround before any NSStatusItem scene is created.
+        if PHTVRemoteViewCrashGuardPolicy.shouldInstall() {
+            PHTVRemoteViewCrashGuard.installIfNeeded()
+        }
+
         // CRITICAL: Initialize AppState first so all shared state is ready
         // before any notification-driven services start.
         _ = AppState.shared

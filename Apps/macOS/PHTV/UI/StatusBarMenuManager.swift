@@ -59,6 +59,15 @@ final class StatusBarMenuManager: NSObject, NSMenuDelegate {
     func prepareForSystemTransition() {
         wakeRecoveryTask?.cancel()
         wakeRecoveryTask = nil
+
+        // On macOS 27, retaining the existing item creates less private scene
+        // churn than removing and recreating it. The Objective-C guard handles
+        // only the known NSRemoteView inconsistency during system reconnection.
+        if PHTVRemoteViewCrashGuard.isInstalled() {
+            isSuspendedForSystemTransition = false
+            return
+        }
+
         isSuspendedForSystemTransition = true
 
         guard let item = statusItem else { return }
@@ -71,6 +80,13 @@ final class StatusBarMenuManager: NSObject, NSMenuDelegate {
     /// Recreate the status item only after the menu-bar scene has settled.
     func recoverAfterSystemTransition() {
         wakeRecoveryTask?.cancel()
+
+        if PHTVRemoteViewCrashGuard.isInstalled() {
+            isSuspendedForSystemTransition = false
+            setup()
+            return
+        }
+
         wakeRecoveryTask = Task { @MainActor [weak self] in
             // Let AppKit finish reconnecting the menu-bar/session scene first.
             try? await Task.sleep(for: .milliseconds(750))

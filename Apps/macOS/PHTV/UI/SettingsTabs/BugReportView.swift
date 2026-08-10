@@ -71,6 +71,10 @@ struct BugReportView: View {
 
     @State private var bugTitle: String = ""
     @State private var bugDescription: String = ""
+    @State private var affectedApp: String = ""
+    @State private var reproductionSteps: String = ""
+    @State private var actualResult: String = ""
+    @State private var expectedResult: String = ""
     @State private var contactEmail: String = ""
     @State private var bugSeverity: BugSeverity = .normal
     @State private var bugArea: BugArea = .typing
@@ -167,9 +171,49 @@ struct BugReportView: View {
 
                 bugTextEditor(
                     text: $bugDescription,
-                    placeholder: "Mô tả ngắn gọn vấn đề, app đang gõ, từ đang gõ, và kết quả sai...",
-                    minHeight: 86
+                    placeholder: "Mô tả ngắn gọn vấn đề và thời điểm xảy ra...",
+                    minHeight: 70
                 )
+
+                TextField(
+                    "Ứng dụng hoặc trang web gặp lỗi (vd: Firefox — notion.so)",
+                    text: $affectedApp
+                )
+                .textFieldStyle(.roundedBorder)
+
+                VStack(alignment: .leading, spacing: 5) {
+                    Text("Các bước tái hiện")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    bugTextEditor(
+                        text: $reproductionSteps,
+                        placeholder: "1. Mở… 2. Gõ… 3. Nhấn…",
+                        minHeight: 70
+                    )
+                }
+
+                HStack(alignment: .top, spacing: 10) {
+                    VStack(alignment: .leading, spacing: 5) {
+                        Text("Kết quả thực tế")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        bugTextEditor(
+                            text: $actualResult,
+                            placeholder: "Nội dung đang xảy ra",
+                            minHeight: 64
+                        )
+                    }
+                    VStack(alignment: .leading, spacing: 5) {
+                        Text("Kết quả mong đợi")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        bugTextEditor(
+                            text: $expectedResult,
+                            placeholder: "Nội dung đúng mong muốn",
+                            minHeight: 64
+                        )
+                    }
+                }
 
                 HStack(alignment: .top, spacing: 10) {
                     compactPicker(title: "Mức độ", selection: $bugSeverity) {
@@ -282,7 +326,7 @@ struct BugReportView: View {
                     icon: "bolt.fill",
                     iconColor: .accentColor,
                     title: "Crash logs gần đây",
-                    subtitle: "Đính kèm các crash log PHTV trong 7 ngày",
+                    subtitle: "Đọc nguyên nhân và stack trace trong các tệp .ips/.crash của 7 ngày gần đây",
                     isOn: bindable.includeCrashLogs
                 )
             }
@@ -609,10 +653,6 @@ struct BugReportView: View {
         return output
     }
 
-    private func getRecentCrashLogs() -> String {
-        BugReportCrashLogCollector.recentCrashLogs(includeCrashLogs: appState.includeCrashLogs)
-    }
-
     private func loadDebugLogs() {
         guard !isLoadingLogs else { return }
         isLoadingLogs = true
@@ -646,7 +686,7 @@ struct BugReportView: View {
     }
 
     /// Tạo báo lỗi với logs đã được fetch sẵn (không block main thread)
-    private func generateBugReportWithLogs(_ logs: String) -> String {
+    private func generateBugReportWithLogs(_ logs: String, crashLogs: String) -> String {
         var report = """
         # Báo lỗi PHTV
 
@@ -660,6 +700,18 @@ struct BugReportView: View {
 
         ## 📝 Mô tả chi tiết
         \(bugDescription.isEmpty ? "(Chưa nhập)" : bugDescription)
+
+        ## 🎯 Phạm vi xảy ra
+        - **Ứng dụng/trang web:** \(affectedApp.isEmpty ? "(Chưa nhập)" : affectedApp)
+
+        ## 🔁 Các bước tái hiện
+        \(reproductionSteps.isEmpty ? "(Chưa nhập)" : reproductionSteps)
+
+        ## ❌ Kết quả thực tế
+        \(actualResult.isEmpty ? "(Chưa nhập)" : actualResult)
+
+        ## ✅ Kết quả mong đợi
+        \(expectedResult.isEmpty ? "(Chưa nhập)" : expectedResult)
 
         """
 
@@ -704,6 +756,8 @@ struct BugReportView: View {
             - **Binary Integrity:** \(PHTVManager.checkBinaryIntegrity() ? "✅ Intact" : "⚠️ Modified (CleanMyMac?)")
             - **Front App:** \(getFrontAppInfo())
             - **English App Rules:** \(appState.excludedApps.isEmpty ? "Không có" : "\(appState.excludedApps.count) app(s)")
+            - **macOS 27 RemoteView Guard:** \(PHTVRemoteViewCrashGuard.isInstalled() ? "✅ Active" : "Không áp dụng")
+            - **RemoteView Exceptions Prevented:** \(PHTVRemoteViewCrashGuard.suppressedExceptionCount())
             \(getExcludedAppsDetails())
 
             ## 🔧 Advanced Settings
@@ -725,7 +779,6 @@ struct BugReportView: View {
         }
 
         // Thêm crash logs nếu có
-        let crashLogs = getRecentCrashLogs()
         if !crashLogs.isEmpty {
             report += """
             ## 💥 Crash Logs gần đây
@@ -767,6 +820,11 @@ struct BugReportView: View {
         guard !isSending else { return }
         isSending = true
 
+        async let crashLogs = BugReportCrashLogCollector.recentCrashLogsInBackground(
+            includeCrashLogs: appState.includeCrashLogs,
+            detail: .full
+        )
+
         // Lấy FULL logs cho clipboard (đầy đủ nhất)
         let logs: String
         if appState.includeLogs {
@@ -776,7 +834,7 @@ struct BugReportView: View {
             logs = ""
         }
 
-        let report = generateBugReportWithLogs(logs)
+        let report = generateBugReportWithLogs(logs, crashLogs: await crashLogs)
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(report, forType: .string)
 
@@ -788,6 +846,11 @@ struct BugReportView: View {
         guard !isSending else { return }
         isSending = true
 
+        async let crashLogs = BugReportCrashLogCollector.recentCrashLogsInBackground(
+            includeCrashLogs: appState.includeCrashLogs,
+            detail: .compact
+        )
+
         // Lấy log quan trọng
         let importantLogs: String
         if appState.includeLogs {
@@ -797,15 +860,14 @@ struct BugReportView: View {
         }
 
         // Tạo body cho GitHub URL
-        let body = generateCompactReport(withLogs: importantLogs)
+        let body = generateCompactReport(withLogs: importantLogs, crashLogs: await crashLogs)
 
-        // Encode URL
-        let title = bugTitle.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
-        let encodedBody = body.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
-
-        let urlString = "https://github.com/phamhungtien/PHTV/issues/new?title=\(title)&body=\(encodedBody)"
-
-        if let url = URL(string: urlString) {
+        var components = URLComponents(string: "https://github.com/phamhungtien/PHTV/issues/new")
+        components?.queryItems = [
+            URLQueryItem(name: "title", value: bugTitle),
+            URLQueryItem(name: "body", value: body)
+        ]
+        if let url = components?.url {
             openExternalURL(url)
         }
 
@@ -813,12 +875,26 @@ struct BugReportView: View {
     }
 
     /// Tạo báo lỗi ngắn gọn để gửi trực tiếp qua URL (không cần paste)
-    private func generateCompactReport(withLogs logs: String = "") -> String {
+    private func generateCompactReport(withLogs logs: String = "", crashLogs: String = "") -> String {
         var report = ""
 
         // Mô tả
         if !bugDescription.isEmpty {
             report += "## 📝 Mô tả\n\(bugDescription)\n\n"
+        }
+
+        if !affectedApp.isEmpty {
+            report += "- **Ứng dụng/trang web:** \(affectedApp)\n\n"
+        }
+
+        if !reproductionSteps.isEmpty {
+            report += "## 🔁 Các bước tái hiện\n\(reproductionSteps)\n\n"
+        }
+
+        if !actualResult.isEmpty || !expectedResult.isEmpty {
+            report += "## 🎯 Kết quả\n"
+            report += "- **Thực tế:** \(actualResult.isEmpty ? "(Chưa nhập)" : actualResult)\n"
+            report += "- **Mong đợi:** \(expectedResult.isEmpty ? "(Chưa nhập)" : expectedResult)\n\n"
         }
 
         report += "## 🧭 Phân loại\n"
@@ -879,11 +955,8 @@ struct BugReportView: View {
         }
 
         // Thêm crash logs nếu có (rút gọn cho URL)
-        let crashLogs = getRecentCrashLogs()
         if !crashLogs.isEmpty {
-            // Chỉ lấy phần đầu crash log cho URL
-            let shortCrashLogs = String(crashLogs.prefix(500))
-            report += "## 💥 Crash Logs\n\(shortCrashLogs)\n"
+            report += "## 💥 Crash Logs\n```\n\(crashLogs)\n```\n"
         }
 
         return report
@@ -892,6 +965,11 @@ struct BugReportView: View {
     private func sendEmailReportAsync() async {
         guard !isSending else { return }
         isSending = true
+
+        async let crashLogs = BugReportCrashLogCollector.recentCrashLogsInBackground(
+            includeCrashLogs: appState.includeCrashLogs,
+            detail: .full
+        )
 
         // Lấy FULL logs cho email (không giới hạn như GitHub)
         let fullLogs: String
@@ -902,7 +980,7 @@ struct BugReportView: View {
         }
 
         // Tạo FULL report (đầy đủ nhất)
-        let fullReport = generateBugReportWithLogs(fullLogs)
+        let fullReport = generateBugReportWithLogs(fullLogs, crashLogs: await crashLogs)
 
         // Copy full report vào clipboard
         NSPasteboard.general.clearContents()
@@ -932,6 +1010,11 @@ struct BugReportView: View {
         guard !isSending else { return }
         isSending = true
 
+        async let crashLogs = BugReportCrashLogCollector.recentCrashLogsInBackground(
+            includeCrashLogs: appState.includeCrashLogs,
+            detail: .full
+        )
+
         let logs: String
         if appState.includeLogs {
             logs = await BugReportLogCollector.fetchLogsInBackground(maxEntries: 120)
@@ -939,7 +1022,7 @@ struct BugReportView: View {
             logs = ""
         }
 
-        let report = generateBugReportWithLogs(logs)
+        let report = generateBugReportWithLogs(logs, crashLogs: await crashLogs)
         reportDocument = BugReportDocument(text: report)
         showingSaveReportSheet = true
 
@@ -960,13 +1043,20 @@ struct BugReportView: View {
 
     private func applyTemplateIfNeeded() {
         if bugDescription.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            bugDescription = "Mô tả ngắn gọn vấn đề và bối cảnh xảy ra."
+            bugDescription = "Mô tả ngắn gọn vấn đề và thời điểm xảy ra."
+        }
+        if reproductionSteps.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            reproductionSteps = "1. Mở ứng dụng hoặc trang web\n2. Thực hiện thao tác\n3. Quan sát lỗi"
         }
     }
 
     private func clearForm() {
         bugTitle = ""
         bugDescription = ""
+        affectedApp = ""
+        reproductionSteps = ""
+        actualResult = ""
+        expectedResult = ""
         contactEmail = ""
         bugSeverity = .normal
         bugArea = .typing

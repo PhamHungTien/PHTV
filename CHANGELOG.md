@@ -7,7 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-Chưa có thay đổi cho phiên bản kế tiếp.
+### Fixed and Improved
+- **Ngăn crash menu bar trên macOS 27 beta (#222)**
+  - Bổ sung lớp bảo vệ giới hạn đúng đường gọi `NSRemoteView` đang phát sinh
+    `NSInternalInconsistencyException` trong AppKit/ViewBridge khi macOS đánh
+    thức lại status item.
+  - Chỉ áp dụng trên macOS 27 và tự ngừng áp dụng ở các phiên bản macOS khác;
+    mọi ngoại lệ không khớp vẫn được chuyển tiếp để tránh che giấu lỗi thật.
+  - Giữ nguyên status item qua sleep và chuyển phiên trên macOS 27, giảm số lần
+    tháo/tạo lại scene menu bar và giúp ứng dụng chạy nền mượt hơn.
+
+- **Báo lỗi chi tiết và hữu ích hơn**
+  - Bổ sung các trường ứng dụng/trang web, bước tái hiện, kết quả thực tế và kết
+    quả mong đợi để báo cáo có đủ bối cảnh xử lý.
+  - Đọc trực tiếp định dạng `.ips` JSON hiện đại của macOS, trích xuất loại ngoại
+    lệ, lý do kết thúc, luồng gây crash và stack trace đã symbolicate.
+  - Thu thập crash report trên luồng nền để không làm khựng giao diện; GitHub
+    nhận bản rút gọn hữu ích, còn clipboard/email/tệp nhận bản đầy đủ hơn.
+  - Tự lược bỏ tên người dùng, đường dẫn home, UUID thiết bị, thanh ghi và địa
+    chỉ bộ nhớ trước khi đưa dữ liệu crash vào báo cáo.
 
 ## [3.4.7] - 2026-08-09
 
