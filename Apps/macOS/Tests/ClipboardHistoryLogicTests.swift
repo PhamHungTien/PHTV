@@ -7,9 +7,18 @@
 //
 
 import XCTest
+import AppKit
 @testable import PHTV
 
 final class ClipboardHistoryLogicTests: XCTestCase {
+
+    @MainActor
+    func testClipboardPanelDragHandleAcceptsImmediateWindowDragging() {
+        let dragHandle = DragHandleView(frame: .zero)
+
+        XCTAssertTrue(dragHandle.mouseDownCanMoveWindow)
+        XCTAssertTrue(dragHandle.acceptsFirstMouse(for: nil))
+    }
 
     func testClipboardPanelToggleGateRejectsDuplicateHotkeyDelivery() {
         var gate = FloatingPanelHotkeyGate(minimumInterval: 0.20)

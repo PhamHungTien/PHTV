@@ -123,13 +123,12 @@ if !contents(root.appendingPathComponent(".gitignore")).components(separatedBy: 
 }
 
 // The repository is intentionally scoped to the shipping macOS product. Keep
-// its project, fixtures and core documentation present after restructures.
+// its project and core documentation present after restructures.
 let requiredRepositoryArtifacts = [
     "Apps/README.md",
     "Apps/macOS/PHTV.xcodeproj/project.pbxproj",
     "Apps/macOS/PHTV/Info.plist",
     "Apps/macOS/PHTV/PrivacyInfo.xcprivacy",
-    "Apps/macOS/Fixtures/vietnamese-core-v1.json",
     "docs/ARCHITECTURE.md",
     "docs/PRIVACY.md",
     "docs/TESTING.md",

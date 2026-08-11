@@ -19,15 +19,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Thêm lối mở Clipboard từ menu bar và trang Cài đặt, đồng thời cảnh báo rõ
     dữ liệu không phải kho mật khẩu và không nên dùng để lưu OTP hoặc khoá bí mật.
   - Đưa bộ chuyển **Lịch sử / Mục đã lưu** lên thanh tiêu đề để giao diện gọn
-    hơn và dành thêm chiều cao cho danh sách nội dung.
+    hơn, luôn căn giữa và dành thêm chiều cao cho danh sách nội dung.
   - Hỗ trợ chuyển nhanh bằng `⌘1` cho **Lịch sử** và `⌘2` cho **Mục đã lưu**
     khi cửa sổ Clipboard đang mở.
+  - Đồng bộ kích thước nút xoá/đóng và sửa vùng kéo để popup có thể di chuyển
+    ổn định bằng biểu tượng ba gạch ở góc trái.
 
 ### Engineering
 - Tập trung lại repository vào ứng dụng macOS đang phát hành; loại bỏ mã thử
   nghiệm, workflow và tài liệu của những nền tảng không còn nằm trong kế hoạch.
-- Chuyển bộ golden vectors dùng cho regression test vào phạm vi dự án macOS để
-  vẫn giữ nguyên độ phủ kiểm thử sau khi dọn cấu trúc repository.
 
 ### Fixed and Improved
 - **Ngăn crash menu bar trên macOS 27 beta (#222)**

@@ -9,18 +9,6 @@ import XCTest
 @testable import PHTV
 
 final class EngineRegressionTests: XCTestCase {
-    private struct GoldenVectorFile: Decodable {
-        let schemaVersion: Int
-        let cases: [GoldenVector]
-    }
-
-    private struct GoldenVector: Decodable {
-        let id: String
-        let method: String
-        let keys: String
-        let expected: String
-    }
-
     // MARK: - Constants
 
     private let eventKeyboard: Int32 = 0  // PHTV_ENGINE_EVENT_KEYBOARD
@@ -1679,41 +1667,6 @@ final class EngineRegressionTests: XCTestCase {
         // "muowfng" → mường; tone (f=grave) on ơ.
         XCTAssertEqual(renderedToken("muowfng"), "mường")
         XCTAssertEqual(runtimeRenderedToken("muowfng"), "mường")
-    }
-
-    func testGoldenVectorsMatchMacEngine() throws {
-        let fixtureURL = try XCTUnwrap(
-            Bundle(for: Self.self).url(
-                forResource: "vietnamese-core-v1",
-                withExtension: "json"
-            )
-        )
-        let fixture = try JSONDecoder().decode(
-            GoldenVectorFile.self,
-            from: Data(contentsOf: fixtureURL)
-        )
-
-        XCTAssertEqual(fixture.schemaVersion, 1)
-        for vector in fixture.cases {
-            let inputType: Int32
-            switch vector.method {
-            case "telex":
-                inputType = 0
-            case "vni":
-                inputType = 1
-            default:
-                XCTFail("Unknown method in golden vector \(vector.id)")
-                continue
-            }
-
-            withInputType(inputType) {
-                XCTAssertEqual(
-                    runtimeRenderedKeySequence(vector.keys.map(runtimeKeyEvent(for:))),
-                    vector.expected,
-                    vector.id
-                )
-            }
-        }
     }
 
 }

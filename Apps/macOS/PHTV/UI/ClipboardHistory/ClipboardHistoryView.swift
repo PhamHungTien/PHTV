@@ -98,8 +98,6 @@ struct ClipboardHistoryView: View {
     var body: some View {
         VStack(spacing: 0) {
             headerView
-                .contentShape(Rectangle())
-                .background(WindowDragHandle())
 
             if manager.selectedSection == .history {
                 searchBar
@@ -157,53 +155,65 @@ struct ClipboardHistoryView: View {
 
     @ViewBuilder
     private var headerView: some View {
-        HStack(spacing: 8) {
-            Image(systemName: "line.3.horizontal")
-                .font(.system(size: 12, weight: .medium))
-                .foregroundColor(.secondary.opacity(0.6))
-                .frame(width: 24, height: 24)
-                .background {
-                    Circle()
-                        .fill(Color.primary.opacity(colorScheme == .dark ? 0.1 : 0.08))
-                }
-                .help("Kéo để di chuyển")
-
-            Image(systemName: "doc.on.clipboard.fill")
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(Color.accentColor)
-                .help("Clipboard")
-
+        ZStack {
             sectionPicker
 
-            Spacer()
+            HStack(spacing: 8) {
+                dragHandle
 
-            if manager.selectedSection == .history && !manager.items.isEmpty {
-                Button(action: {
-                    withAnimation(.easeInOut(duration: 0.2)) {
-                        manager.clearAll()
-                        syncSelectionWithFilteredItems()
-                        keyboardFocus = .search
-                        isSearchFieldFocused = true
+                Spacer()
+
+                if manager.selectedSection == .history && !manager.items.isEmpty {
+                    Button(action: {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            manager.clearAll()
+                            syncSelectionWithFilteredItems()
+                            keyboardFocus = .search
+                            isSearchFieldFocused = true
+                        }
+                    }) {
+                        Image(systemName: "trash")
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundStyle(.secondary)
+                            .frame(width: 28, height: 28)
+                            .background {
+                                Circle()
+                                    .fill(Color.primary.opacity(colorScheme == .dark ? 0.1 : 0.06))
+                                    .overlay {
+                                        Circle()
+                                            .stroke(Color.primary.opacity(0.1), lineWidth: 1)
+                                    }
+                            }
                     }
-                }) {
-                    Image(systemName: "trash")
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundStyle(.secondary)
-                        .frame(width: 24, height: 24)
-                        .background(Color.primary.opacity(colorScheme == .dark ? 0.08 : 0.05))
-                        .clipShape(Circle())
+                    .buttonStyle(.plain)
+                    .help("Xoá tất cả (mục đã ghim được giữ lại)")
                 }
-                .buttonStyle(.plain)
-                .help("Xoá tất cả (mục đã ghim được giữ lại)")
-            }
 
-            GlassCloseButton {
-                onClose()
+                GlassCloseButton(action: onClose, size: 28)
+                    .help("Đóng (ESC)")
             }
-            .help("Đóng (ESC)")
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
+    }
+
+    @ViewBuilder
+    private var dragHandle: some View {
+        ZStack {
+            Circle()
+                .fill(Color.primary.opacity(colorScheme == .dark ? 0.1 : 0.08))
+
+            Image(systemName: "line.3.horizontal")
+                .font(.system(size: 12, weight: .medium))
+                .foregroundStyle(.secondary.opacity(0.65))
+        }
+        .frame(width: 28, height: 28)
+        .overlay {
+            WindowDragHandle()
+                .help("Kéo để di chuyển")
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Di chuyển cửa sổ Clipboard")
     }
 
     @ViewBuilder

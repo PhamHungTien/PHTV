@@ -19,7 +19,7 @@ struct WindowDragHandle: NSViewRepresentable {
     func updateNSView(_ nsView: DragHandleView, context: Context) {}
 }
 
-class DragHandleView: NSView {
+final class DragHandleView: NSView {
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
     }
@@ -32,13 +32,17 @@ class DragHandleView: NSView {
         return true
     }
 
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
+        true
+    }
+
     override func resetCursorRects() {
         addCursorRect(bounds, cursor: .openHand)
     }
 
     override func mouseDown(with event: NSEvent) {
         NSCursor.closedHand.push()
-        super.mouseDown(with: event)
-        NSCursor.pop()
+        defer { NSCursor.pop() }
+        window?.performDrag(with: event)
     }
 }
