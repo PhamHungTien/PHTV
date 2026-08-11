@@ -51,17 +51,30 @@ struct ClipboardSavedItemsView: View {
     let initialContent: String
     let onInitialContentConsumed: () -> Void
     let onItemSelected: (ClipboardSavedItem) -> Void
+    let onClose: () -> Void
     let onEditingChanged: (Bool) -> Void
 
     var manager = ClipboardHistoryManager.shared
     @State private var searchText = ""
     @State private var groupFilter: ClipboardSavedGroupFilter = .all
     @State private var hoveredItemID: UUID?
+    @State private var selectedItemID: UUID?
+    @State private var keyboardFocus: ClipboardPanelKeyboardFocus = .search
+    @State private var isSearchFieldFocused = false
     @State private var itemDraft: ClipboardSavedItemDraft?
     @State private var groupDraft: ClipboardSavedGroupDraft?
     @State private var pendingDeletion: ClipboardSavedDeletion?
     @State private var errorMessage: String?
     @Environment(\.colorScheme) private var colorScheme
+
+    private var selectedIndex: Int? {
+        displayedItems.firstIndex { $0.id == selectedItemID }
+    }
+
+    private var selectedItem: ClipboardSavedItem? {
+        guard let selectedItemID else { return nil }
+        return displayedItems.first { $0.id == selectedItemID }
+    }
 
     private var filteredItems: [ClipboardSavedItem] {
         switch groupFilter {
@@ -80,6 +93,12 @@ struct ClipboardSavedItemsView: View {
                 includesAllGroups: false
             )
         }
+    }
+
+    /// Mirrors the visual order when the all-groups view inserts section
+    /// headers, so arrow-key movement never jumps between non-adjacent rows.
+    private var displayedItems: [ClipboardSavedItem] {
+        groupFilter == .all ? populatedGroups.flatMap(\.items) : filteredItems
     }
 
     var body: some View {
@@ -117,6 +136,19 @@ struct ClipboardSavedItemsView: View {
             )
             onInitialContentConsumed()
         }
+        .task {
+            guard initialContent.isEmpty else { return }
+            await Task.yield()
+            focusSearch()
+        }
+        .onChange(of: displayedItems.map(\.id)) { _, _ in
+            syncSelectionWithFilteredItems()
+        }
+        .onChange(of: isSearchFieldFocused) { _, isFocused in
+            if isFocused {
+                keyboardFocus = .search
+            }
+        }
         .onChange(of: manager.savedLibrary.groups.map(\.id)) { _, groupIDs in
             if case .group(let id) = groupFilter, !groupIDs.contains(id) {
                 groupFilter = .all
@@ -124,6 +156,15 @@ struct ClipboardSavedItemsView: View {
         }
         .onChange(of: isPresentingEditor) { _, isEditing in
             onEditingChanged(isEditing)
+            guard !isEditing else { return }
+            Task { @MainActor in
+                await Task.yield()
+                if let selectedIndex {
+                    _ = focusList(at: selectedIndex)
+                } else {
+                    focusSearch()
+                }
+            }
         }
         .onDisappear {
             onEditingChanged(false)
@@ -218,13 +259,18 @@ struct ClipboardSavedItemsView: View {
                 .foregroundStyle(.secondary)
                 .font(.system(size: 12))
 
-            TextField("Tìm tên, nội dung hoặc nhóm...", text: $searchText)
-                .textFieldStyle(.plain)
-                .font(.system(size: 13))
+            ClipboardPanelSearchField(
+                placeholder: "Tìm tên, nội dung hoặc nhóm...",
+                text: $searchText,
+                isFocused: $isSearchFieldFocused,
+                onCommand: handleSearchCommand
+            )
+            .frame(height: 20)
 
             if !searchText.isEmpty {
                 Button {
                     searchText = ""
+                    focusSearch()
                 } label: {
                     Image(systemName: "xmark.circle.fill")
                         .foregroundStyle(.tertiary)
@@ -244,22 +290,46 @@ struct ClipboardSavedItemsView: View {
         }
         .padding(.horizontal, 12)
         .padding(.bottom, 8)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            focusSearch()
+        }
     }
 
     @ViewBuilder
     private var savedItemList: some View {
-        ScrollView {
-            LazyVStack(spacing: 0) {
-                if groupFilter == .all {
-                    ForEach(populatedGroups, id: \.id) { group in
-                        savedSectionHeader(group.name, systemImage: "folder.fill")
-                        savedRows(for: group.items)
+        ScrollViewReader { scrollProxy in
+            ScrollView {
+                LazyVStack(spacing: 0) {
+                    if groupFilter == .all {
+                        ForEach(populatedGroups, id: \.id) { group in
+                            savedSectionHeader(group.name, systemImage: "folder.fill")
+                            savedRows(for: group.items)
+                        }
+                    } else {
+                        savedRows(for: filteredItems)
                     }
-                } else {
-                    savedRows(for: filteredItems)
+                }
+                .padding(.vertical, 4)
+                .background {
+                    ClipboardPanelListKeyboardHandler(
+                        isActive: keyboardFocus == .list && !filteredItems.isEmpty,
+                        allowsPinShortcut: false,
+                        onCommand: handleListCommand,
+                        onInsertTextIntoSearch: insertTextIntoSearch
+                    )
+                    .frame(width: 0, height: 0)
                 }
             }
-            .padding(.vertical, 4)
+            .onChange(of: selectedItemID) { _, newValue in
+                guard let newValue else { return }
+                Task { @MainActor in
+                    await Task.yield()
+                    withAnimation(.easeInOut(duration: 0.12)) {
+                        scrollProxy.scrollTo(newValue, anchor: .center)
+                    }
+                }
+            }
         }
     }
 
@@ -289,11 +359,13 @@ struct ClipboardSavedItemsView: View {
                 item: item,
                 groupName: manager.savedLibrary.groupName(for: item.groupID),
                 isHovered: hoveredItemID == item.id,
+                isSelected: selectedItemID == item.id,
                 colorScheme: colorScheme,
-                onSelect: { onItemSelected(item) },
+                onSelect: { select(item) },
                 onEdit: { itemDraft = ClipboardSavedItemDraft(item: item) },
                 onDelete: { pendingDeletion = .item(item) }
             )
+            .id(item.id)
             .onHover { isHovered in
                 hoveredItemID = isHovered ? item.id : nil
             }
@@ -352,6 +424,106 @@ struct ClipboardSavedItemsView: View {
         .padding(.horizontal, 24)
     }
 
+    // MARK: - Keyboard Selection
+
+    private func syncSelectionWithFilteredItems() {
+        guard !displayedItems.isEmpty else {
+            selectedItemID = nil
+            focusSearch()
+            return
+        }
+
+        guard let selectedItemID else { return }
+        if displayedItems.contains(where: { $0.id == selectedItemID }) { return }
+        self.selectedItemID = displayedItems.first?.id
+    }
+
+    private func focusSearch() {
+        keyboardFocus = .search
+        isSearchFieldFocused = true
+    }
+
+    @discardableResult
+    private func focusList(at index: Int) -> Bool {
+        guard !displayedItems.isEmpty else { return false }
+
+        let clampedIndex = min(max(index, 0), displayedItems.count - 1)
+        selectedItemID = displayedItems[clampedIndex].id
+        keyboardFocus = .list
+        isSearchFieldFocused = false
+        return true
+    }
+
+    private func moveSelection(by delta: Int) {
+        guard !displayedItems.isEmpty else { return }
+
+        let currentIndex = selectedIndex ?? 0
+        let nextIndex = min(max(currentIndex + delta, 0), displayedItems.count - 1)
+        selectedItemID = displayedItems[nextIndex].id
+    }
+
+    private func activateSelectedItem() -> Bool {
+        guard let selectedItem else { return false }
+        onItemSelected(selectedItem)
+        return true
+    }
+
+    private func handleSearchCommand(_ command: ClipboardPanelSearchCommand) -> Bool {
+        switch command {
+        case .moveForward:
+            return focusList(at: selectedIndex ?? 0)
+
+        case .moveBackward:
+            guard !displayedItems.isEmpty else { return false }
+            return focusList(at: displayedItems.count - 1)
+
+        case .activateSelection:
+            if selectedItemID == nil {
+                selectedItemID = displayedItems.first?.id
+            }
+            return activateSelectedItem()
+        }
+    }
+
+    private func handleListCommand(_ command: ClipboardPanelListCommand) {
+        switch command {
+        case .moveUp, .movePrevious:
+            if let selectedIndex, selectedIndex == 0 {
+                focusSearch()
+            } else {
+                moveSelection(by: -1)
+            }
+
+        case .moveDown, .moveNext:
+            moveSelection(by: 1)
+
+        case .activateSelection:
+            _ = activateSelectedItem()
+
+        case .deleteSelection:
+            guard let selectedItem else { return }
+            pendingDeletion = .item(selectedItem)
+
+        case .togglePinSelection:
+            break
+
+        case .close:
+            onClose()
+        }
+    }
+
+    private func insertTextIntoSearch(_ text: String) {
+        guard !text.isEmpty else { return }
+        searchText.append(text)
+        focusSearch()
+    }
+
+    private func select(_ item: ClipboardSavedItem) {
+        selectedItemID = item.id
+        keyboardFocus = .list
+        onItemSelected(item)
+    }
+
     private func closeEditor() {
         itemDraft = nil
         groupDraft = nil
@@ -388,15 +560,34 @@ struct ClipboardSavedItemsView: View {
 
     private func performDeletion() {
         guard let pendingDeletion else { return }
+        let previousSelectedID = selectedItemID
+        let previousSelectedIndex = selectedIndex
+        var deletedSelectedItem = false
+
         do {
             switch pendingDeletion {
             case .item(let item):
+                deletedSelectedItem = item.id == previousSelectedID
                 try manager.removeSavedItem(id: item.id)
             case .group(let group):
                 try manager.removeSavedGroup(id: group.id)
                 groupFilter = .all
             }
             self.pendingDeletion = nil
+
+            guard !displayedItems.isEmpty else {
+                selectedItemID = nil
+                focusSearch()
+                return
+            }
+
+            if deletedSelectedItem {
+                let fallbackIndex = min(previousSelectedIndex ?? 0, displayedItems.count - 1)
+                selectedItemID = displayedItems[fallbackIndex].id
+            } else if let previousSelectedID,
+                      displayedItems.contains(where: { $0.id == previousSelectedID }) {
+                selectedItemID = previousSelectedID
+            }
         } catch {
             errorMessage = error.localizedDescription
             self.pendingDeletion = nil
@@ -408,6 +599,7 @@ private struct ClipboardSavedItemRow: View {
     let item: ClipboardSavedItem
     let groupName: String
     let isHovered: Bool
+    let isSelected: Bool
     let colorScheme: ColorScheme
     let onSelect: () -> Void
     let onEdit: () -> Void
@@ -442,7 +634,7 @@ private struct ClipboardSavedItemRow: View {
 
                 Spacer(minLength: 4)
 
-                if isHovered {
+                if isHovered || isSelected {
                     HStack(spacing: 7) {
                         Button(action: onEdit) {
                             Image(systemName: "pencil")
@@ -463,7 +655,10 @@ private struct ClipboardSavedItemRow: View {
             .padding(.horizontal, 12)
             .padding(.vertical, 7)
             .background {
-                if isHovered {
+                if isSelected {
+                    PHTVRoundedRect(cornerRadius: 8)
+                        .fill(Color.accentColor.opacity(colorScheme == .dark ? 0.2 : 0.12))
+                } else if isHovered {
                     PHTVRoundedRect(cornerRadius: 8)
                         .fill(Color.primary.opacity(colorScheme == .dark ? 0.1 : 0.06))
                 }

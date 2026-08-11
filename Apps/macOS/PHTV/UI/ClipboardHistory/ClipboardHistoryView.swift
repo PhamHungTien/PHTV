@@ -10,18 +10,18 @@ import SwiftUI
 import AppKit
 import Carbon
 
-private enum ClipboardHistoryKeyboardFocus: Equatable {
+enum ClipboardPanelKeyboardFocus: Equatable {
     case search
     case list
 }
 
-private enum ClipboardHistorySearchCommand {
+enum ClipboardPanelSearchCommand: Equatable {
     case moveForward
     case moveBackward
     case activateSelection
 }
 
-private enum ClipboardHistoryListCommand {
+enum ClipboardPanelListCommand: Equatable {
     case moveUp
     case moveDown
     case moveNext
@@ -40,7 +40,7 @@ struct ClipboardHistoryView: View {
     @State private var hoveredItemId: UUID?
     @State private var selectedItemId: UUID?
     @State private var searchText = ""
-    @State private var keyboardFocus: ClipboardHistoryKeyboardFocus = .search
+    @State private var keyboardFocus: ClipboardPanelKeyboardFocus = .search
     @State private var isSearchFieldFocused = false
     @State private var savedItemSeed = ""
     @State private var savedLibraryIsEditing = false
@@ -115,6 +115,7 @@ struct ClipboardHistoryView: View {
                     initialContent: savedItemSeed,
                     onInitialContentConsumed: { savedItemSeed = "" },
                     onItemSelected: manager.handleSavedItemSelected,
+                    onClose: onClose,
                     onEditingChanged: { savedLibraryIsEditing = $0 }
                 )
             }
@@ -242,7 +243,7 @@ struct ClipboardHistoryView: View {
                 .foregroundStyle(.secondary)
                 .font(.system(size: 12))
 
-            ClipboardHistorySearchField(
+            ClipboardPanelSearchField(
                 placeholder: "Tìm kiếm...",
                 text: $searchText,
                 isFocused: $isSearchFieldFocused,
@@ -312,8 +313,9 @@ struct ClipboardHistoryView: View {
                 }
                 .padding(.vertical, 4)
                 .background(
-                    ClipboardHistoryListKeyboardHandler(
+                    ClipboardPanelListKeyboardHandler(
                         isActive: keyboardFocus == .list && !filteredItems.isEmpty,
+                        allowsPinShortcut: true,
                         onCommand: handleListCommand,
                         onInsertTextIntoSearch: insertTextIntoSearch
                     )
@@ -446,7 +448,7 @@ struct ClipboardHistoryView: View {
         selectedItemId = filteredItems[nextIndex].id
     }
 
-    private func handleSearchCommand(_ command: ClipboardHistorySearchCommand) -> Bool {
+    private func handleSearchCommand(_ command: ClipboardPanelSearchCommand) -> Bool {
         switch command {
         case .moveForward:
             return focusList(at: selectedIndex ?? 0)
@@ -463,7 +465,7 @@ struct ClipboardHistoryView: View {
         }
     }
 
-    private func handleListCommand(_ command: ClipboardHistoryListCommand) {
+    private func handleListCommand(_ command: ClipboardPanelListCommand) {
         switch command {
         case .moveUp:
             if let selectedIndex, selectedIndex == 0 {
@@ -762,11 +764,11 @@ final class ClipboardSectionShortcutCaptureView: NSView {
 
 // MARK: - Search Field
 
-private struct ClipboardHistorySearchField: NSViewRepresentable {
+struct ClipboardPanelSearchField: NSViewRepresentable {
     let placeholder: String
     @Binding var text: String
     @Binding var isFocused: Bool
-    let onCommand: (ClipboardHistorySearchCommand) -> Bool
+    let onCommand: (ClipboardPanelSearchCommand) -> Bool
 
     func makeCoordinator() -> Coordinator {
         Coordinator(text: $text, isFocused: $isFocused, onCommand: onCommand)
@@ -808,12 +810,12 @@ private struct ClipboardHistorySearchField: NSViewRepresentable {
     final class Coordinator: NSObject, NSTextFieldDelegate {
         @Binding var text: String
         @Binding var isFocused: Bool
-        var onCommand: (ClipboardHistorySearchCommand) -> Bool
+        var onCommand: (ClipboardPanelSearchCommand) -> Bool
 
         init(
             text: Binding<String>,
             isFocused: Binding<Bool>,
-            onCommand: @escaping (ClipboardHistorySearchCommand) -> Bool
+            onCommand: @escaping (ClipboardPanelSearchCommand) -> Bool
         ) {
             self._text = text
             self._isFocused = isFocused
@@ -856,20 +858,23 @@ private struct ClipboardHistorySearchField: NSViewRepresentable {
 
 // MARK: - List Keyboard Handler
 
-private struct ClipboardHistoryListKeyboardHandler: NSViewRepresentable {
+struct ClipboardPanelListKeyboardHandler: NSViewRepresentable {
     let isActive: Bool
-    let onCommand: (ClipboardHistoryListCommand) -> Void
+    let allowsPinShortcut: Bool
+    let onCommand: (ClipboardPanelListCommand) -> Void
     let onInsertTextIntoSearch: (String) -> Void
 
-    func makeNSView(context: Context) -> ClipboardHistoryListKeyCaptureView {
-        let view = ClipboardHistoryListKeyCaptureView()
+    func makeNSView(context: Context) -> ClipboardPanelListKeyCaptureView {
+        let view = ClipboardPanelListKeyCaptureView()
+        view.allowsPinShortcut = allowsPinShortcut
         view.onCommand = onCommand
         view.onInsertTextIntoSearch = onInsertTextIntoSearch
         return view
     }
 
-    func updateNSView(_ nsView: ClipboardHistoryListKeyCaptureView, context: Context) {
+    func updateNSView(_ nsView: ClipboardPanelListKeyCaptureView, context: Context) {
         nsView.isActive = isActive
+        nsView.allowsPinShortcut = allowsPinShortcut
         nsView.onCommand = onCommand
         nsView.onInsertTextIntoSearch = onInsertTextIntoSearch
 
@@ -883,9 +888,10 @@ private struct ClipboardHistoryListKeyboardHandler: NSViewRepresentable {
     }
 }
 
-private final class ClipboardHistoryListKeyCaptureView: NSView {
+final class ClipboardPanelListKeyCaptureView: NSView {
     var isActive = false
-    var onCommand: ((ClipboardHistoryListCommand) -> Void)?
+    var allowsPinShortcut = false
+    var onCommand: ((ClipboardPanelListCommand) -> Void)?
     var onInsertTextIntoSearch: ((String) -> Void)?
 
     override var acceptsFirstResponder: Bool { true }
@@ -906,7 +912,9 @@ private final class ClipboardHistoryListKeyCaptureView: NSView {
     private func handleNavigation(_ event: NSEvent) -> Bool {
         let normalizedFlags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
 
-        if Int(event.keyCode) == kVK_ANSI_P, normalizedFlags == .command {
+        if allowsPinShortcut,
+           Int(event.keyCode) == kVK_ANSI_P,
+           normalizedFlags == .command {
             onCommand?(.togglePinSelection)
             return true
         }

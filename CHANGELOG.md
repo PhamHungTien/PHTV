@@ -33,6 +33,9 @@ macOS 27 beta và cung cấp báo cáo lỗi chi tiết hơn.
     thêm chiều cao cho danh sách nội dung.
   - Hỗ trợ `⌘1` để mở **Lịch sử** và `⌘2` để mở **Mục đã lưu** khi popup đang
     hiển thị, kể cả khi con trỏ nằm trong ô tìm kiếm.
+  - Tự đưa con trỏ vào ô tìm kiếm khi chuyển tab; **Mục đã lưu** hỗ trợ mũi tên,
+    `Tab`/`Shift-Tab`, `Enter`, `Space`, `Delete`, `Esc` và gõ để tìm giống
+    **Lịch sử**.
   - Đồng bộ kích thước nút xoá/đóng và sửa vùng kéo để có thể di chuyển popup
     ổn định bằng biểu tượng ba gạch ở góc trái.
 
@@ -57,7 +60,7 @@ macOS 27 beta và cung cấp báo cáo lỗi chi tiết hơn.
 
 ### Chất lượng
 - Universal Debug build thành công bằng Xcode beta với SDK macOS 27; toàn bộ
-  442 XCTest đều đạt.
+  444 XCTest đều đạt.
 - Tập trung repository vào ứng dụng macOS đang phát hành; loại bỏ mã thử nghiệm,
   workflow và tài liệu của những nền tảng không còn nằm trong kế hoạch.
 - Kiểm tra release metadata, appcast, privacy manifest và repository policy đều đạt.

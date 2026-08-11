@@ -144,6 +144,43 @@ final class ClipboardSavedLibraryTests: XCTestCase {
     }
 
     @MainActor
+    func testClipboardPanelListKeyboardHandlerRoutesNavigationCommands() throws {
+        let captureView = ClipboardPanelListKeyCaptureView(frame: .zero)
+        var commands: [ClipboardPanelListCommand] = []
+        captureView.isActive = true
+        captureView.onCommand = { commands.append($0) }
+
+        captureView.keyDown(with: try keyEvent(kVK_DownArrow, modifiers: []))
+        captureView.keyDown(with: try keyEvent(kVK_UpArrow, modifiers: []))
+        captureView.keyDown(with: try keyEvent(kVK_Tab, modifiers: []))
+        captureView.keyDown(with: try keyEvent(kVK_Tab, modifiers: .shift))
+        captureView.keyDown(with: try keyEvent(kVK_Return, modifiers: []))
+        captureView.keyDown(with: try keyEvent(kVK_Delete, modifiers: []))
+        captureView.keyDown(with: try keyEvent(kVK_Escape, modifiers: []))
+
+        XCTAssertEqual(
+            commands,
+            [.moveDown, .moveUp, .moveNext, .movePrevious, .activateSelection, .deleteSelection, .close]
+        )
+    }
+
+    @MainActor
+    func testClipboardPanelListPinShortcutCanBeLimitedToHistory() throws {
+        let captureView = ClipboardPanelListKeyCaptureView(frame: .zero)
+        var commands: [ClipboardPanelListCommand] = []
+        captureView.isActive = true
+        captureView.onCommand = { commands.append($0) }
+
+        captureView.allowsPinShortcut = true
+        captureView.keyDown(with: try keyEvent(kVK_ANSI_P))
+        XCTAssertEqual(commands, [.togglePinSelection])
+
+        captureView.allowsPinShortcut = false
+        captureView.keyDown(with: try keyEvent(kVK_ANSI_P))
+        XCTAssertEqual(commands, [.togglePinSelection])
+    }
+
+    @MainActor
     private func keyEvent(
         _ keyCode: Int,
         modifiers: NSEvent.ModifierFlags = .command
