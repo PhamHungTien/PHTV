@@ -7,6 +7,68 @@
         <language>vi</language>
         <!-- Intel (x86_64) feed — Most recent version first -->
         <item>
+            <title>3.4.8</title>
+            <pubDate>Wed, 12 Aug 2026 05:33:11 +0700</pubDate>
+            <sparkle:version>315</sparkle:version>
+            <sparkle:shortVersionString>3.4.8</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[
+                <h2>PHTV 3.4.8</h2>
+                <h3>Tổng quan</h3>
+                <p>PHTV 3.4.8 bổ sung <strong>Mục đã lưu</strong> cho Clipboard, giúp lưu và sắp xếp những nội dung thường dùng mà không phụ thuộc vào lịch sử tự động. Phiên bản này đồng thời hoàn thiện giao diện popup, tăng độ ổn định của biểu tượng menu bar trên macOS 27 beta và cung cấp báo cáo lỗi chi tiết hơn.</p>
+                <h3>Added</h3>
+                <ul>
+                <li><strong>Nhóm và lưu nội dung Clipboard thường dùng (#221)</strong>
+                <ul>
+                <li>Bổ sung khu vực <strong>Mục đã lưu</strong> tách biệt với lịch sử tự động, giúp lưu văn bản thường dùng mà không bị ảnh hưởng bởi giới hạn lưu trữ hoặc thao tác xoá lịch sử.</li>
+                <li>Cho phép tạo, đổi tên và xoá nhóm; khi xoá nhóm, các mục bên trong được chuyển an toàn về <strong>Chưa phân loại</strong> thay vì bị xoá theo.</li>
+                <li>Có thể lưu nhanh một mục văn bản từ lịch sử, tìm theo tên/nội dung/nhóm, chỉnh sửa và dán trực tiếp vào ứng dụng đang dùng.</li>
+                <li>Thêm lối mở Clipboard từ menu bar và trang Cài đặt, đồng thời cảnh báo rõ dữ liệu không phải kho mật khẩu và không nên dùng để lưu OTP hoặc khoá bí mật.</li>
+                </ul>
+                </li>
+                </ul>
+                <h3>Fixed and Improved</h3>
+                <ul>
+                <li><strong>Popup Clipboard gọn và dễ thao tác hơn</strong>
+                <ul>
+                <li>Đưa bộ chuyển <strong>Lịch sử / Mục đã lưu</strong> lên thanh tiêu đề, căn giữa và dành thêm chiều cao cho danh sách nội dung.</li>
+                <li>Hỗ trợ <code>⌘1</code> để mở <strong>Lịch sử</strong> và <code>⌘2</code> để mở <strong>Mục đã lưu</strong> khi popup đang hiển thị, kể cả khi con trỏ nằm trong ô tìm kiếm.</li>
+                <li>Tự đưa con trỏ vào ô tìm kiếm khi chuyển tab; <strong>Mục đã lưu</strong> hỗ trợ mũi tên, <code>Tab</code>/<code>Shift-Tab</code>, <code>Enter</code>, <code>Space</code>, <code>Delete</code>, <code>Esc</code> và gõ để tìm giống <strong>Lịch sử</strong>.</li>
+                <li>Đồng bộ kích thước nút xoá/đóng và sửa vùng kéo để có thể di chuyển popup ổn định bằng biểu tượng ba gạch ở góc trái.</li>
+                </ul>
+                </li>
+                <li><strong>Ngăn crash menu bar trên macOS 27 beta (#222)</strong>
+                <ul>
+                <li>Bổ sung lớp bảo vệ giới hạn đúng đường gọi <code>NSRemoteView</code> đang phát sinh <code>NSInternalInconsistencyException</code> trong AppKit/ViewBridge khi macOS đánh thức lại status item.</li>
+                <li>Chỉ áp dụng trên macOS 27 và tự ngừng áp dụng ở các phiên bản macOS khác; mọi ngoại lệ không khớp vẫn được chuyển tiếp để tránh che giấu lỗi thật.</li>
+                <li>Giữ nguyên status item qua sleep và chuyển phiên trên macOS 27, giảm số lần tháo/tạo lại scene menu bar và giúp ứng dụng chạy nền mượt hơn.</li>
+                </ul>
+                </li>
+                <li><strong>Báo lỗi chi tiết và hữu ích hơn</strong>
+                <ul>
+                <li>Bổ sung các trường ứng dụng/trang web, bước tái hiện, kết quả thực tế và kết quả mong đợi để báo cáo có đủ bối cảnh xử lý.</li>
+                <li>Đọc trực tiếp định dạng <code>.ips</code> JSON hiện đại của macOS, trích xuất loại ngoại lệ, lý do kết thúc, luồng gây crash và stack trace đã symbolicate.</li>
+                <li>Thu thập crash report trên luồng nền để không làm khựng giao diện; GitHub nhận bản rút gọn hữu ích, còn clipboard/email/tệp nhận bản đầy đủ hơn.</li>
+                <li>Tự lược bỏ tên người dùng, đường dẫn home, UUID thiết bị, thanh ghi và địa chỉ bộ nhớ trước khi đưa dữ liệu crash vào báo cáo.</li>
+                </ul>
+                </li>
+                </ul>
+                <h3>Chất lượng</h3>
+                <ul>
+                <li>Universal Debug build thành công bằng Xcode beta với SDK macOS 27; toàn bộ 444 XCTest đều đạt.</li>
+                <li>Tập trung repository vào ứng dụng macOS đang phát hành; loại bỏ mã thử nghiệm, workflow và tài liệu của những nền tảng không còn nằm trong kế hoạch.</li>
+                <li>Kiểm tra release metadata, appcast, privacy manifest và repository policy đều đạt.</li>
+                </ul>
+                <h3>Ghi chú nâng cấp</h3>
+                <ul>
+                <li>Không cần cấp thêm quyền hoặc thiết lập lại PHTV sau khi cập nhật.</li>
+                <li>Thiết lập, macro, lịch sử Clipboard và quy tắc theo ứng dụng được giữ nguyên.</li>
+                <li><strong>Mục đã lưu</strong> được lưu cục bộ trên máy và tách biệt với lịch sử Clipboard.</li>
+                </ul>
+            ]]></description>
+            <enclosure url="https://github.com/PhamHungTien/PHTV/releases/download/v3.4.8/PHTV-3.4.8-intel.dmg" length="9593998" type="application/octet-stream" sparkle:edSignature="spG7vYHuXKTKuApXqU2i8otqY4zn07uSIT0PrBYEndmMt296MRrSnfzV4F90Rx2kmRL/1XRjECC5xPiUN1nVDw=="/>
+        </item>
+        <item>
             <title>3.4.7</title>
             <pubDate>Sun, 09 Aug 2026 15:04:11 +0700</pubDate>
             <sparkle:version>314</sparkle:version>
@@ -487,28 +549,6 @@
             <sparkle:shortVersionString>3.1.9</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
             <enclosure url="https://github.com/PhamHungTien/PHTV/releases/download/v3.1.9/PHTV-3.1.9-intel.dmg" length="9901327" type="application/octet-stream" sparkle:edSignature="R3kEoj24mvsCpRPUBkyL/9vBqHm7BxDk0O8xAaGSa+Z7dOtrcNK7m5E0E7EeH+UewCY1vGsmwn+8ekhD/TLJBw=="/>
-        </item>
-        <item>
-            <title>3.1.8</title>
-            <pubDate>Thu, 21 May 2026 15:30:41 +0000</pubDate>
-            <sparkle:version>285</sparkle:version>
-            <sparkle:shortVersionString>3.1.8</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[
-                <h2>PHTV 3.1.8</h2>
-                <p>PHTV 3.1.8 sửa lỗi <strong>Clipboard History không dán lại được ảnh hoặc file cũ</strong>. Bản này đặc biệt hữu ích nếu bạn thường mở lịch sử clipboard để tìm lại ảnh chụp màn hình, ảnh đã copy hoặc file cũ.</p>
-                <h3>Điểm nổi bật</h3>
-                <ul>
-                    <li><strong>Dán lại ảnh cũ ổn định hơn</strong>: PHTV ưu tiên dán dữ liệu ảnh đã lưu thay vì dán nhầm đường dẫn file tạm của screenshot.</li>
-                    <li><strong>Sửa lỗi screenshot không dán được</strong>: Các mục kiểu <strong>Screenshot ... .png</strong> trong lịch sử clipboard không còn chỉ hiện tên file rồi paste trống.</li>
-                    <li><strong>Dán lại file đáng tin cậy hơn</strong>: File nhỏ được cache nội bộ để giảm phụ thuộc vào quyền file-url tạm thời của pasteboard macOS.</li>
-                    <li><strong>Fallback thông minh</strong>: Khi cache không còn nhưng file gốc vẫn tồn tại, PHTV tự dùng lại đường dẫn gốc.</li>
-                    <li><strong>Dọn cache tự động</strong>: Cache file được xoá khi xoá item, xoá toàn bộ lịch sử hoặc khi lịch sử bị giới hạn theo số mục tối đa.</li>
-                </ul>
-                <h3>Lưu ý sau khi cập nhật</h3>
-                <p>Các ảnh/file mới được copy sau khi cập nhật sẽ ổn định nhất vì PHTV có thêm dữ liệu/cache mới. Một số mục file rất cũ vẫn có thể không dán lại được nếu file gốc đã bị xoá và trước đó chưa có cache nội bộ.</p>
-            ]]></description>
-            <enclosure url="https://github.com/PhamHungTien/PHTV/releases/download/v3.1.8/PHTV-3.1.8-intel.dmg" length="9578029" type="application/octet-stream" sparkle:edSignature="vDfNs+yVgg8Q4/cJba5eaTqefUtvyQklavGDr58xRsMaMHJxF5rsfgNLLu082dQp6U3ThVp9OpjcnwsdC2MzCg=="/>
         </item>
         <item>
             <title>2.8.9</title>
