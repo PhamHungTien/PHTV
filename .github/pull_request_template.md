@@ -76,7 +76,7 @@ Closes #[issue number]
 
 ### Code Quality
 - [ ] Code builds without errors or warnings
-- [ ] Code follows project style guidelines (Swift/Objective-C conventions)
+- [ ] Code follows project style guidelines (Swift conventions)
 - [ ] No new compiler warnings introduced
 - [ ] No debugging code left (NSLog spam, test code, commented code)
 - [ ] No unnecessary dependencies added

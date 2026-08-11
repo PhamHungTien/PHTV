@@ -8,9 +8,9 @@
 
 import Foundation
 
-// MARK: - Emoji Hotkey Bridge for Objective-C
+// MARK: - Emoji Hotkey Bridge
 
-/// Bridge to initialize EmojiHotkeyManager from Objective-C AppDelegate
+/// Keeps AppDelegate integration isolated from the hotkey implementation.
 @objc class EmojiHotkeyBridge: NSObject {
     @MainActor @objc static func initializeEmojiHotkeyManager() {
         // Force initialization - this will trigger the singleton's init()

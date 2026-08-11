@@ -1,14 +1,16 @@
 //
-//  PHTVRemoteViewCrashGuardPolicy.swift
+//  PHTVStatusItemRecoveryPolicy.swift
 //  PHTV
 //
 
 import Foundation
 
-enum PHTVRemoteViewCrashGuardPolicy {
-    static func shouldInstall(
+enum PHTVStatusItemRecoveryPolicy {
+    static func delay(
         operatingSystemVersion: OperatingSystemVersion = ProcessInfo.processInfo.operatingSystemVersion
-    ) -> Bool {
+    ) -> Duration {
         operatingSystemVersion.majorVersion == 27
+            ? .milliseconds(1_250)
+            : .milliseconds(750)
     }
 }

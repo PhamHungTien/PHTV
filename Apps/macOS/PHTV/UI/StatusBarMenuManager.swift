@@ -23,6 +23,7 @@ final class StatusBarMenuManager: NSObject, NSMenuDelegate {
     private var didSetupIconObservers = false
     private var wakeRecoveryTask: Task<Void, Never>?
     private var isSuspendedForSystemTransition = false
+    private var transitionGeneration: UInt64 = 0
 
     private var appState: AppState { AppState.shared }
 
@@ -53,47 +54,44 @@ final class StatusBarMenuManager: NSObject, NSMenuDelegate {
         setupIconObserversIfNeeded()
     }
 
-    /// Detach the status item before macOS tears down the menu-bar scene.
-    /// macOS 27 beta has an AppKit/ViewBridge crash when an existing
-    /// NSStatusItem is reconnected after sleep or a user-session transition.
+    /// Detach before AppKit tears down its menu-bar scene. Keeping lifecycle
+    /// ownership in Swift avoids relying on private NSRemoteView hooks.
     func prepareForSystemTransition() {
         wakeRecoveryTask?.cancel()
         wakeRecoveryTask = nil
-
-        // On macOS 27, retaining the existing item creates less private scene
-        // churn than removing and recreating it. The Objective-C guard handles
-        // only the known NSRemoteView inconsistency during system reconnection.
-        if PHTVRemoteViewCrashGuard.isInstalled() {
-            isSuspendedForSystemTransition = false
-            return
-        }
-
+        transitionGeneration &+= 1
         isSuspendedForSystemTransition = true
 
         guard let item = statusItem else { return }
         statusItem = nil
+        item.menu?.cancelTracking()
         item.menu?.delegate = nil
         item.menu = nil
         NSStatusBar.system.removeStatusItem(item)
     }
 
-    /// Recreate the status item only after the menu-bar scene has settled.
+    /// Recreate only after the menu-bar scene has settled. The generation
+    /// check prevents a stale wake callback from racing a newer sleep event.
     func recoverAfterSystemTransition() {
         wakeRecoveryTask?.cancel()
-
-        if PHTVRemoteViewCrashGuard.isInstalled() {
-            isSuspendedForSystemTransition = false
-            setup()
-            return
-        }
-
+        let generation = transitionGeneration
+        let delay = PHTVStatusItemRecoveryPolicy.delay()
         wakeRecoveryTask = Task { @MainActor [weak self] in
-            // Let AppKit finish reconnecting the menu-bar/session scene first.
-            try? await Task.sleep(for: .milliseconds(750))
-            guard let self, !Task.isCancelled else { return }
+            try? await Task.sleep(for: delay)
+            guard let self,
+                  !Task.isCancelled,
+                  self.transitionGeneration == generation else { return }
+            self.wakeRecoveryTask = nil
             self.isSuspendedForSystemTransition = false
             self.setup()
         }
+    }
+
+    var diagnosticState: String {
+        if isSuspendedForSystemTransition {
+            return "Đang chờ macOS khôi phục menu bar"
+        }
+        return statusItem == nil ? "Chưa khởi tạo" : "Swift lifecycle đang hoạt động"
     }
 
     private func setupIconObserversIfNeeded() {

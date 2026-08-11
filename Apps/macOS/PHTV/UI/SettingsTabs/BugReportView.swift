@@ -756,8 +756,7 @@ struct BugReportView: View {
             - **Binary Integrity:** \(PHTVManager.checkBinaryIntegrity() ? "✅ Intact" : "⚠️ Modified (CleanMyMac?)")
             - **Front App:** \(getFrontAppInfo())
             - **English App Rules:** \(appState.excludedApps.isEmpty ? "Không có" : "\(appState.excludedApps.count) app(s)")
-            - **macOS 27 RemoteView Guard:** \(PHTVRemoteViewCrashGuard.isInstalled() ? "✅ Active" : "Không áp dụng")
-            - **RemoteView Exceptions Prevented:** \(PHTVRemoteViewCrashGuard.suppressedExceptionCount())
+            - **Menu Bar Recovery:** \(StatusBarMenuManager.shared.diagnosticState)
             \(getExcludedAppsDetails())
 
             ## 🔧 Advanced Settings

@@ -118,6 +118,36 @@ let prohibited = files(under: root).filter {
         && !$0.path.contains("/.build/") && !$0.path.contains("/.git/")
 }
 if !prohibited.isEmpty { fail("Non-Swift local tools remain: \(prohibited.map(\.lastPathComponent).joined(separator: ", "))") }
+
+// Shipping app and test implementation must stay Swift-only. Resources such
+// as binary dictionaries, asset catalogs and plists are intentionally exempt.
+let nativeSourceExtensions: Set<String> = ["c", "cc", "cpp", "cxx", "h", "hpp", "m", "mm"]
+let nonSwiftAppSources = ["Apps/macOS/PHTV", "Apps/macOS/Tests"]
+    .flatMap { files(under: root.appendingPathComponent($0)) }
+    .filter { nativeSourceExtensions.contains($0.pathExtension.lowercased()) }
+if !nonSwiftAppSources.isEmpty {
+    fail("Non-Swift app sources remain: \(nonSwiftAppSources.map(\.lastPathComponent).sorted().joined(separator: ", "))")
+}
+
+let executableAllowlist: Set<String> = [
+    "scripts/build_and_run.swift",
+    "scripts/dev.swift",
+    "scripts/tools/generate_dict_binary.swift",
+    "scripts/tools/release_notes.swift",
+    "scripts/tools/repository_policy.swift",
+    "scripts/tools/update_homebrew_cask.swift",
+]
+let unexpectedExecutables = files(under: root).filter { url in
+    let relativePath = url.path.replacingOccurrences(of: root.path + "/", with: "")
+    return !relativePath.hasPrefix(".git/")
+        && !relativePath.hasPrefix(".build/")
+        && !executableAllowlist.contains(relativePath)
+        && fileManager.isExecutableFile(atPath: url.path)
+}
+if !unexpectedExecutables.isEmpty {
+    fail("Unexpected executable files: \(unexpectedExecutables.map(\.lastPathComponent).sorted().joined(separator: ", "))")
+}
+
 if !contents(root.appendingPathComponent(".gitignore")).components(separatedBy: .newlines).contains(".codex/") {
     fail(".codex/ must stay ignored")
 }
