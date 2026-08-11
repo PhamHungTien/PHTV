@@ -7,29 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.4.8] - 2026-08-12
+
+### Tổng quan
+PHTV 3.4.8 bổ sung **Mục đã lưu** cho Clipboard, giúp lưu và sắp xếp những nội
+dung thường dùng mà không phụ thuộc vào lịch sử tự động. Phiên bản này đồng
+thời hoàn thiện giao diện popup, tăng độ ổn định của biểu tượng menu bar trên
+macOS 27 beta và cung cấp báo cáo lỗi chi tiết hơn.
+
 ### Added
 - **Nhóm và lưu nội dung Clipboard thường dùng (#221)**
   - Bổ sung khu vực **Mục đã lưu** tách biệt với lịch sử tự động, giúp lưu văn
-    bản cố định và sắp xếp theo nhóm mà không bị ảnh hưởng bởi giới hạn hoặc
-    thao tác xoá lịch sử.
+    bản thường dùng mà không bị ảnh hưởng bởi giới hạn lưu trữ hoặc thao tác
+    xoá lịch sử.
   - Cho phép tạo, đổi tên và xoá nhóm; khi xoá nhóm, các mục bên trong được
     chuyển an toàn về **Chưa phân loại** thay vì bị xoá theo.
   - Có thể lưu nhanh một mục văn bản từ lịch sử, tìm theo tên/nội dung/nhóm,
     chỉnh sửa và dán trực tiếp vào ứng dụng đang dùng.
   - Thêm lối mở Clipboard từ menu bar và trang Cài đặt, đồng thời cảnh báo rõ
     dữ liệu không phải kho mật khẩu và không nên dùng để lưu OTP hoặc khoá bí mật.
-  - Đưa bộ chuyển **Lịch sử / Mục đã lưu** lên thanh tiêu đề để giao diện gọn
-    hơn, luôn căn giữa và dành thêm chiều cao cho danh sách nội dung.
-  - Hỗ trợ chuyển nhanh bằng `⌘1` cho **Lịch sử** và `⌘2` cho **Mục đã lưu**
-    khi cửa sổ Clipboard đang mở.
-  - Đồng bộ kích thước nút xoá/đóng và sửa vùng kéo để popup có thể di chuyển
-    ổn định bằng biểu tượng ba gạch ở góc trái.
-
-### Engineering
-- Tập trung lại repository vào ứng dụng macOS đang phát hành; loại bỏ mã thử
-  nghiệm, workflow và tài liệu của những nền tảng không còn nằm trong kế hoạch.
 
 ### Fixed and Improved
+- **Popup Clipboard gọn và dễ thao tác hơn**
+  - Đưa bộ chuyển **Lịch sử / Mục đã lưu** lên thanh tiêu đề, căn giữa và dành
+    thêm chiều cao cho danh sách nội dung.
+  - Hỗ trợ `⌘1` để mở **Lịch sử** và `⌘2` để mở **Mục đã lưu** khi popup đang
+    hiển thị, kể cả khi con trỏ nằm trong ô tìm kiếm.
+  - Đồng bộ kích thước nút xoá/đóng và sửa vùng kéo để có thể di chuyển popup
+    ổn định bằng biểu tượng ba gạch ở góc trái.
+
 - **Ngăn crash menu bar trên macOS 27 beta (#222)**
   - Bổ sung lớp bảo vệ giới hạn đúng đường gọi `NSRemoteView` đang phát sinh
     `NSInternalInconsistencyException` trong AppKit/ViewBridge khi macOS đánh
@@ -48,6 +54,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     nhận bản rút gọn hữu ích, còn clipboard/email/tệp nhận bản đầy đủ hơn.
   - Tự lược bỏ tên người dùng, đường dẫn home, UUID thiết bị, thanh ghi và địa
     chỉ bộ nhớ trước khi đưa dữ liệu crash vào báo cáo.
+
+### Chất lượng
+- Universal Debug build thành công bằng Xcode beta với SDK macOS 27; toàn bộ
+  442 XCTest đều đạt.
+- Tập trung repository vào ứng dụng macOS đang phát hành; loại bỏ mã thử nghiệm,
+  workflow và tài liệu của những nền tảng không còn nằm trong kế hoạch.
+- Kiểm tra release metadata, appcast, privacy manifest và repository policy đều đạt.
+
+### Ghi chú nâng cấp
+- Không cần cấp thêm quyền hoặc thiết lập lại PHTV sau khi cập nhật.
+- Thiết lập, macro, lịch sử Clipboard và quy tắc theo ứng dụng được giữ nguyên.
+- **Mục đã lưu** được lưu cục bộ trên máy và tách biệt với lịch sử Clipboard.
 
 ## [3.4.7] - 2026-08-09
 
