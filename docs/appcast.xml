@@ -39,9 +39,9 @@
                 </li>
                 <li><strong>Ngăn crash menu bar trên macOS 27 beta (#222)</strong>
                 <ul>
-                <li>Bổ sung lớp bảo vệ giới hạn đúng đường gọi <code>NSRemoteView</code> đang phát sinh <code>NSInternalInconsistencyException</code> trong AppKit/ViewBridge khi macOS đánh thức lại status item.</li>
-                <li>Chỉ áp dụng trên macOS 27 và tự ngừng áp dụng ở các phiên bản macOS khác; mọi ngoại lệ không khớp vẫn được chuyển tiếp để tránh che giấu lỗi thật.</li>
-                <li>Giữ nguyên status item qua sleep và chuyển phiên trên macOS 27, giảm số lần tháo/tạo lại scene menu bar và giúp ứng dụng chạy nền mượt hơn.</li>
+                <li>Quản lý toàn bộ vòng đời status item bằng Swift: chủ động tháo trước khi máy ngủ hoặc đổi phiên, rồi tạo lại sau khi menu bar đã ổn định.</li>
+                <li>Dùng thế hệ chuyển trạng thái để huỷ callback wake cũ khi sleep/wake diễn ra liên tiếp; macOS 27 có thời gian chờ riêng để tránh đua với ViewBridge.</li>
+                <li>Loại bỏ bridge Objective-C và can thiệp vào lớp <code>NSRemoteView</code> nội bộ của AppKit; status item vẫn dùng kích thước cố định để giảm scene churn.</li>
                 </ul>
                 </li>
                 <li><strong>Báo lỗi chi tiết và hữu ích hơn</strong>
