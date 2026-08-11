@@ -15,8 +15,8 @@
 		460202712F2814260040B043 /* ServiceManagement.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 460202672F2814260040B043 /* ServiceManagement.framework */; };
 		460202732F2814260040B043 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = 460202742F2814260040B043 /* Sparkle */; };
 		46020A082F3000000040B043 /* XCTest.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 46020A072F3000000040B043 /* XCTest.framework */; };
-		46C000012F5000000040B043 /* vietnamese-core-v1.json in Resources */ = {isa = PBXBuildFile; fileRef = 46C000002F5000000040B043 /* vietnamese-core-v1.json */; };
 		46A9C5F42F4AF9D70048BCED /* PHTV.icon in Resources */ = {isa = PBXBuildFile; fileRef = 46A9C5F32F4AF9D70048BCED /* PHTV.icon */; };
+		46C000012F5000000040B043 /* vietnamese-core-v1.json in Resources */ = {isa = PBXBuildFile; fileRef = 46C000002F5000000040B043 /* vietnamese-core-v1.json */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -39,8 +39,8 @@
 		460202672F2814260040B043 /* ServiceManagement.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ServiceManagement.framework; path = System/Library/Frameworks/ServiceManagement.framework; sourceTree = SDKROOT; };
 		46020A012F3000000040B043 /* PHEngineTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PHEngineTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		46020A072F3000000040B043 /* XCTest.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = XCTest.framework; path = Platforms/MacOSX.platform/Developer/Library/Frameworks/XCTest.framework; sourceTree = DEVELOPER_DIR; };
-		46C000002F5000000040B043 /* vietnamese-core-v1.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = "vietnamese-core-v1.json"; path = "../../Shared/TestVectors/vietnamese-core-v1.json"; sourceTree = SOURCE_ROOT; };
 		46A9C5F32F4AF9D70048BCED /* PHTV.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = PHTV.icon; sourceTree = "<group>"; };
+		46C000002F5000000040B043 /* vietnamese-core-v1.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = "vietnamese-core-v1.json"; path = "Fixtures/vietnamese-core-v1.json"; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -445,8 +445,8 @@
 				RUNTIME_EXCEPTION_DISABLE_EXECUTABLE_PAGE_PROTECTION = NO;
 				RUNTIME_EXCEPTION_DISABLE_LIBRARY_VALIDATION = NO;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
-				SWIFT_OBJC_BRIDGING_HEADER = PHTV/Utilities/PHTVObjectiveCBridge.h;
 				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = PHTV/Utilities/PHTVObjectiveCBridge.h;
 			};
 			name = Debug;
 		};
@@ -496,8 +496,8 @@
 				RUNTIME_EXCEPTION_DISABLE_EXECUTABLE_PAGE_PROTECTION = NO;
 				RUNTIME_EXCEPTION_DISABLE_LIBRARY_VALIDATION = NO;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
-				SWIFT_OBJC_BRIDGING_HEADER = PHTV/Utilities/PHTVObjectiveCBridge.h;
 				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = PHTV/Utilities/PHTVObjectiveCBridge.h;
 			};
 			name = Release;
 		};

@@ -4,14 +4,5 @@
 /.github/ @PhamHungTien
 /Apps/macOS/PHTV/PrivacyInfo.xcprivacy @PhamHungTien
 /Apps/macOS/PHTV/PHTV.entitlements @PhamHungTien
-/Apps/Windows/src/PHTV.Windows.IME/ @PhamHungTien
-/Apps/Windows/docs/SECURITY.md @PhamHungTien
-/Apps/Windows/docs/PRIVACY.md @PhamHungTien
-/Apps/Linux/src/PHTV.Linux.IBus/ @PhamHungTien
-/Apps/Linux/src/PHTV.Linux.Fcitx5/ @PhamHungTien
-/Apps/Linux/docs/SECURITY.md @PhamHungTien
-/Apps/Linux/docs/PRIVACY.md @PhamHungTien
-/Shared/PHTVCore/ @PhamHungTien
-/Shared/Contracts/ @PhamHungTien
 /docs/appcast*.xml @PhamHungTien
 /scripts/tools/ @PhamHungTien

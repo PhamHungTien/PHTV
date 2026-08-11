@@ -122,71 +122,22 @@ if !contents(root.appendingPathComponent(".gitignore")).components(separatedBy: 
     fail(".codex/ must stay ignored")
 }
 
-// Platform scaffolds must keep their baseline architecture, build entrypoints,
-// security, privacy, testing and distribution contracts. This prevents a partial
-// rename or cleanup from silently leaving a platform incomplete.
-let requiredPlatformArtifacts = [
+// The repository is intentionally scoped to the shipping macOS product. Keep
+// its project, fixtures and core documentation present after restructures.
+let requiredRepositoryArtifacts = [
     "Apps/README.md",
-    "Shared/README.md",
-    "Shared/PHTVCore/README.md",
-    "Shared/PHTVCore/Package.swift",
-    "Shared/PHTVCore/Sources/PHTVCoreContracts/include/PHTVCoreContracts.h",
-    "Shared/Contracts/README.md",
-    "Shared/TestVectors/README.md",
-    ".github/workflows/windows-core.yml",
-    "Apps/Windows/README.md",
-    "Apps/Windows/PHTV.Windows.slnx",
-    "Apps/Windows/Directory.Build.props",
-    "Apps/Windows/Directory.Packages.props",
-    "Apps/Windows/global.json",
-    "Apps/Windows/src/PHTV.Windows.Contracts/PHTV.Windows.Contracts.csproj",
-    "Apps/Windows/src/PHTV.Windows.Contracts/Configuration/PHTVApplicationRulesSnapshot.cs",
-    "Apps/Windows/src/PHTV.Windows.Contracts/Configuration/PHTVRuntimeSettingsSnapshot.cs",
-    "Apps/Windows/src/PHTV.Windows.CoreBridge/PHTV.Windows.CoreBridge.vcxproj",
-    "Apps/Windows/src/PHTV.Windows.IME/PHTV.Windows.IME.vcxproj",
-    "Apps/Windows/src/PHTV.Windows.IME/InputModeState.cpp",
-    "Apps/Windows/src/PHTV.Windows.IME/InputModeState.h",
-    "Apps/Windows/src/PHTV.Windows.IME/InputScopePolicy.cpp",
-    "Apps/Windows/src/PHTV.Windows.IME/InputScopePolicy.h",
-    "Apps/Windows/src/PHTV.Windows.IME/ApplicationIdentity.cpp",
-    "Apps/Windows/src/PHTV.Windows.IME/ApplicationIdentity.h",
-    "Apps/Windows/src/PHTV.Windows.IME/ApplicationRulesSnapshot.cpp",
-    "Apps/Windows/src/PHTV.Windows.IME/ApplicationRulesSnapshot.h",
-    "Apps/Windows/src/PHTV.Windows.IME/SettingsSnapshot.h",
-    "Apps/Windows/src/PHTV.Windows.IME/SettingsSnapshot.cpp",
-    "Apps/Windows/src/PHTV.Windows.IME/SettingsStore.cpp",
-    "Apps/Windows/src/PHTV.Windows.App/PHTV.Windows.App.csproj",
-    "Apps/Windows/tests/PHTV.Windows.CoreBridge.Tests/PHTV.Windows.CoreBridge.Tests.vcxproj",
-    "Apps/Windows/tests/PHTV.Windows.Contracts.Tests/PHTV.Windows.Contracts.Tests.csproj",
-    "Apps/Windows/tests/PHTV.Windows.ApplicationRulesSnapshot.Tests/PHTV.Windows.ApplicationRulesSnapshot.Tests.vcxproj",
-    "Apps/Windows/tests/PHTV.Windows.InputModeState.Tests/PHTV.Windows.InputModeState.Tests.vcxproj",
-    "Apps/Windows/tests/PHTV.Windows.InputScopePolicy.Tests/PHTV.Windows.InputScopePolicy.Tests.vcxproj",
-    "Apps/Windows/tests/PHTV.Windows.SettingsSnapshot.Tests/PHTV.Windows.SettingsSnapshot.Tests.vcxproj",
-    "Apps/Windows/docs/ARCHITECTURE.md",
-    "Apps/Windows/docs/APPLICATION_RULES.md",
-    "Apps/Windows/docs/INPUT_MODE.md",
-    "Apps/Windows/docs/INPUT_SCOPE_POLICY.md",
-    "Apps/Windows/docs/SETTINGS_SNAPSHOT.md",
-    "Apps/Windows/docs/SECURITY.md",
-    "Apps/Windows/docs/PRIVACY.md",
-    "Apps/Windows/docs/TESTING.md",
-    "Apps/Windows/docs/DISTRIBUTION.md",
-    "Apps/Linux/README.md",
-    "Apps/Linux/docs/ARCHITECTURE.md",
-    "Apps/Linux/docs/COMPATIBILITY.md",
-    "Apps/Linux/docs/SECURITY.md",
-    "Apps/Linux/docs/PRIVACY.md",
-    "Apps/Linux/docs/TESTING.md",
-    "Apps/Linux/docs/DISTRIBUTION.md",
+    "Apps/macOS/PHTV.xcodeproj/project.pbxproj",
+    "Apps/macOS/PHTV/Info.plist",
+    "Apps/macOS/PHTV/PrivacyInfo.xcprivacy",
+    "Apps/macOS/Fixtures/vietnamese-core-v1.json",
+    "docs/ARCHITECTURE.md",
+    "docs/PRIVACY.md",
+    "docs/TESTING.md",
+    "docs/RELEASING.md",
 ]
-for relativePath in requiredPlatformArtifacts
+for relativePath in requiredRepositoryArtifacts
 where !fileManager.fileExists(atPath: root.appendingPathComponent(relativePath).path) {
-    fail("Missing required platform artifact: \(relativePath)")
-}
-
-for legacyDirectory in ["macOS", "Windows", "Linux"]
-where fileManager.fileExists(atPath: root.appendingPathComponent(legacyDirectory).path) {
-    fail("Legacy platform directory must be moved under Apps/: \(legacyDirectory)")
+    fail("Missing required repository artifact: \(relativePath)")
 }
 
 if failures.isEmpty {

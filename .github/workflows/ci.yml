@@ -10,7 +10,6 @@ on:
       - main
     paths:
       - "Apps/macOS/**"
-      - "Shared/**"
       - "scripts/**"
       - ".github/workflows/ci.yml"
       - ".swift-format"
@@ -21,7 +20,6 @@ on:
       - main
     paths:
       - "Apps/macOS/**"
-      - "Shared/**"
       - "scripts/**"
       - ".github/workflows/ci.yml"
       - ".swift-format"
@@ -54,14 +52,6 @@ jobs:
 
       - name: Validate repository metadata
         run: scripts/dev.swift metadata-check
-
-      - name: Type-check Windows Swift entrypoint
-        run: swiftc -typecheck scripts/windows.swift
-
-      - name: Test portable Core
-        run: |
-          swift test --package-path Shared/PHTVCore
-          swift run --package-path Shared/PHTVCore PHTVCoreABISmoke
 
       - name: Validate dictionary sources
         run: swift scripts/tools/generate_dict_binary.swift --strict-check-sources

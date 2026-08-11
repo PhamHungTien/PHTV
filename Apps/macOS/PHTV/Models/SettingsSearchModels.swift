@@ -106,11 +106,14 @@ struct SettingsItem: Identifiable {
         // MARK: - Clipboard History
         // ═══════════════════════════════════════════
         SettingsItem(
-            title: "Lịch sử Clipboard", iconName: "doc.on.clipboard.fill", tab: .clipboardHistory,
-            keywords: ["clipboard", "pasteboard", "lịch sử", "sao chép", "copy", "paste", "dán", "phím tắt", "hotkey"]),
+            title: "Clipboard", iconName: "doc.on.clipboard.fill", tab: .clipboardHistory,
+            keywords: ["clipboard", "pasteboard", "lịch sử", "mục đã lưu", "nhóm", "folder", "snippet", "sao chép", "copy", "paste", "dán", "phím tắt", "hotkey"]),
         SettingsItem(
             title: "Số mục Clipboard tối đa", iconName: "list.number", tab: .clipboardHistory,
             keywords: ["clipboard", "max items", "số mục", "lưu", "history", "100", "30"]),
+        SettingsItem(
+            title: "Mục đã lưu", iconName: "bookmark.fill", tab: .clipboardHistory,
+            keywords: ["clipboard", "mục đã lưu", "nội dung thường dùng", "nhóm", "folder", "snippet", "văn bản", "dán nhanh"]),
 
         // ═══════════════════════════════════════════
         // MARK: - Lau bàn phím
@@ -219,7 +222,7 @@ struct SettingsItem: Identifiable {
 enum SettingsTab: String, CaseIterable, Identifiable {
     case typing = "Bộ gõ"
     case phtvPicker = "PHTV Picker"
-    case clipboardHistory = "Lịch sử Clipboard"
+    case clipboardHistory = "Clipboard"
     case keyboardCleaning = "Lau bàn phím"
     case hotkeys = "Phím tắt"
     case macro = "Gõ tắt"

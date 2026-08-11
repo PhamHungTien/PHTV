@@ -383,7 +383,10 @@ final class StatusBarMenuManager: NSObject, NSMenuDelegate {
         m.addItem(.separator())
 
         sectionHeader("Clipboard", in: m)
-        m.addItem(closureToggle("Lịch sử Clipboard", image: "doc.on.clipboard.fill", on: appState.enableClipboardHistory) {
+        m.addItem(closureAction("Mở Clipboard", image: "doc.on.clipboard.fill") {
+            ClipboardHistoryManager.shared.show()
+        })
+        m.addItem(closureToggle("Ghi lại lịch sử", image: "clock.arrow.circlepath", on: appState.enableClipboardHistory) {
             AppState.shared.enableClipboardHistory.toggle()
         })
 

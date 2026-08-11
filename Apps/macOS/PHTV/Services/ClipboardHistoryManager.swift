@@ -111,6 +111,8 @@ final class ClipboardHistoryManager {
     static let shared = ClipboardHistoryManager()
 
     private(set) var items: [ClipboardHistoryItem] = []
+    private(set) var savedLibrary = ClipboardSavedLibrary()
+    var selectedSection: ClipboardPanelSection = .history
 
     private let panelSession = FloatingPanelSession<ClipboardHistoryView>()
     private var previousApp: NSRunningApplication?
@@ -132,6 +134,7 @@ final class ClipboardHistoryManager {
 
     private init() {
         loadHistory()
+        loadSavedLibrary()
 
         settingsObservationTask = Task { @MainActor [weak self] in
             guard let self else { return }
@@ -230,6 +233,57 @@ final class ClipboardHistoryManager {
         saveHistory()
     }
 
+    // MARK: - Saved Items
+
+    @discardableResult
+    func addSavedGroup(named name: String) throws -> ClipboardSavedGroup {
+        var updatedLibrary = savedLibrary
+        let group = try updatedLibrary.addGroup(named: name)
+        try persistSavedLibrary(updatedLibrary)
+        savedLibrary = updatedLibrary
+        return group
+    }
+
+    func renameSavedGroup(id: UUID, to name: String) throws {
+        var updatedLibrary = savedLibrary
+        try updatedLibrary.renameGroup(id: id, to: name)
+        try persistSavedLibrary(updatedLibrary)
+        savedLibrary = updatedLibrary
+    }
+
+    func removeSavedGroup(id: UUID) throws {
+        var updatedLibrary = savedLibrary
+        try updatedLibrary.removeGroup(id: id)
+        try persistSavedLibrary(updatedLibrary)
+        savedLibrary = updatedLibrary
+    }
+
+    @discardableResult
+    func saveSavedItem(
+        id: UUID? = nil,
+        title: String,
+        content: String,
+        groupID: UUID?
+    ) throws -> ClipboardSavedItem {
+        var updatedLibrary = savedLibrary
+        let item = try updatedLibrary.saveItem(
+            id: id,
+            title: title,
+            content: content,
+            groupID: groupID
+        )
+        try persistSavedLibrary(updatedLibrary)
+        savedLibrary = updatedLibrary
+        return item
+    }
+
+    func removeSavedItem(id: UUID) throws {
+        var updatedLibrary = savedLibrary
+        try updatedLibrary.removeItem(id: id)
+        try persistSavedLibrary(updatedLibrary)
+        savedLibrary = updatedLibrary
+    }
+
     // MARK: - Persistence
 
     private static let historyFileURL: URL = {
@@ -237,6 +291,18 @@ final class ClipboardHistoryManager {
         let dir = appSupport.appendingPathComponent("PHTV", isDirectory: true)
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         return dir.appendingPathComponent("clipboard_history.json")
+    }()
+
+    private static let savedLibraryFileURL: URL = {
+        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+        let dir = appSupport.appendingPathComponent("PHTV", isDirectory: true)
+        try? FileManager.default.createDirectory(
+            at: dir,
+            withIntermediateDirectories: true,
+            attributes: [.posixPermissions: 0o700]
+        )
+        try? FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: dir.path)
+        return dir.appendingPathComponent("clipboard_saved_items.json")
     }()
 
     private func loadHistory() {
@@ -274,6 +340,34 @@ final class ClipboardHistoryManager {
         } catch {
             NSLog("[ClipboardHistory] Failed to save history: %@", error.localizedDescription)
         }
+    }
+
+    private func loadSavedLibrary() {
+        let url = Self.savedLibraryFileURL
+        guard FileManager.default.fileExists(atPath: url.path),
+              let data = try? Data(contentsOf: url) else { return }
+        do {
+            savedLibrary = try JSONDecoder().decode(ClipboardSavedLibrary.self, from: data)
+        } catch {
+            let backupURL = url
+                .deletingPathExtension()
+                .appendingPathExtension("corrupted-\(Int(Date().timeIntervalSince1970)).json")
+            try? FileManager.default.moveItem(at: url, to: backupURL)
+            NSLog(
+                "[ClipboardHistory] Failed to decode saved items; preserved corrupted data at %@: %@",
+                backupURL.path,
+                error.localizedDescription
+            )
+        }
+    }
+
+    private func persistSavedLibrary(_ library: ClipboardSavedLibrary) throws {
+        let data = try JSONEncoder().encode(library)
+        try data.write(to: Self.savedLibraryFileURL, options: [.atomic, .completeFileProtection])
+        try FileManager.default.setAttributes(
+            [.posixPermissions: 0o600],
+            ofItemAtPath: Self.savedLibraryFileURL.path
+        )
     }
 
     /// Applies both storage limits: the retention window (age) and the maximum
@@ -315,7 +409,10 @@ final class ClipboardHistoryManager {
         }
     }
 
-    func show() {
+    func show(section: ClipboardPanelSection? = nil) {
+        if let section {
+            selectedSection = section
+        }
         restoreFocusTask?.cancel()
         restoreFocusTask = nil
 
@@ -372,6 +469,17 @@ final class ClipboardHistoryManager {
         }
     }
 
+    func handleSavedItemSelected(_ item: ClipboardSavedItem) {
+        hide()
+
+        pendingPasteTask?.cancel()
+        pendingPasteTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .milliseconds(100))
+            guard !Task.isCancelled else { return }
+            self?.pasteText(item.content)
+        }
+    }
+
     private func pasteItem(_ item: ClipboardHistoryItem) {
         isPasting = true
 
@@ -387,25 +495,21 @@ final class ClipboardHistoryManager {
         // Most-recently-used ordering: bump the pasted item back to the top.
         promoteItemToTop(item)
 
-        // Simulate Command+V to paste
-        let source = CGEventSource(stateID: .hidSystemState)
+        postPasteShortcut()
+        scheduleClearPasting()
+    }
 
-        if let cmdDown = CGEvent(keyboardEventSource: source, virtualKey: CGKeyCode(kVK_Command), keyDown: true) {
-            cmdDown.flags = .maskCommand
-            cmdDown.post(tap: .cgSessionEventTap)
-        }
-        if let vDown = CGEvent(keyboardEventSource: source, virtualKey: CGKeyCode(kVK_ANSI_V), keyDown: true) {
-            vDown.flags = .maskCommand
-            vDown.post(tap: .cgSessionEventTap)
-        }
-        if let vUp = CGEvent(keyboardEventSource: source, virtualKey: CGKeyCode(kVK_ANSI_V), keyDown: false) {
-            vUp.flags = .maskCommand
-            vUp.post(tap: .cgSessionEventTap)
-        }
-        if let cmdUp = CGEvent(keyboardEventSource: source, virtualKey: CGKeyCode(kVK_Command), keyDown: false) {
-            cmdUp.post(tap: .cgSessionEventTap)
+    private func pasteText(_ text: String) {
+        isPasting = true
+
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+        guard pasteboard.setString(text, forType: .string) else {
+            scheduleClearPasting()
+            return
         }
 
+        postPasteShortcut()
         scheduleClearPasting()
     }
 
@@ -430,6 +534,26 @@ final class ClipboardHistoryManager {
 
         case .text(let text):
             return pasteboard.setString(text, forType: .string)
+        }
+    }
+
+    private func postPasteShortcut() {
+        let source = CGEventSource(stateID: .hidSystemState)
+
+        if let cmdDown = CGEvent(keyboardEventSource: source, virtualKey: CGKeyCode(kVK_Command), keyDown: true) {
+            cmdDown.flags = .maskCommand
+            cmdDown.post(tap: .cgSessionEventTap)
+        }
+        if let vDown = CGEvent(keyboardEventSource: source, virtualKey: CGKeyCode(kVK_ANSI_V), keyDown: true) {
+            vDown.flags = .maskCommand
+            vDown.post(tap: .cgSessionEventTap)
+        }
+        if let vUp = CGEvent(keyboardEventSource: source, virtualKey: CGKeyCode(kVK_ANSI_V), keyDown: false) {
+            vUp.flags = .maskCommand
+            vUp.post(tap: .cgSessionEventTap)
+        }
+        if let cmdUp = CGEvent(keyboardEventSource: source, virtualKey: CGKeyCode(kVK_Command), keyDown: false) {
+            cmdUp.post(tap: .cgSessionEventTap)
         }
     }
 

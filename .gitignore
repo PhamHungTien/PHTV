@@ -41,7 +41,6 @@ SourcePackages/
 # IDE
 .idea/
 .codex/
-.vs/
 *.swp
 *.swo
 *~
@@ -66,27 +65,3 @@ cmake_install.cmake
 compile_commands.json
 .ninja_deps
 .ninja_log
-
-# Visual Studio / .NET
-**/bin/
-**/obj/
-**/x64/
-*.user
-*.suo
-*.VC.db
-*.VC.VC.opendb
-
-# Windows packages and signing artifacts
-AppPackages/
-*.appx
-*.appxbundle
-*.msix
-*.msixbundle
-*.snk
-
-# Linux packages and native artifacts
-*.deb
-*.rpm
-*.AppImage
-*.ddeb
-*.debug

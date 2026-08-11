@@ -4,9 +4,7 @@
 
 PHTV là bộ gõ tiếng Việt cho macOS, được xây dựng bằng Swift. Ứng dụng chạy như một menu bar app native, dùng CGEvent tap để nhận phím, engine Swift để xử lý tiếng Việt và Accessibility/TCC để commit chữ ổn định vào ứng dụng đích.
 
-Đây là kiến trúc của sản phẩm macOS trong `Apps/macOS/`. Nền móng Windows được tách
-riêng tại [Apps/Windows/README.md](../Apps/Windows/README.md) để không trộn TSF/WinUI với
-CGEvent/SwiftUI.
+Đây là kiến trúc của ứng dụng PHTV cho macOS trong `Apps/macOS/`.
 
 Project hiện chỉ còn:
 

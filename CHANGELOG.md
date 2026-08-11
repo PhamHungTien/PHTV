@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Nhóm và lưu nội dung Clipboard thường dùng (#221)**
+  - Bổ sung khu vực **Mục đã lưu** tách biệt với lịch sử tự động, giúp lưu văn
+    bản cố định và sắp xếp theo nhóm mà không bị ảnh hưởng bởi giới hạn hoặc
+    thao tác xoá lịch sử.
+  - Cho phép tạo, đổi tên và xoá nhóm; khi xoá nhóm, các mục bên trong được
+    chuyển an toàn về **Chưa phân loại** thay vì bị xoá theo.
+  - Có thể lưu nhanh một mục văn bản từ lịch sử, tìm theo tên/nội dung/nhóm,
+    chỉnh sửa và dán trực tiếp vào ứng dụng đang dùng.
+  - Thêm lối mở Clipboard từ menu bar và trang Cài đặt, đồng thời cảnh báo rõ
+    dữ liệu không phải kho mật khẩu và không nên dùng để lưu OTP hoặc khoá bí mật.
+  - Đưa bộ chuyển **Lịch sử / Mục đã lưu** lên thanh tiêu đề để giao diện gọn
+    hơn và dành thêm chiều cao cho danh sách nội dung.
+  - Hỗ trợ chuyển nhanh bằng `⌘1` cho **Lịch sử** và `⌘2` cho **Mục đã lưu**
+    khi cửa sổ Clipboard đang mở.
+
+### Engineering
+- Tập trung lại repository vào ứng dụng macOS đang phát hành; loại bỏ mã thử
+  nghiệm, workflow và tài liệu của những nền tảng không còn nằm trong kế hoạch.
+- Chuyển bộ golden vectors dùng cho regression test vào phạm vi dự án macOS để
+  vẫn giữ nguyên độ phủ kiểm thử sau khi dọn cấu trúc repository.
+
 ### Fixed and Improved
 - **Ngăn crash menu bar trên macOS 27 beta (#222)**
   - Bổ sung lớp bảo vệ giới hạn đúng đường gọi `NSRemoteView` đang phát sinh

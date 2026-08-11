@@ -9,12 +9,12 @@ import XCTest
 @testable import PHTV
 
 final class EngineRegressionTests: XCTestCase {
-    private struct SharedGoldenVectorFile: Decodable {
+    private struct GoldenVectorFile: Decodable {
         let schemaVersion: Int
-        let cases: [SharedGoldenVector]
+        let cases: [GoldenVector]
     }
 
-    private struct SharedGoldenVector: Decodable {
+    private struct GoldenVector: Decodable {
         let id: String
         let method: String
         let keys: String
@@ -1681,7 +1681,7 @@ final class EngineRegressionTests: XCTestCase {
         XCTAssertEqual(runtimeRenderedToken("muowfng"), "mường")
     }
 
-    func testSharedPortableCoreGoldenVectorsMatchMacEngine() throws {
+    func testGoldenVectorsMatchMacEngine() throws {
         let fixtureURL = try XCTUnwrap(
             Bundle(for: Self.self).url(
                 forResource: "vietnamese-core-v1",
@@ -1689,7 +1689,7 @@ final class EngineRegressionTests: XCTestCase {
             )
         )
         let fixture = try JSONDecoder().decode(
-            SharedGoldenVectorFile.self,
+            GoldenVectorFile.self,
             from: Data(contentsOf: fixtureURL)
         )
 
@@ -1702,7 +1702,7 @@ final class EngineRegressionTests: XCTestCase {
             case "vni":
                 inputType = 1
             default:
-                XCTFail("Unknown method in shared vector \(vector.id)")
+                XCTFail("Unknown method in golden vector \(vector.id)")
                 continue
             }
 

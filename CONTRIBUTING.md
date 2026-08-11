@@ -55,8 +55,8 @@ Tạo [issue mới](https://github.com/PhamHungTien/PHTV/issues/new) với thôn
 - Tiêu đề rõ ràng
 - Cách tái hiện (bước chi tiết)
 - Hành vi mong đợi vs thực tế
-- Hệ điều hành/desktop/input framework và phiên bản PHTV
-- Trạng thái quyền hoặc backend IME nếu lỗi liên quan đến gõ phím
+- Phiên bản macOS, ứng dụng/trang web gặp lỗi và phiên bản PHTV
+- Trạng thái Accessibility/Input Monitoring nếu lỗi liên quan đến gõ phím
 - Screenshot/video (nếu có)
 
 ## Đề Xuất Tính Năng
@@ -92,23 +92,15 @@ Format: `<type>: <mô tả>`
 
 ```
 PHTV/
-├── Apps/                       # Sản phẩm và adapter riêng từng hệ điều hành
-│   ├── macOS/                  # Swift/SwiftUI app đang phát hành
-│   │   ├── PHTV/               # App, Engine, Input, UI và Resources
-│   │   ├── Tests/              # XCTest regression tests
-│   │   └── PHTV.xcodeproj/     # Xcode project
-│   ├── Windows/                # TSF + WinUI 3
-│   │   ├── docs/
-│   │   ├── src/
-│   │   └── tests/
-│   └── Linux/                  # IBus + Fcitx 5 + GTK 4
-│       ├── docs/
-│       ├── src/
-│       └── tests/
-├── Shared/                 # Engine/contracts/test vectors xuyên nền tảng
-├── docs/                   # Tài liệu, kiến trúc, hình ảnh
-├── scripts/                # Local dev entrypoint và build tools
-│   └── tools/              # Build tools (generate_dict_binary.swift, etc.)
+├── Apps/
+│   └── macOS/                  # Ứng dụng Swift/SwiftUI đang phát hành
+│       ├── PHTV/               # App, Engine, Input, UI và Resources
+│       ├── Tests/              # XCTest regression tests
+│       ├── Fixtures/           # Dữ liệu kiểm thử tĩnh
+│       └── PHTV.xcodeproj/     # Xcode project
+├── docs/                       # Tài liệu, kiến trúc, hình ảnh
+├── scripts/                    # Local dev entrypoint và build tools
+│   └── tools/                  # Build tools (generate_dict_binary.swift, etc.)
 └── README.md
 ```
 

@@ -42,6 +42,8 @@ struct ClipboardHistoryView: View {
     @State private var searchText = ""
     @State private var keyboardFocus: ClipboardHistoryKeyboardFocus = .search
     @State private var isSearchFieldFocused = false
+    @State private var savedItemSeed = ""
+    @State private var savedLibraryIsEditing = false
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @Environment(\.colorScheme) private var colorScheme
 
@@ -99,20 +101,34 @@ struct ClipboardHistoryView: View {
                 .contentShape(Rectangle())
                 .background(WindowDragHandle())
 
-            searchBar
+            if manager.selectedSection == .history {
+                searchBar
 
-            Divider()
-                .opacity(0.5)
+                Divider()
+                    .opacity(0.5)
 
-            if filteredItems.isEmpty {
-                emptyState
+                if filteredItems.isEmpty {
+                    emptyState
+                } else {
+                    itemList
+                }
             } else {
-                itemList
+                ClipboardSavedItemsView(
+                    initialContent: savedItemSeed,
+                    onInitialContentConsumed: { savedItemSeed = "" },
+                    onItemSelected: manager.handleSavedItemSelected,
+                    onEditingChanged: { savedLibraryIsEditing = $0 }
+                )
             }
         }
         .frame(width: 380, height: 480)
         .background {
             clipboardBackground
+        }
+        .background {
+            ClipboardSectionShortcutHandler(isEnabled: !savedLibraryIsEditing) { section in
+                manager.selectedSection = section
+            }
         }
         .task {
             await Task.yield()
@@ -125,6 +141,14 @@ struct ClipboardHistoryView: View {
         .onChange(of: isSearchFieldFocused) { _, isFocused in
             if isFocused {
                 keyboardFocus = .search
+            }
+        }
+        .onChange(of: manager.selectedSection) { _, section in
+            selectedItemId = nil
+            if section == .history {
+                focusSearch()
+            } else {
+                isSearchFieldFocused = false
             }
         }
     }
@@ -147,14 +171,13 @@ struct ClipboardHistoryView: View {
             Image(systemName: "doc.on.clipboard.fill")
                 .font(.system(size: 14, weight: .semibold))
                 .foregroundStyle(Color.accentColor)
+                .help("Clipboard")
 
-            Text("Lịch sử Clipboard")
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundColor(.primary)
+            sectionPicker
 
             Spacer()
 
-            if !manager.items.isEmpty {
+            if manager.selectedSection == .history && !manager.items.isEmpty {
                 Button(action: {
                     withAnimation(.easeInOut(duration: 0.2)) {
                         manager.clearAll()
@@ -163,15 +186,12 @@ struct ClipboardHistoryView: View {
                         isSearchFieldFocused = true
                     }
                 }) {
-                    Text("Xoá tất cả")
-                        .font(.system(size: 11))
+                    Image(systemName: "trash")
+                        .font(.system(size: 12, weight: .medium))
                         .foregroundStyle(.secondary)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background {
-                            PHTVRoundedRect(cornerRadius: 6)
-                                .fill(Color.primary.opacity(colorScheme == .dark ? 0.08 : 0.05))
-                        }
+                        .frame(width: 24, height: 24)
+                        .background(Color.primary.opacity(colorScheme == .dark ? 0.08 : 0.05))
+                        .clipShape(Circle())
                 }
                 .buttonStyle(.plain)
                 .help("Xoá tất cả (mục đã ghim được giữ lại)")
@@ -183,8 +203,24 @@ struct ClipboardHistoryView: View {
             .help("Đóng (ESC)")
         }
         .padding(.horizontal, 16)
-        .padding(.top, 12)
-        .padding(.bottom, 10)
+        .padding(.vertical, 10)
+    }
+
+    @ViewBuilder
+    private var sectionPicker: some View {
+        Picker("Nội dung Clipboard", selection: Binding(
+            get: { manager.selectedSection },
+            set: { manager.selectedSection = $0 }
+        )) {
+            ForEach(ClipboardPanelSection.allCases) { section in
+                Text(section.title).tag(section)
+            }
+        }
+        .labelsHidden()
+        .pickerStyle(.segmented)
+        .disabled(savedLibraryIsEditing)
+        .frame(width: 158)
+        .help("⌘1 Lịch sử • ⌘2 Mục đã lưu")
     }
 
     // MARK: - Search Bar
@@ -244,6 +280,12 @@ struct ClipboardHistoryView: View {
                             colorScheme: colorScheme,
                             onSelect: { select(item) },
                             onTogglePin: { togglePin(item) },
+                            onSave: item.textContent.map { text in
+                                {
+                                    savedItemSeed = text
+                                    manager.selectedSection = .saved
+                                }
+                            },
                             onDelete: { delete(item) }
                         )
                         .onHover { isHovered in
@@ -502,6 +544,7 @@ private struct ClipboardItemRow: View {
     let colorScheme: ColorScheme
     let onSelect: () -> Void
     let onTogglePin: () -> Void
+    let onSave: (() -> Void)?
     let onDelete: () -> Void
 
     @State private var loadedImage: NSImage?
@@ -529,6 +572,16 @@ private struct ClipboardItemRow: View {
 
                 if isHovered {
                     HStack(spacing: 6) {
+                        if let onSave {
+                            Button(action: onSave) {
+                                Image(systemName: "bookmark.fill")
+                                    .foregroundStyle(Color.accentColor)
+                                    .imageScale(.small)
+                            }
+                            .buttonStyle(.plain)
+                            .help("Lưu để dùng lại")
+                        }
+
                         Button(action: onTogglePin) {
                             Image(systemName: item.isPinned ? "pin.slash.fill" : "pin.fill")
                                 .foregroundStyle(item.isPinned ? AnyShapeStyle(.secondary) : AnyShapeStyle(Color.accentColor))
@@ -568,6 +621,20 @@ private struct ClipboardItemRow: View {
         }
         .buttonStyle(.plain)
         .id(item.id)
+        .contextMenu {
+            if let onSave {
+                Button("Lưu để dùng lại", systemImage: "bookmark") {
+                    onSave()
+                }
+            }
+            Button(item.isPinned ? "Bỏ ghim" : "Ghim", systemImage: item.isPinned ? "pin.slash" : "pin") {
+                onTogglePin()
+            }
+            Divider()
+            Button("Xoá", systemImage: "trash", role: .destructive) {
+                onDelete()
+            }
+        }
         .task(id: item.id) {
             guard item.hasImage, loadedImage == nil else { return }
             if let data = item.imageData {
@@ -625,6 +692,61 @@ private struct ClipboardItemRow: View {
             return timeAgoText
         }
         return "\(sourceAppDisplayName) • \(timeAgoText)"
+    }
+}
+
+// MARK: - Section Keyboard Shortcuts
+
+/// Keeps ⌘1/⌘2 scoped to the Clipboard panel while allowing AppKit to resolve
+/// the key equivalent before its search field or editor consumes the event.
+private struct ClipboardSectionShortcutHandler: NSViewRepresentable {
+    let isEnabled: Bool
+    let onSelect: (ClipboardPanelSection) -> Void
+
+    func makeNSView(context: Context) -> ClipboardSectionShortcutCaptureView {
+        let view = ClipboardSectionShortcutCaptureView()
+        view.onSelect = onSelect
+        return view
+    }
+
+    func updateNSView(_ nsView: ClipboardSectionShortcutCaptureView, context: Context) {
+        nsView.isEnabled = isEnabled
+        nsView.onSelect = onSelect
+    }
+}
+
+final class ClipboardSectionShortcutCaptureView: NSView {
+    var isEnabled = true
+    var onSelect: ((ClipboardPanelSection) -> Void)?
+
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        nil
+    }
+
+    override func performKeyEquivalent(with event: NSEvent) -> Bool {
+        guard isEnabled, event.type == .keyDown else {
+            return super.performKeyEquivalent(with: event)
+        }
+
+        let relevantModifiers = event.modifierFlags.intersection([
+            .command, .option, .control, .shift, .function,
+        ])
+        guard relevantModifiers == .command else {
+            return super.performKeyEquivalent(with: event)
+        }
+
+        let section: ClipboardPanelSection
+        switch Int(event.keyCode) {
+        case kVK_ANSI_1:
+            section = .history
+        case kVK_ANSI_2:
+            section = .saved
+        default:
+            return super.performKeyEquivalent(with: event)
+        }
+
+        onSelect?(section)
+        return true
     }
 }
 

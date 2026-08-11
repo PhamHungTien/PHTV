@@ -2,9 +2,8 @@
 
 ## macOS CI (`ci.yml`)
 
-Chạy khi mã macOS, `Shared/`, tooling release hoặc metadata appcast/changelog
-liên quan thay đổi trên `main` (các thư mục build của nền tảng khác không kích
-hoạt job này) với quyền `contents: read`:
+Chạy khi mã macOS, tooling release hoặc metadata appcast/changelog liên quan
+thay đổi trên `main` với quyền `contents: read`:
 
 1. chạy bộ tự kiểm tra release notes viết bằng Swift, repository policy,
    appcast, plist và privacy manifest;
@@ -38,40 +37,6 @@ Luồng công việc:
 5. **update-homebrew**: cập nhật `Casks/phtv.rb` trong Homebrew tap.
 
 Hai kiến trúc dùng DMG và appcast riêng; đây không phải một Universal DMG.
-
-## Windows CI (`windows-core.yml`)
-
-Chạy khi `Apps/Windows`, portable Core, C contract hoặc golden vectors thay đổi;
-kiểm tra thêm runtime settings snapshot C#/C++ trước khi build TSF;
-cũng có thể chạy thủ công:
-
-1. kiểm tra nhanh solution/project boundary và từ chối artifact sinh tự động
-   (`bin/`, `obj/`, `.vs/`) bị commit;
-2. dùng Windows Server 2025 x64;
-3. cache/tải bộ cài Swift 6.3.3 chính thức, xác minh SHA-256, cài Python 3.10,
-   .NET 10 và dùng MSBuild v143;
-4. kiểm tra entrypoint Swift `scripts/windows.swift doctor`;
-5. build/chạy C++ input-mode state, sensitive scope và hai snapshot parser tests;
-6. build/test `Shared/PHTVCore` và C ABI smoke executable;
-7. build/chạy C++ Core bridge cùng C# config/golden-vector tests;
-8. build TSF DLL, kiểm tra vòng đời COM/profile/category trong runner cô lập;
-9. build WinUI Settings app.
-
-Thay đổi chỉ ở output cục bộ `bin/`, `obj/` hoặc `.vs/` được loại khỏi path
-filter; không làm CI chạy lại khi IDE tạo artifact tạm.
-
-Workflow không gọi `regsvr32`: một test host nạp DLL, gọi entrypoint
-registration, xác minh trạng thái rồi gỡ sạch. Nó chưa thay thế
-Notepad/Office/Chromium integration tests, kiểm tra quyền cài đặt hay installer
-lifecycle tests trên Windows client thật.
-Nếu bước cài Swift lỗi, workflow tải lên log của installer trong bảy ngày.
-
-## Linux workflows
-
-Phiên bản Linux hiện chỉ có kiến trúc và tài liệu trong `Apps/Linux/`, chưa có target
-có thể build. Linux CI sẽ được thêm khi `Shared/PHTVCore` build được trên Linux
-và IBus PoC tồn tại; tiếp theo mới mở rộng ma trận Fcitx 5, Wayland/X11 và package
-tests. Không thêm workflow chỉ kiểm tra placeholder.
 
 ## Secrets bắt buộc
 

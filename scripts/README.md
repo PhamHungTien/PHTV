@@ -44,24 +44,6 @@ scripts/build_and_run.swift logs
 scripts/build_and_run.swift verify
 ```
 
-## Windows
-
-Nhánh Windows dùng cùng một entrypoint Swift để không phải duy trì thêm các
-file `.sh` hoặc `.ps1` riêng:
-
-```bash
-swift scripts/windows.swift doctor
-swift scripts/windows.swift core-test
-# Chạy trên Windows với Visual Studio/MSBuild:
-swift scripts/windows.swift build
-swift scripts/windows.swift test
-```
-
-`doctor` kiểm tra solution và project boundary. `core-test` chạy portable Core
-và C ABI smoke trên mọi máy có Swift. `build`/`test` tự dừng với thông báo rõ
-ràng khi chạy ngoài Windows vì TSF, MSBuild và WinUI là thành phần native của
-Windows.
-
 ## Dictionary
 
 Nguồn chuẩn được lưu tại:
