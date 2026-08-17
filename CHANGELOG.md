@@ -7,6 +7,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.4.9] - 2026-08-17
+
+### Tổng quan
+PHTV 3.4.9 hoàn thiện trải nghiệm gõ tiếng Việt khi dùng **Text Replacements**
+của macOS, đặc biệt với kiểu gõ VNI. Bản cập nhật cũng bổ sung phụ âm đầu
+`DZ` cho cách gõ thân mật như “dzui”, “dzẻ” và “dzậy”.
+
+### Added
+- **Phụ âm đầu `DZ` mở rộng**
+  - Thêm `DZ` vào tuỳ chọn **Phụ âm Z, F, W, J, DZ**.
+  - Hỗ trợ các từ như `dzui`, `dzer` → “dzẻ” và `dzaayj` → “dzậy” khi bật
+    tuỳ chọn này.
+
+### Fixed and Improved
+- **VNI hoạt động ổn định cùng Text Replacements macOS**
+  - Khắc phục việc các phím số dấu gõ ở cuối từ bị để nguyên hoặc hoạt động
+    không nhất quán khi bật Text Replacements của macOS.
+  - Trong VNI, PHTV tự mở rộng các mục Text Replacement đã nhập để các chuỗi
+    như `dang9 di9 an8 ha3` luôn tạo đúng “đang đi ăn hả”, đồng thời vẫn mở
+    rộng shortcut hệ thống bình thường.
+  - Telex và hai kiểu Simple Telex vẫn giữ cơ chế native Text Replacement tại
+    các ứng dụng hỗ trợ, nên không thay đổi hành vi tương thích hiện có.
+  - Loại bỏ truy vấn native-context/Accessibility không cần thiết trên đường
+    xử lý phím VNI, giúp event tap nhẹ và ổn định hơn.
+
+### Chất lượng
+- Bổ sung regression test cho `DZ`, VNI hậu tố (`d9`, `a8`, `3`, `7`, `9`,
+  `5`) và Text Replacement hệ thống trong VNI.
+- Toàn bộ **449 XCTest** đạt trên Universal Debug build với Xcode beta và SDK
+  macOS 27.
+
+### Ghi chú nâng cấp
+- Không cần cấp thêm quyền hoặc thiết lập lại PHTV sau khi cập nhật.
+- Thiết lập, macro, Text Replacements macOS và quy tắc theo ứng dụng được giữ
+  nguyên.
+
 ## [3.4.8] - 2026-08-12
 
 ### Tổng quan
