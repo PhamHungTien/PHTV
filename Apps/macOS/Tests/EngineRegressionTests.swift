@@ -1455,6 +1455,20 @@ final class EngineRegressionTests: XCTestCase {
         XCTAssertEqual(runtimeRenderedToken("dzui dzer sao dzaayj"), "dzui dzẻ sao dzậy")
     }
 
+    func testVNIHauToMarkKeysWorkAtTheEndOfWords() {
+        withInputType(VKeyInputType.vni.rawValue) {
+            XCTAssertEqual(renderedToken("dang9"), "đang")
+            XCTAssertEqual(renderedToken("di9"), "đi")
+            XCTAssertEqual(renderedToken("an8"), "ăn")
+            XCTAssertEqual(renderedToken("ha3"), "hả")
+            XCTAssertEqual(renderedToken("duoc975"), "được")
+            XCTAssertEqual(
+                runtimeRenderedToken("dang9 di9 an8 ha3"),
+                "đang đi ăn hả"
+            )
+        }
+    }
+
     func testRuntimeDungKeepsToneWhenEnglishConflictDetectorMatchesRawPrefix() {
         setCustomEnglishWords(["ddus"])
         XCTAssertEqual(runtimeRenderedToken("ddusng"), "đúng")

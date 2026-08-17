@@ -734,7 +734,10 @@ final class PHTVEventCallbackService {
 
         let nativeTextReplacementEnabled =
             !contextSafeMode &&
-            PHTVSystemTextReplacementService.isEnabled() &&
+            PHTVSystemTextReplacementService.canUseNativeTextReplacementMode(
+                enabled: PHTVSystemTextReplacementService.isEnabled(),
+                inputType: settings.inputType
+            ) &&
             PHTVAccessibilityService.nativeTextReplacementContext(
                 forBundleId: effectiveBundleId
             )

@@ -220,6 +220,34 @@ final class SystemTextReplacementServiceTests: XCTestCase {
         )
     }
 
+    func testVNIKeepsTextReplacementHandlingInsidePHTV() {
+        XCTAssertFalse(
+            PHTVSystemTextReplacementService.canUseNativeTextReplacementMode(
+                enabled: true,
+                inputType: VKeyInputType.vni.rawValue
+            )
+        )
+        for inputType in [
+            VKeyInputType.telex,
+            VKeyInputType.simpleTelex1,
+            VKeyInputType.simpleTelex2
+        ] {
+            XCTAssertTrue(
+                PHTVSystemTextReplacementService.canUseNativeTextReplacementMode(
+                    enabled: true,
+                    inputType: inputType.rawValue
+                ),
+                "Expected native Text Replacement mode for \(inputType)"
+            )
+        }
+        XCTAssertFalse(
+            PHTVSystemTextReplacementService.canUseNativeTextReplacementMode(
+                enabled: false,
+                inputType: VKeyInputType.telex.rawValue
+            )
+        )
+    }
+
     func testIssue219KnownAIWebContextsDeferToNativeReplacement() {
         XCTAssertTrue(
             PHTVSystemTextReplacementService.shouldDeferToNativeTextReplacement(

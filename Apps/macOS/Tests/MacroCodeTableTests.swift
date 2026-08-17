@@ -62,6 +62,7 @@ final class MacroCodeTableTests: XCTestCase {
         PHTVEngineRuntimeFacade.setCurrentInputType(0)  // Telex
         PHTVEngineRuntimeFacade.setCurrentCodeTable(0)  // Unicode
         PHTVEngineRuntimeFacade.setUseMacro(1)
+        PHTVEngineRuntimeFacade.setNativeSystemTextReplacementMode(false)
         PHTVEngineRuntimeFacade.setQuickTelex(0)
         PHTVEngineRuntimeFacade.setAutoCapsMacro(0)
         PHTVEngineRuntimeFacade.setCheckSpelling(1)
@@ -71,6 +72,7 @@ final class MacroCodeTableTests: XCTestCase {
     override func tearDown() {
         loadMacros([])
         PHTVEngineRuntimeFacade.setUseMacro(0)
+        PHTVEngineRuntimeFacade.setNativeSystemTextReplacementMode(false)
         PHTVEngineRuntimeFacade.setQuickTelex(0)
         PHTVEngineRuntimeFacade.setCurrentCodeTable(0)
         engineInitialize()
@@ -245,5 +247,27 @@ final class MacroCodeTableTests: XCTestCase {
 
         XCTAssertEqual(snippetType(of: "đc", in: merged), .static)
         XCTAssertEqual(snippetType(of: "omw", in: merged), .systemTextReplacement)
+    }
+
+    func testVNISystemTextReplacementExpandsThroughPHTV() {
+        PHTVEngineRuntimeFacade.setCurrentInputType(VKeyInputType.vni.rawValue)
+        PHTVEngineRuntimeFacade.setNativeSystemTextReplacementMode(false)
+        loadMacros([
+            MacroItem(
+                shortcut: "dc",
+                expansion: "được",
+                snippetType: .systemTextReplacement
+            )
+        ])
+
+        let result = macroResult(afterTyping: "dc")
+        XCTAssertTrue(result.didTrigger)
+        XCTAssertEqual(
+            PHTVEngineDataBridge.macroString(
+                fromMacroData: result.macroData,
+                codeTable: Int32(CodeTable.unicode.toIndex())
+            ),
+            "được"
+        )
     }
 }

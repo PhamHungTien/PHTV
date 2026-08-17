@@ -156,7 +156,8 @@ final class PHTVCharacterOutputService: NSObject {
             }
         }
 
-        if PHTVEngineRuntimeFacade.engineDataMatchedMacroSnippetType() == EngineMacroSnippetType.systemTextReplacement,
+        if phtvRuntimeNativeSystemTextReplacementEnabled() != 0,
+           PHTVEngineRuntimeFacade.engineDataMatchedMacroSnippetType() == EngineMacroSnippetType.systemTextReplacement,
            PHTVSystemTextReplacementService.shouldDeferToNativeTextReplacement(
                forBundleId: effectiveTarget,
                document: PHTVAccessibilityService.focusedWindowDocumentForFrontmostAppValue(),

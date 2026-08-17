@@ -144,6 +144,18 @@ final class PHTVSystemTextReplacementService: NSObject {
         )
     }
 
+    /// VNI uses number keys as composition keys (for example `an8` → `ăn`).
+    /// Keeping a native Text Replacement prefix raw can consume those suffix
+    /// keys before the Vietnamese engine sees them, so PHTV must expand the
+    /// imported replacement itself while VNI is active.
+    class func canUseNativeTextReplacementMode(
+        enabled: Bool,
+        inputType: Int32
+    ) -> Bool {
+        enabled &&
+        inputType != VKeyInputType.vni.rawValue
+    }
+
     class func rawReplacementItems(
         globalDefaults: UserDefaults = .standard
     ) -> [[String: Any]] {

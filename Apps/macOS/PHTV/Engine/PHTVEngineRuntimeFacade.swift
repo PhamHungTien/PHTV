@@ -883,6 +883,7 @@ func phtvRuntimeQuickEndConsonantEnabled() -> Int32 {
 /// path avoids re-locking for every field and sees one consistent view.
 struct PHTVEventDispatchSettings {
     let language: Int32
+    let inputType: Int32
     let safeMode: Bool
     let performLayoutCompat: Int32
     let switchKeyStatus: Int32
@@ -916,6 +917,7 @@ final class PHTVEngineRuntimeFacade: NSObject {
         withRuntimeSettings { state in
             PHTVEventDispatchSettings(
                 language: state.language,
+                inputType: state.inputType,
                 safeMode: state.safeMode != 0,
                 performLayoutCompat: state.performLayoutCompat,
                 switchKeyStatus: state.switchKeyStatus,
