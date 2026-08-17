@@ -140,7 +140,7 @@ struct TypingSettingsView: View {
                         SettingsToggleRow(
                             icon: "character.cursor.ibeam",
                             iconColor: .accentColor,
-                            title: "Phụ âm Z, F, W, J",
+                            title: "Phụ âm Z, F, W, J, DZ",
                             subtitle: "Cho phép gõ các phụ âm không có trong tiếng Việt",
                             isOn: bindable.allowConsonantZFWJ
                         )

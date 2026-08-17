@@ -334,7 +334,7 @@ final class StatusBarMenuManager: NSObject, NSMenuDelegate {
         m.addItem(closureToggle("Viết hoa đầu câu", image: "textformat.size.larger", on: appState.upperCaseFirstChar) {
             AppState.shared.upperCaseFirstChar.toggle()
         })
-        m.addItem(closureToggle("Phụ âm Z, F, W, J", image: "character.cursor.ibeam", on: appState.allowConsonantZFWJ) {
+        m.addItem(closureToggle("Phụ âm Z, F, W, J, DZ", image: "character.cursor.ibeam", on: appState.allowConsonantZFWJ) {
             AppState.shared.allowConsonantZFWJ.toggle()
         })
         m.addItem(closureToggle("Phụ âm đầu nhanh", image: "arrow.right.to.line", on: appState.quickStartConsonant) {

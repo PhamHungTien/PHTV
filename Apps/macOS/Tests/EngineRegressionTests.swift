@@ -1440,6 +1440,21 @@ final class EngineRegressionTests: XCTestCase {
         XCTAssertEqual(renderedToken("ddusng"), "đúng")
     }
 
+    func testDZInitialSupportsTelexToneMarks() {
+        XCTAssertEqual(renderedToken("dzui"), "dzui")
+        XCTAssertEqual(renderedToken("dzer"), "dzẻ")
+        XCTAssertEqual(renderedToken("dzaayj"), "dzậy")
+
+        let originalAllowConsonantZFWJ = PHTVEngineRuntimeFacade.allowConsonantZFWJ()
+        PHTVEngineRuntimeFacade.setAllowConsonantZFWJ(0)
+        defer { PHTVEngineRuntimeFacade.setAllowConsonantZFWJ(originalAllowConsonantZFWJ) }
+        XCTAssertEqual(renderedToken("dzer"), "dzer")
+    }
+
+    func testDZInitialWorksAcrossWords() {
+        XCTAssertEqual(runtimeRenderedToken("dzui dzer sao dzaayj"), "dzui dzẻ sao dzậy")
+    }
+
     func testRuntimeDungKeepsToneWhenEnglishConflictDetectorMatchesRawPrefix() {
         setCustomEnglishWords(["ddus"])
         XCTAssertEqual(runtimeRenderedToken("ddusng"), "đúng")

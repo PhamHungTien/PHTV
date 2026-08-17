@@ -492,6 +492,7 @@ let vnConsonantTable: [[UInt16]] = [
     [KEY_X],
     [KEY_P],
     [KEY_S],
+    [KEY_D, KEY_Z | CONSONANT_ALLOW_MASK],
     [KEY_D],
     [KEY_F | CONSONANT_ALLOW_MASK],
     [KEY_W | CONSONANT_ALLOW_MASK],

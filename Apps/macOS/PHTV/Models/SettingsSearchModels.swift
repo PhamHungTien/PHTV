@@ -46,8 +46,8 @@ struct SettingsItem: Identifiable {
             title: "Gõ nhanh (Quick Telex)", iconName: "hare.fill", tab: .typing,
             keywords: ["quick telex", "gõ nhanh", "cc", "gg", "kk", "nn", "qq", "pp", "tt"]),
         SettingsItem(
-            title: "Phụ âm Z, F, W, J", iconName: "character.cursor.ibeam", tab: .typing,
-            keywords: ["consonants", "z", "f", "w", "j", "phụ âm", "tiếng anh", "ngoại ngữ"]),
+            title: "Phụ âm Z, F, W, J, DZ", iconName: "character.cursor.ibeam", tab: .typing,
+            keywords: ["consonants", "z", "f", "w", "j", "dz", "phụ âm", "tiếng anh", "ngoại ngữ"]),
         SettingsItem(
             title: "Phụ âm đầu nhanh", iconName: "arrow.right.circle.fill", tab: .typing,
             keywords: ["quick start consonant", "phụ âm đầu", "nhanh", "f", "j", "w", "ph", "gi", "qu"]),
