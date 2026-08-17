@@ -7,6 +7,49 @@
         <language>vi</language>
         <!-- Most recent version first -->
         <item>
+            <title>3.4.9</title>
+            <pubDate>Mon, 17 Aug 2026 23:37:00 +0700</pubDate>
+            <sparkle:version>316</sparkle:version>
+            <sparkle:shortVersionString>3.4.9</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[
+                <h2>PHTV 3.4.9</h2>
+                <h3>Tổng quan</h3>
+                <p>PHTV 3.4.9 hoàn thiện trải nghiệm gõ tiếng Việt khi dùng <strong>Text Replacements</strong> của macOS, đặc biệt với kiểu gõ VNI. Bản cập nhật cũng bổ sung phụ âm đầu <code>DZ</code> cho cách gõ thân mật như “dzui”, “dzẻ” và “dzậy”.</p>
+                <h3>Added</h3>
+                <ul>
+                <li><strong>Phụ âm đầu <code>DZ</code> mở rộng</strong>
+                <ul>
+                <li>Thêm <code>DZ</code> vào tuỳ chọn <strong>Phụ âm Z, F, W, J, DZ</strong>.</li>
+                <li>Hỗ trợ các từ như <code>dzui</code>, <code>dzer</code> → “dzẻ” và <code>dzaayj</code> → “dzậy” khi bật tuỳ chọn này.</li>
+                </ul>
+                </li>
+                </ul>
+                <h3>Fixed and Improved</h3>
+                <ul>
+                <li><strong>VNI hoạt động ổn định cùng Text Replacements macOS</strong>
+                <ul>
+                <li>Khắc phục việc các phím số dấu gõ ở cuối từ bị để nguyên hoặc hoạt động không nhất quán khi bật Text Replacements của macOS.</li>
+                <li>Trong VNI, PHTV tự mở rộng các mục Text Replacement đã nhập để các chuỗi như <code>dang9 di9 an8 ha3</code> luôn tạo đúng “đang đi ăn hả”, đồng thời vẫn mở rộng shortcut hệ thống bình thường.</li>
+                <li>Telex và hai kiểu Simple Telex vẫn giữ cơ chế native Text Replacement tại các ứng dụng hỗ trợ, nên không thay đổi hành vi tương thích hiện có.</li>
+                <li>Loại bỏ truy vấn native-context/Accessibility không cần thiết trên đường xử lý phím VNI, giúp event tap nhẹ và ổn định hơn.</li>
+                </ul>
+                </li>
+                </ul>
+                <h3>Chất lượng</h3>
+                <ul>
+                <li>Bổ sung regression test cho <code>DZ</code>, VNI hậu tố (<code>d9</code>, <code>a8</code>, <code>3</code>, <code>7</code>, <code>9</code>, <code>5</code>) và Text Replacement hệ thống trong VNI.</li>
+                <li>Toàn bộ <strong>449 XCTest</strong> đạt trên Universal Debug build với Xcode beta và SDK macOS 27.</li>
+                </ul>
+                <h3>Ghi chú nâng cấp</h3>
+                <ul>
+                <li>Không cần cấp thêm quyền hoặc thiết lập lại PHTV sau khi cập nhật.</li>
+                <li>Thiết lập, macro, Text Replacements macOS và quy tắc theo ứng dụng được giữ nguyên.</li>
+                </ul>
+            ]]></description>
+            <enclosure url="https://github.com/PhamHungTien/PHTV/releases/download/v3.4.9/PHTV-3.4.9-arm64.dmg" length="9303506" type="application/octet-stream" sparkle:edSignature="ddTd1rr8/vGpOSV+erMFql9RCR2XzPejz/sEQ0GBeNHEXSItjwt06s3r13CJVkQdkfEFAb57mKFvPhrUqiMSCA=="/>
+        </item>
+        <item>
             <title>3.4.8</title>
             <pubDate>Wed, 12 Aug 2026 05:30:30 +0700</pubDate>
             <sparkle:version>315</sparkle:version>
@@ -541,14 +584,6 @@
             <sparkle:shortVersionString>3.2.0</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
             <enclosure url="https://github.com/PhamHungTien/PHTV/releases/download/v3.2.0/PHTV-3.2.0-arm64.dmg" length="9645438" type="application/octet-stream" sparkle:edSignature="HXSOAcMnRGmZqtDl/rtZiuc8o+j3oh7ett++9/5EUEY69tqoBg23D2tHSZCRHbpsrY27bxDoDzfhCmncu487BA=="/>
-        </item>
-        <item>
-            <title>3.1.9</title>
-            <pubDate>Tue, 09 Jun 2026 03:04:07 +0700</pubDate>
-            <sparkle:version>286</sparkle:version>
-            <sparkle:shortVersionString>3.1.9</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <enclosure url="https://github.com/PhamHungTien/PHTV/releases/download/v3.1.9/PHTV-3.1.9-arm64.dmg" length="9645364" type="application/octet-stream" sparkle:edSignature="I9P40ld/bZI4+AhYNczpAsdbO5w2huXaib3CcdyTFKHeBGcw7hvs6Vae1dDE+KBotlFGcCo8ko7/WBtPkh2oAw=="/>
         </item>
         <item>
             <title>2.8.9</title>
