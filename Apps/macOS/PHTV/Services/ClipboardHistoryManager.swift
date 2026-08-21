@@ -165,8 +165,8 @@ final class ClipboardHistoryManager {
         let duplicateIDs = Set(duplicateItems.map(\.id))
         items.removeAll { duplicateIDs.contains($0.id) }
 
-        let inheritsPin = duplicateItems.contains(where: \.isPinned)
-        let newItem = inheritsPin ? item.withPinned(true) : item
+        let pinnedDuplicate = duplicateItems.first(where: \.isPinned)
+        let newItem = pinnedDuplicate.map { item.withPinned(true).withHotkey($0.hotkey) } ?? item
 
         // Insert at beginning
         items.insert(newItem, at: 0)
@@ -179,6 +179,12 @@ final class ClipboardHistoryManager {
         items = keptItems
 
         saveHistory()
+        // Regular captures do not affect direct-paste registrations. A
+        // duplicate pinned item is the one exception: it receives a fresh ID
+        // while inheriting its shortcut, so update that registration only.
+        if pinnedDuplicate != nil {
+            postClipboardItemHotkeysChanged()
+        }
     }
 
     /// Move a just-used item to the top of the history (most-recently-used ordering)
@@ -199,7 +205,8 @@ final class ClipboardHistoryManager {
             fileReferences: existing.fileReferences,
             sourceApp: existing.sourceApp,
             imageFilePath: existing.imageFilePath,
-            isPinned: existing.isPinned
+            isPinned: existing.isPinned,
+            hotkey: existing.hotkey
         )
         items.insert(promoted, at: 0)
         saveHistory()
@@ -211,12 +218,14 @@ final class ClipboardHistoryManager {
         guard let index = items.firstIndex(where: { $0.id == item.id }) else { return }
         items[index] = items[index].withPinned(!items[index].isPinned)
         saveHistory()
+        postClipboardItemHotkeysChanged()
     }
 
     func removeItem(_ item: ClipboardHistoryItem) {
         items.removeAll { $0.id == item.id }
         ClipboardHistoryFileCache.removeCache(for: item)
         saveHistory()
+        postClipboardItemHotkeysChanged()
     }
 
     /// Clears the history but keeps pinned items — those only leave via an
@@ -231,6 +240,7 @@ final class ClipboardHistoryManager {
             items = keptItems
         }
         saveHistory()
+        postClipboardItemHotkeysChanged()
     }
 
     // MARK: - Saved Items
@@ -263,17 +273,28 @@ final class ClipboardHistoryManager {
         id: UUID? = nil,
         title: String,
         content: String,
-        groupID: UUID?
+        groupID: UUID?,
+        hotkey: ClipboardItemHotkey? = nil
     ) throws -> ClipboardSavedItem {
+        try validateItemHotkey(hotkey, excludingSavedItemID: id)
+        let previousLibrary = savedLibrary
         var updatedLibrary = savedLibrary
         let item = try updatedLibrary.saveItem(
             id: id,
             title: title,
             content: content,
-            groupID: groupID
+            groupID: groupID,
+            hotkey: hotkey
         )
         try persistSavedLibrary(updatedLibrary)
         savedLibrary = updatedLibrary
+        postClipboardItemHotkeysChanged()
+        if let hotkey, !ClipboardItemHotkeyManager.shared.isAvailable(hotkey) {
+            savedLibrary = previousLibrary
+            try persistSavedLibrary(previousLibrary)
+            postClipboardItemHotkeysChanged()
+            throw ClipboardItemHotkeyError.unavailable
+        }
         return item
     }
 
@@ -282,6 +303,23 @@ final class ClipboardHistoryManager {
         try updatedLibrary.removeItem(id: id)
         try persistSavedLibrary(updatedLibrary)
         savedLibrary = updatedLibrary
+        postClipboardItemHotkeysChanged()
+    }
+
+    func setPinnedItemHotkey(_ hotkey: ClipboardItemHotkey?, for itemID: UUID) throws {
+        guard let index = items.firstIndex(where: { $0.id == itemID }) else { return }
+        guard items[index].isPinned else { throw ClipboardItemHotkeyError.pinnedItemRequired }
+        try validateItemHotkey(hotkey, excludingPinnedHistoryItemID: itemID)
+        let previousItem = items[index]
+        items[index] = items[index].withHotkey(hotkey)
+        saveHistory()
+        postClipboardItemHotkeysChanged()
+        if let hotkey, !ClipboardItemHotkeyManager.shared.isAvailable(hotkey) {
+            items[index] = previousItem
+            saveHistory()
+            postClipboardItemHotkeysChanged()
+            throw ClipboardItemHotkeyError.unavailable
+        }
     }
 
     // MARK: - Persistence
@@ -368,6 +406,44 @@ final class ClipboardHistoryManager {
             [.posixPermissions: 0o600],
             ofItemAtPath: Self.savedLibraryFileURL.path
         )
+    }
+
+    private func validateItemHotkey(
+        _ hotkey: ClipboardItemHotkey?,
+        excludingPinnedHistoryItemID: UUID? = nil,
+        excludingSavedItemID: UUID? = nil
+    ) throws {
+        guard let hotkey else { return }
+        guard hotkey.isValid else { throw ClipboardItemHotkeyError.invalidShortcut }
+
+        if items.contains(where: {
+            $0.id != excludingPinnedHistoryItemID && $0.isPinned && $0.hotkey == hotkey
+        }) || savedLibrary.items.contains(where: {
+            $0.id != excludingSavedItemID && $0.hotkey == hotkey
+        }) {
+            throw ClipboardItemHotkeyError.conflictsWithItem
+        }
+
+        let appState = AppState.shared
+        if appState.enableClipboardHistory,
+           ClipboardItemHotkey(
+                modifiers: appState.clipboardHotkeyModifiers,
+                keyCode: appState.clipboardHotkeyKeyCode
+           ) == hotkey {
+            throw ClipboardItemHotkeyError.conflictsWithClipboardHistory
+        }
+        if appState.enableEmojiHotkey,
+           ClipboardItemHotkey(
+                modifiers: appState.emojiHotkeyModifiers,
+                keyCode: appState.emojiHotkeyKeyCode
+           ) == hotkey {
+            throw ClipboardItemHotkeyError.conflictsWithEmojiPicker
+        }
+    }
+
+    private func postClipboardItemHotkeysChanged() {
+        NotificationCenter.default.post(name: NotificationName.clipboardItemHotkeysChanged, object: nil)
+        ClipboardItemHotkeyManager.shared.refreshRegistrations()
     }
 
     /// Applies both storage limits: the retention window (age) and the maximum
@@ -478,6 +554,19 @@ final class ClipboardHistoryManager {
             guard !Task.isCancelled else { return }
             self?.pasteText(item.content)
         }
+    }
+
+    /// Called by an item-specific global hotkey. No panel is shown, so the
+    /// frontmost application remains ready to receive Command-V immediately.
+    func pastePinnedItemImmediately(id: UUID) {
+        guard let item = items.first(where: { $0.id == id && $0.isPinned }) else { return }
+        pasteItem(item)
+    }
+
+    /// Called by an item-specific global hotkey. Saved items are text-only.
+    func pasteSavedItemImmediately(id: UUID) {
+        guard let item = savedLibrary.items.first(where: { $0.id == id }) else { return }
+        pasteText(item.content)
     }
 
     private func pasteItem(_ item: ClipboardHistoryItem) {

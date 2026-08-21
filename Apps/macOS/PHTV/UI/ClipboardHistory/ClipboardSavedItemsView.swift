@@ -19,12 +19,14 @@ private struct ClipboardSavedItemDraft {
     var title: String
     var content: String
     var groupID: UUID?
+    var hotkey: ClipboardItemHotkey?
 
     init(item: ClipboardSavedItem? = nil, initialContent: String = "", groupID: UUID? = nil) {
         id = item?.id
         title = item?.title ?? Self.suggestedTitle(from: initialContent)
         content = item?.content ?? initialContent
         self.groupID = item?.groupID ?? groupID
+        hotkey = item?.hotkey
     }
 
     private static func suggestedTitle(from content: String) -> String {
@@ -65,6 +67,7 @@ struct ClipboardSavedItemsView: View {
     @State private var groupDraft: ClipboardSavedGroupDraft?
     @State private var pendingDeletion: ClipboardSavedDeletion?
     @State private var errorMessage: String?
+    @State private var hotkeyItem: ClipboardSavedItem?
     @Environment(\.colorScheme) private var colorScheme
 
     private var selectedIndex: Int? {
@@ -168,6 +171,21 @@ struct ClipboardSavedItemsView: View {
         }
         .onDisappear {
             onEditingChanged(false)
+        }
+        .sheet(item: $hotkeyItem) { item in
+            ClipboardItemHotkeyEditor(
+                itemTitle: item.title,
+                currentHotkey: item.hotkey,
+                onSave: { hotkey in
+                    try manager.saveSavedItem(
+                        id: item.id,
+                        title: item.title,
+                        content: item.content,
+                        groupID: item.groupID,
+                        hotkey: hotkey
+                    )
+                }
+            )
         }
     }
 
@@ -363,6 +381,7 @@ struct ClipboardSavedItemsView: View {
                 colorScheme: colorScheme,
                 onSelect: { select(item) },
                 onEdit: { itemDraft = ClipboardSavedItemDraft(item: item) },
+                onConfigureHotkey: { hotkeyItem = item },
                 onDelete: { pendingDeletion = .item(item) }
             )
             .id(item.id)
@@ -536,7 +555,8 @@ struct ClipboardSavedItemsView: View {
                 id: draft.id,
                 title: draft.title,
                 content: draft.content,
-                groupID: draft.groupID
+                groupID: draft.groupID,
+                hotkey: draft.hotkey
             )
             closeEditor()
         } catch {
@@ -603,6 +623,7 @@ private struct ClipboardSavedItemRow: View {
     let colorScheme: ColorScheme
     let onSelect: () -> Void
     let onEdit: () -> Void
+    let onConfigureHotkey: () -> Void
     let onDelete: () -> Void
 
     var body: some View {
@@ -636,6 +657,13 @@ private struct ClipboardSavedItemRow: View {
 
                 if isHovered || isSelected {
                     HStack(spacing: 7) {
+                        Button(action: onConfigureHotkey) {
+                            Image(systemName: "keyboard")
+                                .foregroundStyle(item.hotkey == nil ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(.secondary))
+                        }
+                        .buttonStyle(.plain)
+                        .help(item.hotkey == nil ? "Gán phím tắt để dán ngay" : "Sửa phím tắt dán ngay")
+
                         Button(action: onEdit) {
                             Image(systemName: "pencil")
                                 .foregroundStyle(.secondary)
@@ -650,6 +678,14 @@ private struct ClipboardSavedItemRow: View {
                         .buttonStyle(.plain)
                         .help("Xoá")
                     }
+                } else if let hotkey = item.hotkey {
+                    Text(hotkey.displayText)
+                        .font(.system(size: 10, weight: .medium, design: .rounded))
+                        .foregroundStyle(.secondary)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 3)
+                        .background(Color.primary.opacity(colorScheme == .dark ? 0.12 : 0.06))
+                        .clipShape(PHTVRoundedRect(cornerRadius: 5))
                 }
             }
             .padding(.horizontal, 12)
@@ -669,6 +705,10 @@ private struct ClipboardSavedItemRow: View {
         .contextMenu {
             Button("Dán", systemImage: "doc.on.clipboard") { onSelect() }
             Button("Sửa", systemImage: "pencil") { onEdit() }
+            Button(
+                item.hotkey == nil ? "Gán phím tắt dán ngay…" : "Sửa phím tắt dán ngay…",
+                systemImage: "keyboard"
+            ) { onConfigureHotkey() }
             Divider()
             Button("Xoá", systemImage: "trash", role: .destructive) { onDelete() }
         }

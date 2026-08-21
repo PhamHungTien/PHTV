@@ -9,6 +9,65 @@
 import Foundation
 import AppKit
 
+/// A global shortcut assigned to a pinned or saved clipboard item.  The raw
+/// representation stays intentionally small and Codable so it can travel with
+/// the existing clipboard stores without depending on AppKit internals.
+struct ClipboardItemHotkey: Codable, Hashable, Sendable {
+    let modifiersRaw: UInt
+    let keyCode: UInt16
+
+    init(modifiers: NSEvent.ModifierFlags, keyCode: UInt16) {
+        self.modifiersRaw = UInt(modifiers.intersection(Self.supportedModifiers).rawValue)
+        self.keyCode = keyCode
+    }
+
+    var modifiers: NSEvent.ModifierFlags {
+        NSEvent.ModifierFlags(rawValue: modifiersRaw).intersection(Self.supportedModifiers)
+    }
+
+    var isValid: Bool {
+        keyCode != KeyCode.noKey && keyCode <= KeyCode.keyMask && !modifiers.isEmpty
+    }
+
+    var displayText: String {
+        var parts: [String] = []
+        if modifiers.contains(.control) { parts.append("⌃") }
+        if modifiers.contains(.option) { parts.append("⌥") }
+        if modifiers.contains(.shift) { parts.append("⇧") }
+        if modifiers.contains(.command) { parts.append("⌘") }
+        parts.append(KeyCode.name(for: keyCode))
+        return parts.joined()
+    }
+
+    private static let supportedModifiers: NSEvent.ModifierFlags = [.command, .option, .control, .shift]
+}
+
+enum ClipboardItemHotkeyError: LocalizedError, Equatable {
+    case invalidShortcut
+    case conflictsWithClipboardHistory
+    case conflictsWithEmojiPicker
+    case conflictsWithItem
+    case pinnedItemRequired
+    case unavailable
+
+    var errorDescription: String? {
+        switch self {
+        case .invalidShortcut:
+            return "Hãy nhấn một phím kèm ít nhất một phím bổ trợ."
+        case .conflictsWithClipboardHistory:
+            return "Phím tắt này đang dùng để mở Lịch sử Clipboard."
+        case .conflictsWithEmojiPicker:
+            return "Phím tắt này đang dùng cho PHTV Picker."
+        case .conflictsWithItem:
+            return "Phím tắt này đã được gán cho một mục Clipboard khác."
+        case .pinnedItemRequired:
+            return "Chỉ mục đang ghim mới có thể dùng phím tắt dán ngay."
+        case .unavailable:
+            return "Phím tắt này đang được hệ thống hoặc ứng dụng khác sử dụng."
+        }
+    }
+}
+
 struct ClipboardHistoryFileReference: Codable, Equatable, Sendable {
     let originalPath: String
     let cachedPath: String?
@@ -87,6 +146,8 @@ struct ClipboardHistoryItem: Identifiable, Codable, Equatable, Sendable {
     /// Pinned items are kept until the user unpins or deletes them: they are
     /// exempt from the retention window, the item-count limit, and "Clear all".
     let isPinned: Bool
+    /// A pinned item may be pasted directly through this global shortcut.
+    let hotkey: ClipboardItemHotkey?
 
     // Non-Codable: only populated for freshly captured items before first save.
     // After decoding from disk this is always nil; use imageFilePath instead.
@@ -101,7 +162,8 @@ struct ClipboardHistoryItem: Identifiable, Codable, Equatable, Sendable {
         fileReferences: [ClipboardHistoryFileReference]? = nil,
         sourceApp: String?,
         imageFilePath: String? = nil,
-        isPinned: Bool = false
+        isPinned: Bool = false,
+        hotkey: ClipboardItemHotkey? = nil
     ) {
         self.id = id
         self.timestamp = timestamp
@@ -112,6 +174,7 @@ struct ClipboardHistoryItem: Identifiable, Codable, Equatable, Sendable {
         self.fileReferences = fileReferences
         self.sourceApp = sourceApp
         self.isPinned = isPinned
+        self.hotkey = isPinned ? hotkey : nil
     }
 
     /// Same item with a different pinned state (all fields are immutable).
@@ -125,14 +188,32 @@ struct ClipboardHistoryItem: Identifiable, Codable, Equatable, Sendable {
             fileReferences: fileReferences,
             sourceApp: sourceApp,
             imageFilePath: imageFilePath,
-            isPinned: pinned
+            isPinned: pinned,
+            hotkey: pinned ? hotkey : nil
+        )
+    }
+
+    /// Same item with a different direct-paste shortcut. Only pinned history
+    /// items may own a shortcut.
+    func withHotkey(_ hotkey: ClipboardItemHotkey?) -> ClipboardHistoryItem {
+        ClipboardHistoryItem(
+            id: id,
+            timestamp: timestamp,
+            textContent: textContent,
+            imageData: imageData,
+            filePaths: filePaths,
+            fileReferences: fileReferences,
+            sourceApp: sourceApp,
+            imageFilePath: imageFilePath,
+            isPinned: isPinned,
+            hotkey: hotkey
         )
     }
 
     // MARK: - Codable
 
     private enum CodingKeys: String, CodingKey {
-        case id, timestamp, textContent, imageFilePath, filePaths, fileReferences, sourceApp, isPinned
+        case id, timestamp, textContent, imageFilePath, filePaths, fileReferences, sourceApp, isPinned, hotkey
         // Legacy key for migration only — not written on encode
         case legacyImageData = "imageData"
     }
@@ -147,6 +228,7 @@ struct ClipboardHistoryItem: Identifiable, Codable, Equatable, Sendable {
         sourceApp = try c.decodeIfPresent(String.self, forKey: .sourceApp)
         // Histories written before the pin feature have no key: default to unpinned.
         isPinned = try c.decodeIfPresent(Bool.self, forKey: .isPinned) ?? false
+        hotkey = isPinned ? try c.decodeIfPresent(ClipboardItemHotkey.self, forKey: .hotkey) : nil
 
         if let existingPath = try c.decodeIfPresent(String.self, forKey: .imageFilePath) {
             // New format: image already on disk
@@ -175,6 +257,7 @@ struct ClipboardHistoryItem: Identifiable, Codable, Equatable, Sendable {
         if isPinned {
             try c.encode(isPinned, forKey: .isPinned)
         }
+        try c.encodeIfPresent(hotkey, forKey: .hotkey)
         // imageData is intentionally excluded — it lives on disk only
     }
 
