@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.5.1] - 2026-08-21
+
+### Tổng quan
+PHTV 3.5.1 khắc phục thao tác cấu hình phím tắt cho Clipboard để popup luôn
+giữ nguyên khi người dùng mở màn hình gán tổ hợp phím.
+
+### Fixed
+- **Nút phím tắt Clipboard không còn tự đóng popup**
+  - Tách vùng dán của từng dòng khỏi các nút thao tác, tránh việc bấm biểu
+    tượng bàn phím cũng kích hoạt dán và đóng Clipboard.
+  - Áp dụng cho cả mục trong **Đã ghim** lẫn **Mục đã lưu**; các nút sửa,
+    ghim, lưu và xoá cũng hoạt động độc lập với thao tác dán.
+
+### Chất lượng
+- Kiểm tra lại Universal Debug build sau khi tách các control trong danh sách
+  Clipboard.
+
 ## [3.5.0] - 2026-08-21
 
 ### Tổng quan

@@ -574,97 +574,49 @@ private struct ClipboardItemRow: View {
     @State private var loadedImage: NSImage?
 
     var body: some View {
-        Button(action: onSelect) {
-            HStack(spacing: 10) {
-                contentIcon
-                    .frame(width: 32, height: 32)
+        HStack(spacing: 10) {
+            // Keep the paste target separate from the row controls. Nesting
+            // the shortcut button inside this Button caused both actions to
+            // fire, which immediately hid the Clipboard panel.
+            Button(action: onSelect) {
+                HStack(spacing: 10) {
+                    contentIcon
+                        .frame(width: 32, height: 32)
 
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(item.displayText)
-                        .font(.system(size: 13))
-                        .foregroundStyle(.primary)
-                        .lineLimit(2)
-                        .multilineTextAlignment(.leading)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(item.displayText)
+                            .font(.system(size: 13))
+                            .foregroundStyle(.primary)
+                            .lineLimit(2)
+                            .multilineTextAlignment(.leading)
 
-                    Text(metadataText)
-                        .font(.system(size: 10))
-                        .foregroundStyle(.tertiary)
-                        .lineLimit(1)
-                }
-
-                Spacer()
-
-                if isHovered {
-                    HStack(spacing: 6) {
-                        if let onConfigureHotkey {
-                            Button(action: onConfigureHotkey) {
-                                Image(systemName: "keyboard")
-                                    .foregroundStyle(item.hotkey == nil ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(.secondary))
-                                    .imageScale(.small)
-                            }
-                            .buttonStyle(.plain)
-                            .help(item.hotkey == nil ? "Gán phím tắt để dán ngay" : "Sửa phím tắt dán ngay")
-                        }
-
-                        if let onSave {
-                            Button(action: onSave) {
-                                Image(systemName: "bookmark.fill")
-                                    .foregroundStyle(Color.accentColor)
-                                    .imageScale(.small)
-                            }
-                            .buttonStyle(.plain)
-                            .help("Lưu để dùng lại")
-                        }
-
-                        Button(action: onTogglePin) {
-                            Image(systemName: item.isPinned ? "pin.slash.fill" : "pin.fill")
-                                .foregroundStyle(item.isPinned ? AnyShapeStyle(.secondary) : AnyShapeStyle(Color.accentColor))
-                                .imageScale(.small)
-                        }
-                        .buttonStyle(.plain)
-                        .help(item.isPinned ? "Bỏ ghim" : "Ghim — giữ vĩnh viễn cho đến khi xoá (⌘P)")
-
-                        Button(action: onDelete) {
-                            Image(systemName: "xmark.circle.fill")
-                                .foregroundStyle(.secondary)
-                                .imageScale(.small)
-                        }
-                        .buttonStyle(.plain)
-                        .help("Xoá")
+                        Text(metadataText)
+                            .font(.system(size: 10))
+                            .foregroundStyle(.tertiary)
+                            .lineLimit(1)
                     }
-                    .transition(.opacity)
-                } else if item.isPinned {
-                    if let hotkey = item.hotkey {
-                        Text(hotkey.displayText)
-                            .font(.system(size: 10, weight: .medium, design: .rounded))
-                            .foregroundStyle(.secondary)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 3)
-                            .background(Color.primary.opacity(colorScheme == .dark ? 0.12 : 0.06))
-                            .clipShape(PHTVRoundedRect(cornerRadius: 5))
-                            .transition(.opacity)
-                    } else {
-                        Image(systemName: "pin.fill")
-                            .font(.system(size: 9))
-                            .foregroundStyle(Color.accentColor.opacity(0.75))
-                            .transition(.opacity)
-                    }
+
+                    Spacer(minLength: 4)
                 }
+                .contentShape(Rectangle())
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
-            .background {
-                if isSelected {
-                    PHTVRoundedRect(cornerRadius: 8)
-                        .fill(Color.accentColor.opacity(colorScheme == .dark ? 0.18 : 0.12))
-                } else if isHovered {
-                    PHTVRoundedRect(cornerRadius: 8)
-                        .fill(Color.primary.opacity(colorScheme == .dark ? 0.1 : 0.06))
-                }
-            }
-            .contentShape(Rectangle())
+            .buttonStyle(.plain)
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            trailingControls
         }
-        .buttonStyle(.plain)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background {
+            if isSelected {
+                PHTVRoundedRect(cornerRadius: 8)
+                    .fill(Color.accentColor.opacity(colorScheme == .dark ? 0.18 : 0.12))
+            } else if isHovered {
+                PHTVRoundedRect(cornerRadius: 8)
+                    .fill(Color.primary.opacity(colorScheme == .dark ? 0.1 : 0.06))
+            }
+        }
+        .contentShape(Rectangle())
         .id(item.id)
         .contextMenu {
             if let onSave {
@@ -697,6 +649,66 @@ private struct ClipboardItemRow: View {
                 if let data = try? Data(contentsOf: url) {
                     loadedImage = NSImage(data: data)
                 }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var trailingControls: some View {
+        if isHovered {
+            HStack(spacing: 6) {
+                if let onConfigureHotkey {
+                    Button(action: onConfigureHotkey) {
+                        Image(systemName: "keyboard")
+                            .foregroundStyle(item.hotkey == nil ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(.secondary))
+                            .imageScale(.small)
+                    }
+                    .buttonStyle(.plain)
+                    .help(item.hotkey == nil ? "Gán phím tắt để dán ngay" : "Sửa phím tắt dán ngay")
+                }
+
+                if let onSave {
+                    Button(action: onSave) {
+                        Image(systemName: "bookmark.fill")
+                            .foregroundStyle(Color.accentColor)
+                            .imageScale(.small)
+                    }
+                    .buttonStyle(.plain)
+                    .help("Lưu để dùng lại")
+                }
+
+                Button(action: onTogglePin) {
+                    Image(systemName: item.isPinned ? "pin.slash.fill" : "pin.fill")
+                        .foregroundStyle(item.isPinned ? AnyShapeStyle(.secondary) : AnyShapeStyle(Color.accentColor))
+                        .imageScale(.small)
+                }
+                .buttonStyle(.plain)
+                .help(item.isPinned ? "Bỏ ghim" : "Ghim — giữ vĩnh viễn cho đến khi xoá (⌘P)")
+
+                Button(action: onDelete) {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundStyle(.secondary)
+                        .imageScale(.small)
+                }
+                .buttonStyle(.plain)
+                .help("Xoá")
+            }
+            .transition(.opacity)
+        } else if item.isPinned {
+            if let hotkey = item.hotkey {
+                Text(hotkey.displayText)
+                    .font(.system(size: 10, weight: .medium, design: .rounded))
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 3)
+                    .background(Color.primary.opacity(colorScheme == .dark ? 0.12 : 0.06))
+                    .clipShape(PHTVRoundedRect(cornerRadius: 5))
+                    .transition(.opacity)
+            } else {
+                Image(systemName: "pin.fill")
+                    .font(.system(size: 9))
+                    .foregroundStyle(Color.accentColor.opacity(0.75))
+                    .transition(.opacity)
             }
         }
     }

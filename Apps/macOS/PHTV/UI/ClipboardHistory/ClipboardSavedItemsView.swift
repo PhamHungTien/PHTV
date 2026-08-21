@@ -627,81 +627,57 @@ private struct ClipboardSavedItemRow: View {
     let onDelete: () -> Void
 
     var body: some View {
-        Button(action: onSelect) {
-            HStack(spacing: 10) {
-                Image(systemName: "bookmark.fill")
-                    .font(.system(size: 14))
-                    .foregroundStyle(Color.accentColor)
-                    .frame(width: 32, height: 32)
-                    .background(Color.accentColor.opacity(colorScheme == .dark ? 0.15 : 0.1))
-                    .clipShape(PHTVRoundedRect(cornerRadius: 6))
+        HStack(spacing: 10) {
+            // Keep the direct-paste action independent from edit/configure
+            // buttons so clicking the keyboard icon cannot also close the
+            // Clipboard panel by selecting this row.
+            Button(action: onSelect) {
+                HStack(spacing: 10) {
+                    Image(systemName: "bookmark.fill")
+                        .font(.system(size: 14))
+                        .foregroundStyle(Color.accentColor)
+                        .frame(width: 32, height: 32)
+                        .background(Color.accentColor.opacity(colorScheme == .dark ? 0.15 : 0.1))
+                        .clipShape(PHTVRoundedRect(cornerRadius: 6))
 
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(item.title)
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(.primary)
-                        .lineLimit(1)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(item.title)
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundStyle(.primary)
+                            .lineLimit(1)
 
-                    Text(item.content.replacingOccurrences(of: "\n", with: " "))
-                        .font(.system(size: 11))
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
+                        Text(item.content.replacingOccurrences(of: "\n", with: " "))
+                            .font(.system(size: 11))
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
 
-                    Text(groupName)
-                        .font(.system(size: 9))
-                        .foregroundStyle(.tertiary)
-                        .lineLimit(1)
-                }
-
-                Spacer(minLength: 4)
-
-                if isHovered || isSelected {
-                    HStack(spacing: 7) {
-                        Button(action: onConfigureHotkey) {
-                            Image(systemName: "keyboard")
-                                .foregroundStyle(item.hotkey == nil ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(.secondary))
-                        }
-                        .buttonStyle(.plain)
-                        .help(item.hotkey == nil ? "Gán phím tắt để dán ngay" : "Sửa phím tắt dán ngay")
-
-                        Button(action: onEdit) {
-                            Image(systemName: "pencil")
-                                .foregroundStyle(.secondary)
-                        }
-                        .buttonStyle(.plain)
-                        .help("Sửa")
-
-                        Button(action: onDelete) {
-                            Image(systemName: "trash")
-                                .foregroundStyle(.secondary)
-                        }
-                        .buttonStyle(.plain)
-                        .help("Xoá")
+                        Text(groupName)
+                            .font(.system(size: 9))
+                            .foregroundStyle(.tertiary)
+                            .lineLimit(1)
                     }
-                } else if let hotkey = item.hotkey {
-                    Text(hotkey.displayText)
-                        .font(.system(size: 10, weight: .medium, design: .rounded))
-                        .foregroundStyle(.secondary)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 3)
-                        .background(Color.primary.opacity(colorScheme == .dark ? 0.12 : 0.06))
-                        .clipShape(PHTVRoundedRect(cornerRadius: 5))
+
+                    Spacer(minLength: 4)
                 }
+                .contentShape(Rectangle())
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 7)
-            .background {
-                if isSelected {
-                    PHTVRoundedRect(cornerRadius: 8)
-                        .fill(Color.accentColor.opacity(colorScheme == .dark ? 0.2 : 0.12))
-                } else if isHovered {
-                    PHTVRoundedRect(cornerRadius: 8)
-                        .fill(Color.primary.opacity(colorScheme == .dark ? 0.1 : 0.06))
-                }
-            }
-            .contentShape(Rectangle())
+            .buttonStyle(.plain)
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            trailingControls
         }
-        .buttonStyle(.plain)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 7)
+        .background {
+            if isSelected {
+                PHTVRoundedRect(cornerRadius: 8)
+                    .fill(Color.accentColor.opacity(colorScheme == .dark ? 0.2 : 0.12))
+            } else if isHovered {
+                PHTVRoundedRect(cornerRadius: 8)
+                    .fill(Color.primary.opacity(colorScheme == .dark ? 0.1 : 0.06))
+            }
+        }
+        .contentShape(Rectangle())
         .contextMenu {
             Button("Dán", systemImage: "doc.on.clipboard") { onSelect() }
             Button("Sửa", systemImage: "pencil") { onEdit() }
@@ -713,6 +689,42 @@ private struct ClipboardSavedItemRow: View {
             Button("Xoá", systemImage: "trash", role: .destructive) { onDelete() }
         }
         .help("Bấm để dán \(item.title)")
+    }
+
+    @ViewBuilder
+    private var trailingControls: some View {
+        if isHovered || isSelected {
+            HStack(spacing: 7) {
+                Button(action: onConfigureHotkey) {
+                    Image(systemName: "keyboard")
+                        .foregroundStyle(item.hotkey == nil ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(.secondary))
+                }
+                .buttonStyle(.plain)
+                .help(item.hotkey == nil ? "Gán phím tắt để dán ngay" : "Sửa phím tắt dán ngay")
+
+                Button(action: onEdit) {
+                    Image(systemName: "pencil")
+                        .foregroundStyle(.secondary)
+                }
+                .buttonStyle(.plain)
+                .help("Sửa")
+
+                Button(action: onDelete) {
+                    Image(systemName: "trash")
+                        .foregroundStyle(.secondary)
+                }
+                .buttonStyle(.plain)
+                .help("Xoá")
+            }
+        } else if let hotkey = item.hotkey {
+            Text(hotkey.displayText)
+                .font(.system(size: 10, weight: .medium, design: .rounded))
+                .foregroundStyle(.secondary)
+                .padding(.horizontal, 6)
+                .padding(.vertical, 3)
+                .background(Color.primary.opacity(colorScheme == .dark ? 0.12 : 0.06))
+                .clipShape(PHTVRoundedRect(cornerRadius: 5))
+        }
     }
 }
 
