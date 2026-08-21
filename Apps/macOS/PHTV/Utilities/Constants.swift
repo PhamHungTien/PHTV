@@ -178,6 +178,7 @@ enum NotificationName {
 
     // MARK: - Clipboard History
     static let clipboardHotkeySettingsChanged = NSNotification.Name("ClipboardHotkeySettingsChanged")
+    static let clipboardItemHotkeysChanged = NSNotification.Name("ClipboardItemHotkeysChanged")
 
     // MARK: - System
     static let accessibilityStatusChanged = NSNotification.Name("AccessibilityStatusChanged")

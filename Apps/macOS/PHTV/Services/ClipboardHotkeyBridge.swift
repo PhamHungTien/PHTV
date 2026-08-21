@@ -12,10 +12,12 @@ import Foundation
 @objc class ClipboardHotkeyBridge: NSObject {
     @MainActor @objc static func initializeClipboardHotkeyManager() {
         _ = ClipboardHotkeyManager.shared
+        _ = ClipboardItemHotkeyManager.shared
     }
 
     @MainActor @objc static func refreshClipboardHotkeyRegistration() {
         ClipboardHotkeyManager.shared.refreshRegistrationFromAppState()
+        ClipboardItemHotkeyManager.shared.refreshRegistrations()
     }
 
     @MainActor @objc static func openClipboardHistory() {

@@ -44,6 +44,7 @@ struct ClipboardHistoryView: View {
     @State private var isSearchFieldFocused = false
     @State private var savedItemSeed = ""
     @State private var savedLibraryIsEditing = false
+    @State private var hotkeyItem: ClipboardHistoryItem?
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @Environment(\.colorScheme) private var colorScheme
 
@@ -149,6 +150,15 @@ struct ClipboardHistoryView: View {
             } else {
                 isSearchFieldFocused = false
             }
+        }
+        .sheet(item: $hotkeyItem) { item in
+            ClipboardItemHotkeyEditor(
+                itemTitle: item.displayText,
+                currentHotkey: item.hotkey,
+                onSave: { hotkey in
+                    try manager.setPinnedItemHotkey(hotkey, for: item.id)
+                }
+            )
         }
     }
 
@@ -291,6 +301,7 @@ struct ClipboardHistoryView: View {
                             colorScheme: colorScheme,
                             onSelect: { select(item) },
                             onTogglePin: { togglePin(item) },
+                            onConfigureHotkey: item.isPinned ? { hotkeyItem = item } : nil,
                             onSave: item.textContent.map { text in
                                 {
                                     savedItemSeed = text
@@ -556,6 +567,7 @@ private struct ClipboardItemRow: View {
     let colorScheme: ColorScheme
     let onSelect: () -> Void
     let onTogglePin: () -> Void
+    let onConfigureHotkey: (() -> Void)?
     let onSave: (() -> Void)?
     let onDelete: () -> Void
 
@@ -584,6 +596,16 @@ private struct ClipboardItemRow: View {
 
                 if isHovered {
                     HStack(spacing: 6) {
+                        if let onConfigureHotkey {
+                            Button(action: onConfigureHotkey) {
+                                Image(systemName: "keyboard")
+                                    .foregroundStyle(item.hotkey == nil ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(.secondary))
+                                    .imageScale(.small)
+                            }
+                            .buttonStyle(.plain)
+                            .help(item.hotkey == nil ? "Gán phím tắt để dán ngay" : "Sửa phím tắt dán ngay")
+                        }
+
                         if let onSave {
                             Button(action: onSave) {
                                 Image(systemName: "bookmark.fill")
@@ -612,10 +634,21 @@ private struct ClipboardItemRow: View {
                     }
                     .transition(.opacity)
                 } else if item.isPinned {
-                    Image(systemName: "pin.fill")
-                        .font(.system(size: 9))
-                        .foregroundStyle(Color.accentColor.opacity(0.75))
-                        .transition(.opacity)
+                    if let hotkey = item.hotkey {
+                        Text(hotkey.displayText)
+                            .font(.system(size: 10, weight: .medium, design: .rounded))
+                            .foregroundStyle(.secondary)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 3)
+                            .background(Color.primary.opacity(colorScheme == .dark ? 0.12 : 0.06))
+                            .clipShape(PHTVRoundedRect(cornerRadius: 5))
+                            .transition(.opacity)
+                    } else {
+                        Image(systemName: "pin.fill")
+                            .font(.system(size: 9))
+                            .foregroundStyle(Color.accentColor.opacity(0.75))
+                            .transition(.opacity)
+                    }
                 }
             }
             .padding(.horizontal, 12)
@@ -641,6 +674,14 @@ private struct ClipboardItemRow: View {
             }
             Button(item.isPinned ? "Bỏ ghim" : "Ghim", systemImage: item.isPinned ? "pin.slash" : "pin") {
                 onTogglePin()
+            }
+            if let onConfigureHotkey {
+                Button(
+                    item.hotkey == nil ? "Gán phím tắt dán ngay…" : "Sửa phím tắt dán ngay…",
+                    systemImage: "keyboard"
+                ) {
+                    onConfigureHotkey()
+                }
             }
             Divider()
             Button("Xoá", systemImage: "trash", role: .destructive) {

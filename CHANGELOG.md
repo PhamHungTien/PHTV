@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.5.0] - 2026-08-21
+
+### Tổng quan
+PHTV 3.5.0 giúp dán nội dung Clipboard thường dùng nhanh hơn: mỗi mục đã ghim
+hoặc đã lưu có thể có phím tắt riêng để dán thẳng vào ứng dụng đang sử dụng.
+
+### Added
+- **Phím tắt dán ngay cho Clipboard**
+  - Gán tổ hợp phím riêng cho từng mục trong **Đã ghim** và **Mục đã lưu**;
+    bấm phím tắt để dán ngay mà không cần mở popup Clipboard.
+  - Dùng chung cơ chế phím tắt toàn cục của PHTV, giữ tổ hợp phím không bị đưa
+    nhầm vào ứng dụng đang gõ.
+  - Hiển thị tổ hợp đã gán ngay trên từng mục, có nút cấu hình nhanh và tuỳ
+    chọn trong menu chuột phải.
+  - Lưu và khôi phục phím tắt cùng dữ liệu Clipboard; khi bỏ ghim, phím tắt của
+    mục lịch sử được gỡ tự động.
+
+### Fixed and Improved
+- Kiểm tra xung đột trước khi lưu: không cho trùng với phím mở Lịch sử
+  Clipboard, PHTV Picker hoặc một mục Clipboard khác; đồng thời báo rõ khi
+  tổ hợp đang bị hệ thống hay ứng dụng khác chiếm.
+- Cập nhật đăng ký phím tắt khi máy thức dậy hoặc cấu hình PHTV thay đổi để
+  các tổ hợp đã gán tiếp tục hoạt động ổn định.
+
+### Chất lượng
+- Bổ sung test cho validation, lưu/khôi phục và giữ phím tắt khi sửa mục đã
+  lưu.
+
 ## [3.4.9] - 2026-08-17
 
 ### Tổng quan

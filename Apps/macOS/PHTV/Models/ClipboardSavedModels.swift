@@ -41,6 +41,7 @@ struct ClipboardSavedItem: Identifiable, Codable, Hashable {
     var groupID: UUID?
     let createdAt: Date
     var updatedAt: Date
+    var hotkey: ClipboardItemHotkey?
 
     init(
         id: UUID = UUID(),
@@ -48,7 +49,8 @@ struct ClipboardSavedItem: Identifiable, Codable, Hashable {
         content: String,
         groupID: UUID? = nil,
         createdAt: Date = Date(),
-        updatedAt: Date = Date()
+        updatedAt: Date = Date(),
+        hotkey: ClipboardItemHotkey? = nil
     ) {
         self.id = id
         self.title = title
@@ -56,6 +58,7 @@ struct ClipboardSavedItem: Identifiable, Codable, Hashable {
         self.groupID = groupID
         self.createdAt = createdAt
         self.updatedAt = updatedAt
+        self.hotkey = hotkey
     }
 }
 
@@ -88,7 +91,7 @@ enum ClipboardSavedLibraryError: LocalizedError, Equatable {
 /// A user-managed library, deliberately separate from automatically captured
 /// clipboard history. History retention and "clear all" never affect this data.
 struct ClipboardSavedLibrary: Codable, Equatable {
-    static let currentVersion = 1
+    static let currentVersion = 2
     static let maximumGroupNameLength = 40
     static let maximumTitleLength = 80
     static let maximumContentLength = 50_000
@@ -141,6 +144,7 @@ struct ClipboardSavedLibrary: Codable, Equatable {
         title rawTitle: String,
         content rawContent: String,
         groupID: UUID?,
+        hotkey: ClipboardItemHotkey? = nil,
         now: Date = Date()
     ) throws -> ClipboardSavedItem {
         let title = try Self.validatedTitle(rawTitle)
@@ -157,6 +161,7 @@ struct ClipboardSavedLibrary: Codable, Equatable {
             items[index].content = content
             items[index].groupID = groupID
             items[index].updatedAt = now
+            items[index].hotkey = hotkey
             return items[index]
         }
 
@@ -165,7 +170,8 @@ struct ClipboardSavedLibrary: Codable, Equatable {
             content: content,
             groupID: groupID,
             createdAt: now,
-            updatedAt: now
+            updatedAt: now,
+            hotkey: hotkey
         )
         items.insert(item, at: 0)
         return item
