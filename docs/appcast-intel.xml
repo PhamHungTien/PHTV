@@ -7,6 +7,39 @@
         <language>vi</language>
         <!-- Intel (x86_64) feed — Most recent version first -->
         <item>
+            <title>3.5.0</title>
+            <pubDate>Fri, 21 Aug 2026 12:29:22 +0700</pubDate>
+            <sparkle:version>317</sparkle:version>
+            <sparkle:shortVersionString>3.5.0</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[
+                <h2>PHTV 3.5.0</h2>
+                <h3>Tổng quan</h3>
+                <p>PHTV 3.5.0 giúp dán nội dung Clipboard thường dùng nhanh hơn: mỗi mục đã ghim hoặc đã lưu có thể có phím tắt riêng để dán thẳng vào ứng dụng đang sử dụng.</p>
+                <h3>Added</h3>
+                <ul>
+                <li><strong>Phím tắt dán ngay cho Clipboard</strong>
+                <ul>
+                <li>Gán tổ hợp phím riêng cho từng mục trong <strong>Đã ghim</strong> và <strong>Mục đã lưu</strong>; bấm phím tắt để dán ngay mà không cần mở popup Clipboard.</li>
+                <li>Dùng chung cơ chế phím tắt toàn cục của PHTV, giữ tổ hợp phím không bị đưa nhầm vào ứng dụng đang gõ.</li>
+                <li>Hiển thị tổ hợp đã gán ngay trên từng mục, có nút cấu hình nhanh và tuỳ chọn trong menu chuột phải.</li>
+                <li>Lưu và khôi phục phím tắt cùng dữ liệu Clipboard; khi bỏ ghim, phím tắt của mục lịch sử được gỡ tự động.</li>
+                </ul>
+                </li>
+                </ul>
+                <h3>Fixed and Improved</h3>
+                <ul>
+                <li>Kiểm tra xung đột trước khi lưu: không cho trùng với phím mở Lịch sử Clipboard, PHTV Picker hoặc một mục Clipboard khác; đồng thời báo rõ khi tổ hợp đang bị hệ thống hay ứng dụng khác chiếm.</li>
+                <li>Cập nhật đăng ký phím tắt khi máy thức dậy hoặc cấu hình PHTV thay đổi để các tổ hợp đã gán tiếp tục hoạt động ổn định.</li>
+                </ul>
+                <h3>Chất lượng</h3>
+                <ul>
+                <li>Bổ sung test cho validation, lưu/khôi phục và giữ phím tắt khi sửa mục đã lưu.</li>
+                </ul>
+            ]]></description>
+            <enclosure url="https://github.com/PhamHungTien/PHTV/releases/download/v3.5.0/PHTV-3.5.0-intel.dmg" length="9669104" type="application/octet-stream" sparkle:edSignature="sdO5Sod4AH2egzfAQHd+y38DeR1tuyT+vX6sG1snPezu2Eem7fJSiLX1KAPucO6Cc6/8msi7qyVzgoxFjK1UAg=="/>
+        </item>
+        <item>
             <title>3.4.9</title>
             <pubDate>Mon, 17 Aug 2026 23:34:01 +0700</pubDate>
             <sparkle:version>316</sparkle:version>
@@ -576,14 +609,6 @@
             <sparkle:shortVersionString>3.2.1</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
             <enclosure url="https://github.com/PhamHungTien/PHTV/releases/download/v3.2.1/PHTV-3.2.1-intel.dmg" length="9901526" type="application/octet-stream" sparkle:edSignature="y1yIiBxQbuRZYR2OplaHAG3EfaiUW6AcgqQJvZvTxM6FQFUJ4b8ASp7vXJZA180wl7FfD7LHxl4AW+09UxDyAQ=="/>
-        </item>
-        <item>
-            <title>3.2.0</title>
-            <pubDate>Tue, 09 Jun 2026 09:48:24 +0700</pubDate>
-            <sparkle:version>287</sparkle:version>
-            <sparkle:shortVersionString>3.2.0</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <enclosure url="https://github.com/PhamHungTien/PHTV/releases/download/v3.2.0/PHTV-3.2.0-intel.dmg" length="9901334" type="application/octet-stream" sparkle:edSignature="oFQk81EQPj3++MgJO0BWC0DIrfGoiQHVlTcpOV9xkYTTeOizhEntlsBvtfpSGlYlS7BX/wf9OIuVog5f1BWGBQ=="/>
         </item>
         <item>
             <title>2.8.9</title>
