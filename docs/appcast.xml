@@ -7,6 +7,32 @@
         <language>vi</language>
         <!-- Most recent version first -->
         <item>
+            <title>3.5.1</title>
+            <pubDate>Fri, 21 Aug 2026 12:41:17 +0700</pubDate>
+            <sparkle:version>318</sparkle:version>
+            <sparkle:shortVersionString>3.5.1</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[
+                <h2>PHTV 3.5.1</h2>
+                <h3>Tổng quan</h3>
+                <p>PHTV 3.5.1 khắc phục thao tác cấu hình phím tắt cho Clipboard để popup luôn giữ nguyên khi người dùng mở màn hình gán tổ hợp phím.</p>
+                <h3>Fixed</h3>
+                <ul>
+                <li><strong>Nút phím tắt Clipboard không còn tự đóng popup</strong>
+                <ul>
+                <li>Tách vùng dán của từng dòng khỏi các nút thao tác, tránh việc bấm biểu tượng bàn phím cũng kích hoạt dán và đóng Clipboard.</li>
+                <li>Áp dụng cho cả mục trong <strong>Đã ghim</strong> lẫn <strong>Mục đã lưu</strong>; các nút sửa, ghim, lưu và xoá cũng hoạt động độc lập với thao tác dán.</li>
+                </ul>
+                </li>
+                </ul>
+                <h3>Chất lượng</h3>
+                <ul>
+                <li>Kiểm tra lại Universal Debug build sau khi tách các control trong danh sách Clipboard.</li>
+                </ul>
+            ]]></description>
+            <enclosure url="https://github.com/PhamHungTien/PHTV/releases/download/v3.5.1/PHTV-3.5.1-arm64.dmg" length="9369596" type="application/octet-stream" sparkle:edSignature="bX35MAjypc3c4sIU+O3+Ji5/vdtvRLDy1BtvsNLmiyvnBUgZMaqA/7o47itoMXy42ZREWP4JHm+az70EKeDGAw=="/>
+        </item>
+        <item>
             <title>3.5.0</title>
             <pubDate>Fri, 21 Aug 2026 12:26:27 +0700</pubDate>
             <sparkle:version>317</sparkle:version>
@@ -601,14 +627,6 @@
             <sparkle:shortVersionString>3.2.2</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
             <enclosure url="https://github.com/PhamHungTien/PHTV/releases/download/v3.2.2/PHTV-3.2.2-arm64.dmg" length="9643012" type="application/octet-stream" sparkle:edSignature="bIXQgO1Mg8rZD3tjQpg3BQNDWrqpogNGGUHHkzZaFzPBRna1mGOnTQmNiskqUmoCvkWuT0x9xBd0zaZzPPMwBQ=="/>
-        </item>
-        <item>
-            <title>3.2.1</title>
-            <pubDate>Tue, 09 Jun 2026 10:02:59 +0700</pubDate>
-            <sparkle:version>288</sparkle:version>
-            <sparkle:shortVersionString>3.2.1</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <enclosure url="https://github.com/PhamHungTien/PHTV/releases/download/v3.2.1/PHTV-3.2.1-arm64.dmg" length="9645406" type="application/octet-stream" sparkle:edSignature="asw37rlmYk5Z/BoFf5IlhUBW48nC1X9ujw76bI0v8SXjPBHEVhmVTN6/iJtBk0qjoCw+vD0LhR1gauLOQCcXCQ=="/>
         </item>
         <item>
             <title>2.8.9</title>
