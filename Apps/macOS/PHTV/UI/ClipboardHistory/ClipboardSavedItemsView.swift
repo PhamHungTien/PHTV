@@ -106,7 +106,22 @@ struct ClipboardSavedItemsView: View {
 
     var body: some View {
         Group {
-            if let itemDraft {
+            if let hotkeyItem {
+                ClipboardItemHotkeyEditor(
+                    itemTitle: hotkeyItem.title,
+                    currentHotkey: hotkeyItem.hotkey,
+                    onCancel: { self.hotkeyItem = nil },
+                    onSave: { hotkey in
+                        try manager.saveSavedItem(
+                            id: hotkeyItem.id,
+                            title: hotkeyItem.title,
+                            content: hotkeyItem.content,
+                            groupID: hotkeyItem.groupID,
+                            hotkey: hotkey
+                        )
+                    }
+                )
+            } else if let itemDraft {
                 ClipboardSavedItemEditor(
                     draft: itemDraft,
                     groups: manager.savedLibrary.groups,
@@ -172,25 +187,10 @@ struct ClipboardSavedItemsView: View {
         .onDisappear {
             onEditingChanged(false)
         }
-        .sheet(item: $hotkeyItem) { item in
-            ClipboardItemHotkeyEditor(
-                itemTitle: item.title,
-                currentHotkey: item.hotkey,
-                onSave: { hotkey in
-                    try manager.saveSavedItem(
-                        id: item.id,
-                        title: item.title,
-                        content: item.content,
-                        groupID: item.groupID,
-                        hotkey: hotkey
-                    )
-                }
-            )
-        }
     }
 
     private var isPresentingEditor: Bool {
-        itemDraft != nil || groupDraft != nil || pendingDeletion != nil
+        hotkeyItem != nil || itemDraft != nil || groupDraft != nil || pendingDeletion != nil
     }
 
     private var selectedGroupID: UUID? {

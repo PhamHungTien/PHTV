@@ -97,28 +97,41 @@ struct ClipboardHistoryView: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            headerView
-
-            if manager.selectedSection == .history {
-                searchBar
-
-                Divider()
-                    .opacity(0.5)
-
-                if filteredItems.isEmpty {
-                    emptyState
-                } else {
-                    itemList
-                }
-            } else {
-                ClipboardSavedItemsView(
-                    initialContent: savedItemSeed,
-                    onInitialContentConsumed: { savedItemSeed = "" },
-                    onItemSelected: manager.handleSavedItemSelected,
-                    onClose: onClose,
-                    onEditingChanged: { savedLibraryIsEditing = $0 }
+        Group {
+            if let hotkeyItem {
+                ClipboardItemHotkeyEditor(
+                    itemTitle: hotkeyItem.displayText,
+                    currentHotkey: hotkeyItem.hotkey,
+                    onCancel: { self.hotkeyItem = nil },
+                    onSave: { hotkey in
+                        try manager.setPinnedItemHotkey(hotkey, for: hotkeyItem.id)
+                    }
                 )
+            } else {
+                VStack(spacing: 0) {
+                    headerView
+
+                    if manager.selectedSection == .history {
+                        searchBar
+
+                        Divider()
+                            .opacity(0.5)
+
+                        if filteredItems.isEmpty {
+                            emptyState
+                        } else {
+                            itemList
+                        }
+                    } else {
+                        ClipboardSavedItemsView(
+                            initialContent: savedItemSeed,
+                            onInitialContentConsumed: { savedItemSeed = "" },
+                            onItemSelected: manager.handleSavedItemSelected,
+                            onClose: onClose,
+                            onEditingChanged: { savedLibraryIsEditing = $0 }
+                        )
+                    }
+                }
             }
         }
         .frame(width: 380, height: 480)
@@ -126,7 +139,7 @@ struct ClipboardHistoryView: View {
             clipboardBackground
         }
         .background {
-            ClipboardSectionShortcutHandler(isEnabled: !savedLibraryIsEditing) { section in
+            ClipboardSectionShortcutHandler(isEnabled: hotkeyItem == nil && !savedLibraryIsEditing) { section in
                 manager.selectedSection = section
             }
         }
@@ -150,15 +163,6 @@ struct ClipboardHistoryView: View {
             } else {
                 isSearchFieldFocused = false
             }
-        }
-        .sheet(item: $hotkeyItem) { item in
-            ClipboardItemHotkeyEditor(
-                itemTitle: item.displayText,
-                currentHotkey: item.hotkey,
-                onSave: { hotkey in
-                    try manager.setPinnedItemHotkey(hotkey, for: item.id)
-                }
-            )
         }
     }
 

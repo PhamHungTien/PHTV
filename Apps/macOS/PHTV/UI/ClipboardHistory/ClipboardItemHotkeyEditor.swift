@@ -13,9 +13,9 @@ import SwiftUI
 /// shortcut settings.
 struct ClipboardItemHotkeyEditor: View {
     let itemTitle: String
+    let onCancel: () -> Void
     let onSave: (ClipboardItemHotkey?) throws -> Void
 
-    @Environment(\.dismiss) private var dismiss
     @State private var hotkey: ClipboardItemHotkey?
     @State private var isRecording = false
     @State private var errorMessage: String?
@@ -23,9 +23,11 @@ struct ClipboardItemHotkeyEditor: View {
     init(
         itemTitle: String,
         currentHotkey: ClipboardItemHotkey?,
+        onCancel: @escaping () -> Void,
         onSave: @escaping (ClipboardItemHotkey?) throws -> Void
     ) {
         self.itemTitle = itemTitle
+        self.onCancel = onCancel
         self.onSave = onSave
         _hotkey = State(initialValue: currentHotkey)
     }
@@ -33,7 +35,7 @@ struct ClipboardItemHotkeyEditor: View {
     var body: some View {
         VStack(spacing: 0) {
             HStack {
-                Button("Huỷ") { dismiss() }
+                Button("Huỷ", action: onCancel)
                     .keyboardShortcut(.cancelAction)
 
                 Spacer()
@@ -130,13 +132,13 @@ struct ClipboardItemHotkeyEditor: View {
             }
             .padding(18)
         }
-        .frame(width: 410)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
     }
 
     private func save() {
         do {
             try onSave(hotkey)
-            dismiss()
+            onCancel()
         } catch {
             errorMessage = error.localizedDescription
         }
