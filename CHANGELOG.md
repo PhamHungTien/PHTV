@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.5.2] - 2026-08-27
+
+### Tổng quan
+PHTV 3.5.2 hoàn thiện việc cấu hình phím tắt dán nhanh cho Clipboard, để popup
+không còn tự đóng khi mở trình gán tổ hợp phím.
+
+### Fixed
+- **Trình gán phím tắt Clipboard luôn giữ nguyên popup**
+  - Chuyển giao diện gán phím tắt vào ngay bên trong popup Clipboard thay vì
+    mở cửa sổ sheet làm panel mất focus và tự đóng.
+  - Áp dụng cho cả mục **Đã ghim** và **Mục đã lưu**; sau khi lưu hoặc huỷ,
+    người dùng trở lại đúng danh sách đang thao tác.
+  - Tạm ngưng phím chuyển tab Clipboard trong lúc đang ghi tổ hợp để thao tác
+    không bị gián đoạn.
+
+### Chất lượng
+- Universal Debug build thành công với Xcode beta và SDK macOS 27.
+
 ## [3.5.1] - 2026-08-21
 
 ### Tổng quan
