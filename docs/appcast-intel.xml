@@ -7,6 +7,33 @@
         <language>vi</language>
         <!-- Intel (x86_64) feed — Most recent version first -->
         <item>
+            <title>3.5.2</title>
+            <pubDate>Sat, 29 Aug 2026 08:58:11 +0700</pubDate>
+            <sparkle:version>319</sparkle:version>
+            <sparkle:shortVersionString>3.5.2</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[
+                <h2>PHTV 3.5.2</h2>
+                <h3>Tổng quan</h3>
+                <p>PHTV 3.5.2 hoàn thiện việc cấu hình phím tắt dán nhanh cho Clipboard, để popup không còn tự đóng khi mở trình gán tổ hợp phím.</p>
+                <h3>Fixed</h3>
+                <ul>
+                <li><strong>Trình gán phím tắt Clipboard luôn giữ nguyên popup</strong>
+                <ul>
+                <li>Chuyển giao diện gán phím tắt vào ngay bên trong popup Clipboard thay vì mở cửa sổ sheet làm panel mất focus và tự đóng.</li>
+                <li>Áp dụng cho cả mục <strong>Đã ghim</strong> và <strong>Mục đã lưu</strong>; sau khi lưu hoặc huỷ, người dùng trở lại đúng danh sách đang thao tác.</li>
+                <li>Tạm ngưng phím chuyển tab Clipboard trong lúc đang ghi tổ hợp để thao tác không bị gián đoạn.</li>
+                </ul>
+                </li>
+                </ul>
+                <h3>Chất lượng</h3>
+                <ul>
+                <li>Universal Debug build thành công với Xcode beta và SDK macOS 27.</li>
+                </ul>
+            ]]></description>
+            <enclosure url="https://github.com/PhamHungTien/PHTV/releases/download/v3.5.2/PHTV-3.5.2-intel.dmg" length="9672242" type="application/octet-stream" sparkle:edSignature="Qhg2w63blUSN3gl233nuy71tNE9ean0sBEC1TsMOrypkLl4AhmqV7k9oyJAgk4iBz2bHm11BhJiMYHr5ORonBQ=="/>
+        </item>
+        <item>
             <title>3.5.1</title>
             <pubDate>Fri, 21 Aug 2026 12:44:08 +0700</pubDate>
             <sparkle:version>318</sparkle:version>
@@ -619,14 +646,6 @@
             <sparkle:shortVersionString>3.2.3</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
             <enclosure url="https://github.com/PhamHungTien/PHTV/releases/download/v3.2.3/PHTV-3.2.3-intel.dmg" length="9899933" type="application/octet-stream" sparkle:edSignature="gGudqzfo6UuIcLeu8zDTxIZrgepe88idxY84V83LhJWfF2JCvybCafxE2iaZhpTG2fcaqF7VchhKgu1HUhJ2AA=="/>
-        </item>
-        <item>
-            <title>3.2.2</title>
-            <pubDate>Wed, 10 Jun 2026 23:49:22 +0700</pubDate>
-            <sparkle:version>289</sparkle:version>
-            <sparkle:shortVersionString>3.2.2</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <enclosure url="https://github.com/PhamHungTien/PHTV/releases/download/v3.2.2/PHTV-3.2.2-intel.dmg" length="9899249" type="application/octet-stream" sparkle:edSignature="+VI3gmmzQfbE51oX/r22bgImGR9n9un05xQXXevlJLd22/Bg1v7BzazarhY6ez5XA4JrDtlBgz1lEKXmUjJABw=="/>
         </item>
         <item>
             <title>2.8.9</title>
