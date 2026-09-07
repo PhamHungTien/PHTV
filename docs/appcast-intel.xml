@@ -7,6 +7,34 @@
         <language>vi</language>
         <!-- Intel (x86_64) feed — Most recent version first -->
         <item>
+            <title>3.5.3</title>
+            <pubDate>Mon, 07 Sep 2026 18:49:02 +0700</pubDate>
+            <sparkle:version>320</sparkle:version>
+            <sparkle:shortVersionString>3.5.3</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[
+                <h2>PHTV 3.5.3</h2>
+                <h3>Tổng quan</h3>
+                <p>PHTV 3.5.3 khắc phục lỗi mất chữ trong TeXstudio khi huỷ dấu tiếng Việt, giúp các chuỗi như <code>A44</code> ra đúng <code>A4</code> và giữ nguyên nội dung đã gõ trước đó.</p>
+                <h3>Fixed</h3>
+                <ul>
+                <li><strong>Không còn mất chữ khi huỷ dấu trong TeXstudio (#224)</strong>
+                <ul>
+                <li>Sửa trường hợp VNI <code>A44</code> làm mất chữ <code>A</code>; kết quả đúng là <code>A4</code>, đồng thời giữ nguyên nội dung phía trước khi tiếp tục gõ và đổi dấu.</li>
+                <li>Gửi các ký tự đã giải mã riêng cho TeXstudio để trình soạn thảo nhận đủ chuỗi khôi phục và macro; áp dụng cả với Unicode tổ hợp và chế độ gõ từng bước.</li>
+                </ul>
+                </li>
+                </ul>
+                <h3>Chất lượng</h3>
+                <ul>
+                <li>Bổ sung 11 kiểm thử hồi quy cho huỷ dấu VNI, nội dung sự kiện bàn phím, Unicode tổ hợp và phạm vi nhận diện TeXstudio; toàn bộ <strong>463 XCTest</strong> đạt.</li>
+                <li>Xác minh <strong>64 tình huống tích hợp</strong> trên TeXstudio 4.9.7 với macOS 27 beta và Apple Silicon, bao gồm VNI, Telex/Simple Telex, macro dài và gõ dấu tiếp sau khi huỷ dấu.</li>
+                <li>Universal Debug/Release build và phân tích tĩnh đều thành công.</li>
+                </ul>
+            ]]></description>
+            <enclosure url="https://github.com/PhamHungTien/PHTV/releases/download/v3.5.3/PHTV-3.5.3-intel.dmg" length="9672828" type="application/octet-stream" sparkle:edSignature="PdicCvu/JVjunzHyCvij82OoHM2FlscEW25UHPSfCER3iuHVYD604hz2ciS3qB0BRs44A1PyY4cQ4kppx+sKAg=="/>
+        </item>
+        <item>
             <title>3.5.2</title>
             <pubDate>Sat, 29 Aug 2026 08:58:11 +0700</pubDate>
             <sparkle:version>319</sparkle:version>
@@ -638,14 +666,6 @@
             <sparkle:shortVersionString>3.2.4</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
             <enclosure url="https://github.com/PhamHungTien/PHTV/releases/download/v3.2.4/PHTV-3.2.4-intel.dmg" length="9909308" type="application/octet-stream" sparkle:edSignature="g/AtSGkiFzIcPL4zTaLIF8tYxJebARGtzoHUuHMX3Uhwe6aZEmeL/77h7BIlboaF2Lv/Z1AyM1CMYg6wQgo4CA=="/>
-        </item>
-        <item>
-            <title>3.2.3</title>
-            <pubDate>Thu, 11 Jun 2026 09:31:59 +0700</pubDate>
-            <sparkle:version>290</sparkle:version>
-            <sparkle:shortVersionString>3.2.3</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <enclosure url="https://github.com/PhamHungTien/PHTV/releases/download/v3.2.3/PHTV-3.2.3-intel.dmg" length="9899933" type="application/octet-stream" sparkle:edSignature="gGudqzfo6UuIcLeu8zDTxIZrgepe88idxY84V83LhJWfF2JCvybCafxE2iaZhpTG2fcaqF7VchhKgu1HUhJ2AA=="/>
         </item>
         <item>
             <title>2.8.9</title>
