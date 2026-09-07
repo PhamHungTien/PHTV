@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.5.3] - 2026-09-07
+
+### Tổng quan
+
+PHTV 3.5.3 khắc phục lỗi mất chữ trong TeXstudio khi huỷ dấu tiếng Việt,
+giúp các chuỗi như `A44` ra đúng `A4` và giữ nguyên nội dung đã gõ trước đó.
+
+### Fixed
+
+- **Không còn mất chữ khi huỷ dấu trong TeXstudio (#224)**
+  - Sửa trường hợp VNI `A44` làm mất chữ `A`; kết quả đúng là `A4`, đồng thời
+    giữ nguyên nội dung phía trước khi tiếp tục gõ và đổi dấu.
+  - Gửi các ký tự đã giải mã riêng cho TeXstudio để trình soạn thảo nhận đủ
+    chuỗi khôi phục và macro; áp dụng cả với Unicode tổ hợp và chế độ gõ từng bước.
+
+### Chất lượng
+
+- Bổ sung 11 kiểm thử hồi quy cho huỷ dấu VNI, nội dung sự kiện bàn phím,
+  Unicode tổ hợp và phạm vi nhận diện TeXstudio; toàn bộ **463 XCTest** đạt.
+- Xác minh **64 tình huống tích hợp** trên TeXstudio 4.9.7 với macOS 27 beta
+  và Apple Silicon, bao gồm VNI, Telex/Simple Telex, macro dài và gõ dấu tiếp
+  sau khi huỷ dấu.
+- Universal Debug/Release build và phân tích tĩnh đều thành công.
+
 ## [3.5.2] - 2026-08-27
 
 ### Tổng quan

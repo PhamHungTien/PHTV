@@ -288,6 +288,12 @@ final class PHTVAppDetectionService: NSObject {
         "com.apple.mail"
     ])
 
+    // TeXstudio's QEditor rejects QKeyEvent::text() longer than one UTF-16
+    // unit. This is an editor-specific restriction, not a general Qt rule.
+    private static let singleUnitUnicodeEventApps = BundlePatternSet([
+        "texstudio"
+    ])
+
     // Outlook can rewrite the committed word on Space unless we break the editor's
     // replacement/autocorrect cycle before replaying the composed text.
     private static let legacySpaceCommitFixApps = BundlePatternSet([
@@ -395,6 +401,10 @@ final class PHTVAppDetectionService: NSObject {
 
     @objc class func needsStepByStep(_ bundleId: String?) -> Bool {
         stepByStepApps.contains(bundleId)
+    }
+
+    @objc class func needsSingleUnitUnicodeEvents(_ bundleId: String?) -> Bool {
+        singleUnitUnicodeEventApps.contains(bundleId)
     }
 
     @objc class func isZaloApp(_ bundleId: String?) -> Bool {

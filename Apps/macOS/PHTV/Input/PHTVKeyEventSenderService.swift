@@ -275,14 +275,17 @@ class PHTVKeyEventSenderService: NSObject {
                 newChar &= 0x1FFF
                 let len = newCharHi > 0 ? 2 : 1
                 insertKeyLength(Int32(len))
-                var uniChars: [UInt16] = [newChar, newCharHi > 0 ? EnginePackedData.unicodeCompoundMark(at: Int32(newCharHi) - 1) : 0]
-                guard let down = CGEvent(keyboardEventSource: source, virtualKey: 0, keyDown: true),
-                      let up   = CGEvent(keyboardEventSource: source, virtualKey: 0, keyDown: false) else { return }
-                PHTVEventContextBridgeService.configureSyntheticKeyEvents(withKeyDown: down, keyUp: up, eventMarker: EventSourceMarker.phtv)
-                down.keyboardSetUnicodeString(stringLength: len, unicodeString: &uniChars)
-                up.keyboardSetUnicodeString(stringLength: len, unicodeString: &uniChars)
-                postSyntheticEvent(down)
-                postSyntheticEvent(up)
+                let uniChars: [UInt16] = [newChar, newCharHi > 0 ? EnginePackedData.unicodeCompoundMark(at: Int32(newCharHi) - 1) : 0]
+                uniChars.withUnsafeBufferPointer { chars in
+                    forEachUnicodeEventPair(
+                        chars: UnsafeBufferPointer(rebasing: chars[..<len]),
+                        source: source,
+                        bundleId: PHTVEventRuntimeContextService.effectiveTargetBundleIdValue()
+                    ) { down, up in
+                        postSyntheticEvent(down)
+                        postSyntheticEvent(up)
+                    }
+                }
                 if PHTVEventRuntimeContextService.postToHIDTapEnabled() {
                     PHTVTimingService.spotlightTinyDelay()
                 }
@@ -318,6 +321,43 @@ class PHTVKeyEventSenderService: NSObject {
 
     // MARK: - Chunked Unicode string
 
+    /// Preserve the decoded output while adapting its event boundaries to the
+    /// target editor. In TeXstudio, a batched restore such as "A4" is ignored
+    /// after deletion has already happened (issue #224). The same restriction
+    /// applies to Unicode Compound output, including step-by-step sends.
+    /// TeXstudio deletes combining marks as individual UTF-16 units, so the
+    /// existing sync-key lengths remain valid when those units are sent apart.
+    class func forEachUnicodeEventPair(
+        chars: UnsafeBufferPointer<UInt16>,
+        source: CGEventSource,
+        bundleId: String?,
+        send: (CGEvent, CGEvent) -> Void
+    ) {
+        guard let baseAddress = chars.baseAddress, !chars.isEmpty else { return }
+        let eventLength = PHTVAppDetectionService.needsSingleUnitUnicodeEvents(bundleId) ? 1 : chars.count
+        var offset = 0
+        while offset < chars.count {
+            var count = min(eventLength, chars.count - offset)
+            // Never create malformed UTF-16 for non-BMP macro content. The
+            // editor may still reject that scalar, but splitting its surrogate
+            // pair would corrupt the payload before it even reaches the app.
+            if count == 1,
+               (0xD800...0xDBFF).contains(chars[offset]),
+               offset + 1 < chars.count,
+               (0xDC00...0xDFFF).contains(chars[offset + 1]) {
+                count = 2
+            }
+            guard let down = CGEvent(keyboardEventSource: source, virtualKey: 0, keyDown: true),
+                  let up = CGEvent(keyboardEventSource: source, virtualKey: 0, keyDown: false) else { return }
+            PHTVEventContextBridgeService.configureSyntheticKeyEvents(
+                withKeyDown: down, keyUp: up, eventMarker: EventSourceMarker.phtv)
+            down.keyboardSetUnicodeString(stringLength: count, unicodeString: baseAddress + offset)
+            up.keyboardSetUnicodeString(stringLength: count, unicodeString: baseAddress + offset)
+            send(down, up)
+            offset += count
+        }
+    }
+
     @objc class func sendUnicodeStringChunked(_ chars: UnsafePointer<UInt16>,
                                               len: Int32,
                                               chunkSize: Int32,
@@ -339,16 +379,18 @@ class PHTVKeyEventSenderService: NSObject {
             }
             PHTVCliRuntimeStateService.scheduleBlock(forMicroseconds: totalBlockUs, nowMachTime: mach_absolute_time())
         }
+        let bundleId = PHTVEventRuntimeContextService.effectiveTargetBundleIdValue()
         var i = 0
         while i < Int(len) {
             let chunkLen = min(effectiveChunkSize, Int(len) - i)
-            guard let down = CGEvent(keyboardEventSource: source, virtualKey: 0, keyDown: true),
-                  let up   = CGEvent(keyboardEventSource: source, virtualKey: 0, keyDown: false) else { break }
-            PHTVEventContextBridgeService.configureSyntheticKeyEvents(withKeyDown: down, keyUp: up, eventMarker: EventSourceMarker.phtv)
-            down.keyboardSetUnicodeString(stringLength: chunkLen, unicodeString: chars + i)
-            up.keyboardSetUnicodeString(stringLength: chunkLen, unicodeString: chars + i)
-            postSyntheticEvent(down)
-            postSyntheticEvent(up)
+            forEachUnicodeEventPair(
+                chars: UnsafeBufferPointer(start: chars + i, count: chunkLen),
+                source: source,
+                bundleId: bundleId
+            ) { down, up in
+                postSyntheticEvent(down)
+                postSyntheticEvent(up)
+            }
             if effectiveDelayUs > 0 && (i + effectiveChunkSize) < Int(len) {
                 usleep(PHTVTimingService.clampToUseconds(effectiveDelayUs))
             }

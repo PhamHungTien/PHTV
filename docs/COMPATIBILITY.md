@@ -9,6 +9,7 @@ không đồng nghĩa đã tương tác thực tế với mọi phiên bản ứ
 | --- | --- | --- | --- |
 | Terminal/CLI | Terminal, iTerm2, Warp, terminal tích hợp JetBrains | `CliProfileServiceTests`, `CompatibilityProfileResolverTests` | Telex/VNI, Backspace, lệnh dài, Claude Code |
 | JetBrains editor | IntelliJ IDEA, Android Studio | Không coi editor là CLI; regression test cho profile | Không xuất hiện INSERT/DELETE, terminal tích hợp vẫn dùng CLI |
+| TeXstudio | QEditor, bundle ID `texstudio` | `EngineRegressionTests/testIssue224*`, `TeXstudioUnicodeEventTests` | VNI `A44`, huỷ/đổi dấu liên tiếp, Unicode tổ hợp, macro và nội dung trước con trỏ |
 | Notion | App native, Firefox, Chrome/Safari | `NotionCodeBlockPolicyTests`, strategy tests | Văn bản thường và code block, URL workspace thật |
 | Chat/Electron | Zalo, Microsoft Teams, Slack, Discord | Text Replacement/strategy/profile tests | Chat, search box, macro ngắn và Unicode dài |
 | AI web chat | Kimi, Grok, Gemini và các trang tương tự | Text Replacement host/title policy tests | Shortcut native trong ô chat, không lặp hoặc mất phần đầu nội dung |
@@ -28,6 +29,32 @@ Mỗi bản release cần lấy mẫu các tổ hợp sau:
 - chữ thường, Title Case, Shift và Caps Lock.
 - Space, dấu câu, Enter, Tab, Backspace và phím điều hướng.
 - US, Dvorak hoặc Colemak nếu thay đổi layout mapping.
+
+## TeXstudio — hồi quy #224
+
+TeXstudio có quy tắc riêng trong
+[QEditor::keyPressEvent](https://github.com/texstudio-org/texstudio/blob/4.9.7/src/qcodeedit/lib/qeditor.cpp):
+bỏ qua sự kiện phím có phần văn bản dài hơn một UTF-16 unit. Vì vậy chuỗi khôi
+phục `A4` cần được gửi thành các ký tự riêng. Quy tắc này chỉ áp dụng cho bundle
+`texstudio`; không suy rộng thành lỗi của mọi ứng dụng Qt.
+
+Các bước kiểm tra lại trước release:
+
+1. Chọn VNI, gõ `prefix A4` rồi thêm `4`: lần lượt nhận `prefix Ã` và
+   `prefix A4`. Gõ tiếp ` a1` phải nhận `prefix A4 á`.
+2. Huỷ lần lượt năm dấu với `a11 a22 a33 a44 a55`, rồi thử chữ hoa. Nội dung
+   phía trước phải còn nguyên. Thử thêm `dang9 di9 an8 ha3`.
+3. Lặp lại với Unicode/Unicode tổ hợp, bật/tắt gõ từng bước và tuỳ chọn sửa lỗi
+   gợi ý trình duyệt. Với Telex và Simple Telex 1/2, thử `Ass as` → `As á`.
+4. Gán macro tiếng Việt dài hơn 16 ký tự, mở rộng rồi gõ tiếp một từ có dấu;
+   chuỗi macro phải đầy đủ và không bị lần đổi dấu sau xoá lấn.
+
+Xác nhận ngày 2026-09-07: TeXstudio 4.9.7, macOS 27.0 beta (26A5425a), arm64.
+Harness gọi engine, strategy, output và sender của bản PHTV vừa build, gửi sự
+kiện vào TeXstudio thật rồi so sánh tệp `.tex` do ứng dụng lưu: **64/64 tình
+huống đạt**. Đường gửi cũ đã tái hiện việc mất `A4` trước khi áp dụng bản sửa.
+Đây là bằng chứng cho môi trường trên, không thay thế kiểm tra các phiên bản
+macOS/TeXstudio khác trước release.
 
 ## Nền tảng
 

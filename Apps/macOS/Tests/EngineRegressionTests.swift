@@ -1469,6 +1469,101 @@ final class EngineRegressionTests: XCTestCase {
         }
     }
 
+    // MARK: - Issue #224: repeated VNI tone keys in TeXstudio
+
+    func testIssue224UppercaseTildeCancellationEmitsTheBaseAndLiteralToneKey() {
+        let savedCodeTable = PHTVEngineRuntimeFacade.currentCodeTable()
+        PHTVEngineRuntimeFacade.setCurrentCodeTable(Int32(CodeTable.unicode.toIndex()))
+        defer { PHTVEngineRuntimeFacade.setCurrentCodeTable(savedCodeTable) }
+
+        withInputType(VKeyInputType.vni.rawValue) {
+            XCTAssertEqual(runtimeRenderedKeySequence("A4".map(runtimeKeyEvent)), "Ã")
+            XCTAssertEqual(engineHookCode(), HookCodeState.willProcess.rawValue)
+            XCTAssertEqual(engineHookBackspaceCount(), 1)
+            XCTAssertEqual(engineHookNewCharCount(), 1)
+            XCTAssertEqual(hookOutputWord(), "Ã")
+
+            // A repeated tone key cancels the tone. The restore signal owns
+            // both the base letter and the literal trigger key in the output.
+            engineHandleEvent(eventKeyboard, stateKeyDown, KEY_4, 0, 0)
+            XCTAssertEqual(engineHookCode(), HookCodeState.restore.rawValue)
+            XCTAssertEqual(engineHookBackspaceCount(), 1)
+            XCTAssertEqual(engineHookNewCharCount(), 1)
+            XCTAssertEqual(hookOutputWord(), "A")
+            XCTAssertEqual(runtimeEmittedWord(for: KEY_4), "A4")
+            XCTAssertEqual(runtimeRenderedKeySequence("A44".map(runtimeKeyEvent)), "A4")
+        }
+    }
+
+    func testIssue224RepeatedVNIToneKeysPreserveLowercaseAndUppercaseBaseLetters() {
+        let savedCodeTable = PHTVEngineRuntimeFacade.currentCodeTable()
+        PHTVEngineRuntimeFacade.setCurrentCodeTable(Int32(CodeTable.unicode.toIndex()))
+        defer { PHTVEngineRuntimeFacade.setCurrentCodeTable(savedCodeTable) }
+
+        withInputType(VKeyInputType.vni.rawValue) {
+            let tones: [(key: Character, lowercase: String)] = [
+                ("1", "á"), ("2", "à"), ("3", "ả"), ("4", "ã"), ("5", "ạ")
+            ]
+            for base in ["a", "A"] {
+                for tone in tones {
+                    let markedKeys = base + String(tone.key)
+                    let markedOutput = base == "A" ? tone.lowercase.uppercased() : tone.lowercase
+                    XCTAssertEqual(
+                        runtimeRenderedKeySequence(markedKeys.map(runtimeKeyEvent)),
+                        markedOutput,
+                        markedKeys
+                    )
+                    XCTAssertEqual(engineHookBackspaceCount(), 1, markedKeys)
+
+                    let cancelledKeys = markedKeys + String(tone.key)
+                    XCTAssertEqual(
+                        runtimeRenderedKeySequence(cancelledKeys.map(runtimeKeyEvent)),
+                        markedKeys,
+                        cancelledKeys
+                    )
+                    // Check the unsanitized hook counts: the rendering helper
+                    // clamps deletion to its buffer and could hide an over-delete.
+                    XCTAssertEqual(engineHookBackspaceCount(), 1, cancelledKeys)
+                    XCTAssertEqual(engineHookNewCharCount(), 1, cancelledKeys)
+                    XCTAssertEqual(hookOutputWord(), base, cancelledKeys)
+                    XCTAssertEqual(
+                        runtimeEmittedWord(for: keyCode(for: tone.key)),
+                        markedKeys,
+                        cancelledKeys
+                    )
+                }
+            }
+        }
+    }
+
+    func testIssue224TypingAfterCancelledVNITonesPreservesEarlierText() {
+        let savedCodeTable = PHTVEngineRuntimeFacade.currentCodeTable()
+        PHTVEngineRuntimeFacade.setCurrentCodeTable(Int32(CodeTable.unicode.toIndex()))
+        defer { PHTVEngineRuntimeFacade.setCurrentCodeTable(savedCodeTable) }
+
+        withInputType(VKeyInputType.vni.rawValue) {
+            for base in ["a", "A"] {
+                for tone in "12345" {
+                    let cancelledKeys = base + String(repeating: String(tone), count: 2)
+                    let prefix = "prefix " + base + String(tone)
+                    let keys = "prefix " + cancelledKeys + " a1"
+                    XCTAssertEqual(
+                        runtimeRenderedKeySequence(keys.map(runtimeKeyEvent)),
+                        prefix + " á",
+                        keys
+                    )
+                    XCTAssertEqual(engineHookBackspaceCount(), 1, keys)
+                    XCTAssertEqual(hookOutputWord(), "á", keys)
+                }
+            }
+
+            XCTAssertEqual(
+                runtimeRenderedKeySequence("prefix A44 a11 a22 a33 a44 a55".map(runtimeKeyEvent)),
+                "prefix A4 a1 a2 a3 a4 a5"
+            )
+        }
+    }
+
     func testRuntimeDungKeepsToneWhenEnglishConflictDetectorMatchesRawPrefix() {
         setCustomEnglishWords(["ddus"])
         XCTAssertEqual(runtimeRenderedToken("ddusng"), "đúng")
