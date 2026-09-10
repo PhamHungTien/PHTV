@@ -38,7 +38,7 @@ scripts/tools/                # Build-time tools (generate_dict_binary.swift, et
 ## Luồng xử lý sự kiện
 
 ```
-CGEventTap (main run loop)
+CGEventTap (dedicated event-tap thread/run loop)
     └─► Input/PHTVEventCallbackService
             ├─► Context/PHTVEventContextBridgeService  (AX context)
             ├─► Input/PHTVHotkeyService                (hotkey check)

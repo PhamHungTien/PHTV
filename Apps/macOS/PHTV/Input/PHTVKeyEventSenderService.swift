@@ -172,15 +172,24 @@ class PHTVKeyEventSenderService: NSObject {
     // MARK: - Character sending
 
     @objc class func sendPureCharacter(_ ch: UInt16) {
-        guard let source = eventSource else { return }
-        guard let down = CGEvent(keyboardEventSource: source, virtualKey: 0, keyDown: true),
-              let up   = CGEvent(keyboardEventSource: source, virtualKey: 0, keyDown: false) else { return }
-        PHTVEventContextBridgeService.configureSyntheticKeyEvents(withKeyDown: down, keyUp: up, eventMarker: EventSourceMarker.phtv)
-        var char = ch
-        down.keyboardSetUnicodeString(stringLength: 1, unicodeString: &char)
-        up.keyboardSetUnicodeString(stringLength: 1, unicodeString: &char)
-        postSyntheticEvent(down)
-        postSyntheticEvent(up)
+        sendPureScalar(UInt32(ch))
+    }
+
+    class func sendPureScalar(_ value: UInt32) {
+        guard let source = eventSource,
+              let encoded = PHTVTextOutputEncoder.scalar(value) else { return }
+        var units: [UInt16] = []
+        encoded.append(to: &units)
+        units.withUnsafeBufferPointer { chars in
+            forEachUnicodeEventPair(
+                chars: chars,
+                source: source,
+                bundleId: PHTVEventRuntimeContextService.effectiveTargetBundleIdValue()
+            ) { down, up in
+                postSyntheticEvent(down)
+                postSyntheticEvent(up)
+            }
+        }
         if PHTVEventRuntimeContextService.postToHIDTapEnabled() {
             PHTVTimingService.spotlightTinyDelay()
         }
@@ -337,16 +346,11 @@ class PHTVKeyEventSenderService: NSObject {
         let eventLength = PHTVAppDetectionService.needsSingleUnitUnicodeEvents(bundleId) ? 1 : chars.count
         var offset = 0
         while offset < chars.count {
-            var count = min(eventLength, chars.count - offset)
             // Never create malformed UTF-16 for non-BMP macro content. The
             // editor may still reject that scalar, but splitting its surrogate
             // pair would corrupt the payload before it even reaches the app.
-            if count == 1,
-               (0xD800...0xDBFF).contains(chars[offset]),
-               offset + 1 < chars.count,
-               (0xDC00...0xDFFF).contains(chars[offset + 1]) {
-                count = 2
-            }
+            let count = PHTVTextOutputEncoder.unicodeChunkLength(
+                in: chars, offset: offset, maximumCount: eventLength)
             guard let down = CGEvent(keyboardEventSource: source, virtualKey: 0, keyDown: true),
                   let up = CGEvent(keyboardEventSource: source, virtualKey: 0, keyDown: false) else { return }
             PHTVEventContextBridgeService.configureSyntheticKeyEvents(
@@ -380,9 +384,11 @@ class PHTVKeyEventSenderService: NSObject {
             PHTVCliRuntimeStateService.scheduleBlock(forMicroseconds: totalBlockUs, nowMachTime: mach_absolute_time())
         }
         let bundleId = PHTVEventRuntimeContextService.effectiveTargetBundleIdValue()
+        let allChars = UnsafeBufferPointer(start: chars, count: Int(len))
         var i = 0
         while i < Int(len) {
-            let chunkLen = min(effectiveChunkSize, Int(len) - i)
+            let chunkLen = PHTVTextOutputEncoder.unicodeChunkLength(
+                in: allChars, offset: i, maximumCount: effectiveChunkSize)
             forEachUnicodeEventPair(
                 chars: UnsafeBufferPointer(start: chars + i, count: chunkLen),
                 source: source,
@@ -391,10 +397,10 @@ class PHTVKeyEventSenderService: NSObject {
                 postSyntheticEvent(down)
                 postSyntheticEvent(up)
             }
-            if effectiveDelayUs > 0 && (i + effectiveChunkSize) < Int(len) {
+            if effectiveDelayUs > 0 && (i + chunkLen) < Int(len) {
                 usleep(PHTVTimingService.clampToUseconds(effectiveDelayUs))
             }
-            i += effectiveChunkSize
+            i += chunkLen
         }
         if isCliTarget {
             var totalBlockUs = PHTVTimingService.scaleDelayMicroseconds(cliPostSendBlockUs, factor: cliSpeedFactor)

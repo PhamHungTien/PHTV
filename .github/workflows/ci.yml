@@ -88,17 +88,13 @@ jobs:
           DESTINATION="${PHTV_TEST_DESTINATION:-platform=macOS}"
           RESULT_DIR="$PWD/.build/test-results"
           RESULT_BUNDLE="$RESULT_DIR/PHTV-CI.xcresult"
-          DEFAULTS_DOMAIN="com.phamhungtien.phtv"
-
-          pkill -x PHTV >/dev/null 2>&1 || true
-          defaults delete "$DEFAULTS_DOMAIN" >/dev/null 2>&1 || true
           mkdir -p "$RESULT_DIR"
           rm -rf "$RESULT_BUNDLE"
 
           xcodebuild \
             -project Apps/macOS/PHTV.xcodeproj \
             -scheme PHTV \
-            -configuration Debug \
+            -configuration Testing \
             -destination "$DESTINATION" \
             -derivedDataPath "$DERIVED_DATA_PATH" \
             -resultBundlePath "$RESULT_BUNDLE" \
@@ -113,15 +109,6 @@ jobs:
 
           echo "Code coverage summary:"
           xcrun xccov view --report "$RESULT_BUNDLE" || true
-
-          pkill -x PHTV >/dev/null 2>&1 || true
-          defaults delete "$DEFAULTS_DOMAIN" >/dev/null 2>&1 || true
-
-      - name: Clean test defaults
-        if: always()
-        run: |
-          pkill -x PHTV >/dev/null 2>&1 || true
-          defaults delete com.phamhungtien.phtv >/dev/null 2>&1 || true
 
       - name: Upload XCTest result bundle
         if: always()

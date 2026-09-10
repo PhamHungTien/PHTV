@@ -319,6 +319,9 @@ final class PHTVEventCallbackService {
 
     // MARK: - Public entry point
 
+    // Quartz owns the incoming event. Returning that same event must not add
+    // a retain; only a newly created replacement would transfer ownership.
+
     static func handle(proxy: CGEventTapProxy,
                        type: CGEventType,
                        event: CGEvent,
@@ -336,13 +339,13 @@ final class PHTVEventCallbackService {
                                     refcon: UnsafeMutableRawPointer?) -> Unmanaged<CGEvent>? {
         // CRITICAL: If permission was lost, reject ALL events immediately
         if PHTVEventTapService.hasPermissionLost() {
-            return Unmanaged.passRetained(event)
+            return Unmanaged.passUnretained(event)
         }
 
         // Skip events injected by PHTV itself before CLI stabilization. Synthetic
         // events must not be delayed by the guard that protects real user input.
         if event.getIntegerValueField(.eventSourceUserData) == EventSourceMarker.phtv {
-            return Unmanaged.passRetained(event)
+            return Unmanaged.passUnretained(event)
         }
 
         // Synthetic-input stabilization: CLI targets and narrowly-scoped
@@ -359,7 +362,7 @@ final class PHTVEventCallbackService {
         // Auto-recover when macOS temporarily disables the event tap
         if type == .tapDisabledByTimeout || type == .tapDisabledByUserInput {
             PHTVEventTapService.handleEventTapDisabled(type)
-            return Unmanaged.passRetained(event)
+            return Unmanaged.passUnretained(event)
         }
 
         if PHTVKeyboardCleaningService.shouldBlockKeyboardEvent(type: type) {
@@ -572,7 +575,7 @@ final class PHTVEventCallbackService {
                         emojiHotkeyKeyCode: settings.emojiHotkeyKeyCode
                     )
                     if shouldPassThroughReleaseEvent {
-                        return Unmanaged.passRetained(event)
+                        return Unmanaged.passUnretained(event)
                     }
                     return nil
                 }
@@ -590,7 +593,7 @@ final class PHTVEventCallbackService {
         // Also check correct event hooked
         guard type == .keyDown || type == .keyUp ||
               type == .leftMouseDown || type == .rightMouseDown else {
-            return Unmanaged.passRetained(event)
+            return Unmanaged.passUnretained(event)
         }
 
         PHTVEventRuntimeContextService.setEventTapProxyRawValue(
@@ -678,12 +681,12 @@ final class PHTVEventCallbackService {
                     if PHTVCharacterOutputService.handleMacro(
                         keycode: eventKeycode, flags: eventFlags.rawValue)
                     {
-                        return Unmanaged.passRetained(event)
+                        return Unmanaged.passUnretained(event)
                     }
                     return nil
                 }
             }
-            return Unmanaged.passRetained(event)
+            return Unmanaged.passUnretained(event)
         }
 
         // Handle mouse - reset session to avoid stale typing state
@@ -691,13 +694,13 @@ final class PHTVEventCallbackService {
             PHTVEngineSessionService.requestNewSessionInternal(allowUppercasePrime: true)
             PHTVModifierRuntimeStateService.setSingleModifierSwitchPressedKeyValue(0)
             PHTVModifierRuntimeStateService.setKeyPressedWhileSingleModifierHeldValue(false)
-            return Unmanaged.passRetained(event)
+            return Unmanaged.passUnretained(event)
         }
 
         // If "turn off Vietnamese when in other language" mode on
         if settings.otherLanguage != 0 {
             if !PHTVInputSourceLanguageService.shouldAllowVietnameseForOtherLanguageMode() {
-                return Unmanaged.passRetained(event)
+                return Unmanaged.passUnretained(event)
             }
         }
 
@@ -711,7 +714,7 @@ final class PHTVEventCallbackService {
                                  contextSafeMode: contextSafeMode)
         }
 
-        return Unmanaged.passRetained(event)
+        return Unmanaged.passUnretained(event)
     }
 
     // MARK: - KeyDown processing
@@ -746,7 +749,7 @@ final class PHTVEventCallbackService {
         )
 
         if PHTVAppContextService.shouldDisableVietnamese(forBundleId: effectiveBundleId) {
-            return Unmanaged.passRetained(event)
+            return Unmanaged.passUnretained(event)
         }
 
         #if DEBUG
@@ -849,7 +852,7 @@ final class PHTVEventCallbackService {
                 sendCliOwnedPrintableCodeUnit(cliCodeUnit)
                 return nil
             }
-            return Unmanaged.passRetained(event)
+            return Unmanaged.passUnretained(event)
 
         } else if signalAction == PHTVEngineSignalAction.processSignal.rawValue {
             let isBrowserApp = targetContext.isBrowser
@@ -869,7 +872,7 @@ final class PHTVEventCallbackService {
 
             // FIGMA FIX: Force pass-through for Space key to support "Hand tool" (Hold Space)
             if processSignalPlan.shouldBypassForFigma {
-                return Unmanaged.passRetained(event)
+                return Unmanaged.passUnretained(event)
             }
 
             #if DEBUG
@@ -1037,7 +1040,7 @@ final class PHTVEventCallbackService {
                     }
                     #endif
                     // CRITICAL: Return event to let macOS insert Space
-                    return Unmanaged.passRetained(event)
+                    return Unmanaged.passUnretained(event)
                 }
 
                 #if DEBUG
@@ -1188,7 +1191,7 @@ final class PHTVEventCallbackService {
             if PHTVCharacterOutputService.handleMacro(
                 keycode: eventKeycode, flags: eventFlags.rawValue)
             {
-                return Unmanaged.passRetained(event)
+                return Unmanaged.passUnretained(event)
             }
         }
 

@@ -90,12 +90,11 @@ jobs:
         run: |
           set -euo pipefail
           RESULT_BUNDLE="$RUNNER_TEMP/PHTV-Release-Verify.xcresult"
-          defaults delete com.phamhungtien.phtv >/dev/null 2>&1 || true
           rm -rf "$RESULT_BUNDLE"
           xcodebuild \
             -project Apps/macOS/PHTV.xcodeproj \
             -scheme PHTV \
-            -configuration Debug \
+            -configuration Testing \
             -destination 'platform=macOS' \
             -derivedDataPath "$RUNNER_TEMP/PHTV-Release-Verify-DerivedData" \
             -resultBundlePath "$RESULT_BUNDLE" \
@@ -106,12 +105,6 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             DEVELOPMENT_TEAM="" \
             test
-
-      - name: Clean test defaults
-        if: always()
-        run: |
-          pkill -x PHTV >/dev/null 2>&1 || true
-          defaults delete com.phamhungtien.phtv >/dev/null 2>&1 || true
 
       - name: Upload verification result
         if: always()

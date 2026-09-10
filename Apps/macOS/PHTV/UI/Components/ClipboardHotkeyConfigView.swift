@@ -193,7 +193,7 @@ struct ClipboardHotkeyConfigView: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
 
-                    Text("Clipboard từ password manager và ứng dụng nhạy cảm sẽ không được lưu vào lịch sử.")
+                    Text("Bỏ qua nội dung được đánh dấu nhạy cảm hoặc tạm thời, cùng các password manager được nhận diện. Nội dung không có dấu hiệu này vẫn có thể được lưu.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -201,4 +201,3 @@ struct ClipboardHotkeyConfigView: View {
         }
     }
 }
-

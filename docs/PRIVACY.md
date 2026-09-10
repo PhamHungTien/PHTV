@@ -1,6 +1,6 @@
 # Quyền riêng tư trong PHTV
 
-Cập nhật lần cuối: 22/07/2026
+Cập nhật lần cuối: 10/09/2026
 
 PHTV xử lý phím gõ và chuyển đổi tiếng Việt trực tiếp trên máy. Nội dung bạn gõ
 trong các ứng dụng khác không được gửi tới máy chủ của PHTV. Một số tính năng
@@ -39,6 +39,13 @@ trong `PrivacyInfo.xcprivacy`.
 
 Lịch sử Clipboard mặc định tắt. PHTV chỉ theo dõi pasteboard khi người dùng bật
 tính năng này. Clipboard và macro không được tải lên máy chủ của PHTV.
+
+Khi bật lịch sử, PHTV bỏ qua nội dung có marker confidential/transient/generated
+và các password manager được nhận diện từ ứng dụng foreground hoặc marker nguồn.
+Generation và metadata clipboard được kiểm tra lại trước khi lưu; kết quả capture
+bị hủy/quá hạn bị bỏ, cache tạm được dọn khi worker hoàn tất. Đây không phải bảo đảm
+nhận diện mọi bí mật: nội dung không được ứng dụng nguồn đánh dấu vẫn có thể được
+lưu, nhất là khi copy từ ứng dụng không nằm trong danh sách nhận diện.
 
 ## Quyền macOS
 

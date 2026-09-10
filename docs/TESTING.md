@@ -45,6 +45,13 @@ Không dùng kết quả của test hẹp để khẳng định toàn bộ ứng
 target có hơn 400 test bao phủ engine, hotkey, runtime policy, settings migration,
 permission flow, Clipboard History, Sparkle và các profile tương thích.
 
+TestAction dùng cấu hình `Testing` (cùng tùy chọn compiler Debug), bundle ID
+test host riêng và Foundation home trong DerivedData. Chỉ domain test host được
+reset; không xóa domain Debug/Release, không dừng `cfprefsd`, không đóng PHTV thật.
+`CFFIXED_USER_HOME` không đủ để cô lập `UserDefaults` qua cfprefsd, nên không thay
+`Testing` bằng `Debug` trong các lệnh test. XCTest không ghi global text preferences
+của macOS. Test mới dùng named pasteboard, defaults suite và storage fixture riêng.
+
 ## CI
 
 Pull request và push vào `main` phải:

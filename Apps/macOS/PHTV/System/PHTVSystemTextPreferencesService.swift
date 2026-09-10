@@ -42,6 +42,10 @@ final class PHTVSystemTextPreferencesService: NSObject {
     }
 
     private class func setGlobalPeriodSubstitution(_ enabled: Bool) {
+        // XCTest verifies engine/settings behavior without changing the user's
+        // global macOS typing preference. The host's bundle ID cannot isolate
+        // explicit writes to kCFPreferencesAnyApplication.
+        guard !phtvIsRunningUnderXCTest() else { return }
         CFPreferencesSetValue(
             periodSubstitutionKey,
             enabled ? kCFBooleanTrue : kCFBooleanFalse,

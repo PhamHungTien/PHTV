@@ -24,8 +24,11 @@ DERIVED_DATA_PATH=/tmp/phtv-derived-data scripts/dev.swift build
 ```
 
 Các lệnh `test`, `engine-test` và `hotkey-test` dùng cùng cấu hình test không ký,
-không chạy song song như CI; công cụ local không xóa thiết lập hoặc tự đóng bản
-PHTV mà người dùng đang chạy.
+không chạy song song như CI. Cấu hình `Testing` dùng app host riêng với bundle ID
+`com.phamhungtien.phtv.tests.host`, không dùng danh tính của bản Debug/Release.
+Storage nằm trong `PHTVTestHome` dưới DerivedData; `UserDefaults` chỉ reset domain
+test host. Không xóa thiết lập, dừng `cfprefsd` hoặc tự đóng PHTV người dùng.
+Lệnh `xcodebuild test` tự dùng `Testing` từ scheme; không ép `-configuration Debug`.
 
 `format` sửa định dạng Swift. `format-check` hiện là công cụ hỗ trợ cải tiến dần,
 chưa phải CI gate cho toàn bộ mã nguồn cũ:

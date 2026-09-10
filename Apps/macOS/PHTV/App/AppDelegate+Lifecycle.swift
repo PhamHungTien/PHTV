@@ -41,11 +41,15 @@ private func phtvShouldTerminateExistingInstance(_ app: NSRunningApplication, cu
 }
 
 func phtvIsRunningUnderXCTest() -> Bool {
+    #if PHTV_TEST_HOST
+    return true
+    #else
     let environment = ProcessInfo.processInfo.environment
     return environment["PHTV_RUNNING_XCTEST"] == "1"
         || environment["XCTestConfigurationFilePath"] != nil
         || NSClassFromString("XCTestCase") != nil
         || NSClassFromString("XCTest.XCTestCase") != nil
+    #endif
 }
 
 @MainActor @objc extension AppDelegate {

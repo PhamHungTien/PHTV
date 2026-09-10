@@ -14,6 +14,7 @@ struct PHTVApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
 
     init() {
+        PHTVTestHostEnvironment.prepareIfNeeded()
         NSLog("PHTV-APP-INIT-START")
 
         // Configure memory-only URL cache before any service can create URL sessions.

@@ -23,120 +23,80 @@ final class PHTVCharacterOutputService: NSObject {
                                  offset: UInt16,
                                  keycode: UInt16,
                                  flags: UInt64) {
-        // Capture engine output once; avoids re-locking the engine per character.
+        // Keep one immutable result for the entire send, including multi-chunk
+        // macros and the restore trigger. Source offsets count engine items;
+        // chunk capacity counts UTF-16 units.
         let hookData = PHTVEngineRuntimeFacade.engineDataResultSnapshot()
-        let macroData = dataFromMacro ? PHTVEngineRuntimeFacade.engineDataMacroSnapshot() : []
-
-        let maxBuf = 20
-        var outputIndex = 0
-        var loopIndex = 0
-        let sourceCharCount = dataFromMacro ? macroData.count : Int(hookData.newCharCount)
-        var newCharString = [UInt16](repeating: 0, count: maxBuf)
-        var willContinueSending = false
-        var willSendControlKey = false
-
-        let codeTable = Int(PHTVEngineRuntimeFacade.currentCodeTable())
+        let sourceItems = dataFromMacro ? PHTVEngineRuntimeFacade.engineDataMacroSnapshot() : hookData.chars
+        let sourceCount = dataFromMacro ? sourceItems.count : max(0, min(Int(hookData.newCharCount), sourceItems.count))
+        var sourceOffset = min(Int(offset), sourceCount)
+        let codeTable = PHTVEngineRuntimeFacade.currentCodeTable()
         let isSpotlightTarget = PHTVEventRuntimeContextService.postToHIDTapEnabled()
                              || PHTVEventRuntimeContextService.appIsSpotlightLike()
         let isPrecomposedBatched = PHTVEventRuntimeContextService.appNeedsPrecomposedBatched()
         let forcePrecomposed = ((codeTable == 3) && isSpotlightTarget)
                             || ((codeTable == 0 || codeTable == 3) && isPrecomposedBatched)
+        var willSendControlKey = false
 
-        let pureCharMask = EngineBitMask.pureCharacter
-        let charCodeMask = EngineBitMask.charCode
+        repeat {
+            let chunk = PHTVTextOutputEncoder.nextChunk(
+                from: sourceItems,
+                sourceCount: sourceCount,
+                sourceOffset: sourceOffset,
+                reversed: !dataFromMacro,
+                codeTable: codeTable
+            )
+            sourceOffset = chunk.nextSourceOffset
+            var finalChars = chunk.units
+            for length in chunk.syncKeyLengths {
+                PHTVKeyEventSenderService.insertKeyLength(length)
+            }
 
-        if sourceCharCount > 0 {
-            if dataFromMacro {
-                loopIndex = Int(offset)
-                while loopIndex < macroData.count {
-                    if outputIndex >= 16 { willContinueSending = true; break }
-                    buildChar(macroData[loopIndex], codeTable: codeTable,
-                              pureCharMask: pureCharMask, charCodeMask: charCodeMask,
-                              into: &newCharString, outputIndex: &outputIndex)
-                    loopIndex += 1
+            if sourceOffset == sourceCount {
+                if hookData.code == EngineSignalCode.restore || hookData.code == EngineSignalCode.restoreAndStartNewSession {
+                    if EngineMacroKeyMap.character(for: UInt32(keycode)) != 0 {
+                        let hasCaps = (flags & CGEventFlags.maskAlphaShift.rawValue) != 0
+                                   || (flags & CGEventFlags.maskShift.rawValue) != 0
+                        let withCaps = UInt32(keycode) | (hasCaps ? EngineBitMask.caps : 0)
+                        finalChars.append(EngineMacroKeyMap.character(for: withCaps))
+                    } else {
+                        willSendControlKey = true
+                    }
                 }
-            } else {
-                loopIndex = Int(hookData.newCharCount) - 1 - Int(offset)
-                while loopIndex >= 0 {
-                    if outputIndex >= 16 { willContinueSending = true; break }
-                    buildChar(hookData.char(at: loopIndex), codeTable: codeTable,
-                              pureCharMask: pureCharMask, charCodeMask: charCodeMask,
-                              into: &newCharString, outputIndex: &outputIndex)
-                    loopIndex -= 1
+                if hookData.code == EngineSignalCode.restoreAndStartNewSession {
+                    PHTVEngineDataBridge.startNewSession()
                 }
             }
-        }
 
-        let engineCode = Int(hookData.code)
-        let vRestoreCode = Int(EngineSignalCode.restore)
-        let vRestoreNewCode = Int(EngineSignalCode.restoreAndStartNewSession)
-        let capsMask = EngineBitMask.caps
-
-        if !willContinueSending && (engineCode == vRestoreCode || engineCode == vRestoreNewCode) {
-            if EngineMacroKeyMap.character(for: UInt32(keycode)) != 0 {
-                let hasCaps = (flags & CGEventFlags.maskAlphaShift.rawValue) != 0
-                           || (flags & CGEventFlags.maskShift.rawValue) != 0
-                let withCaps = UInt32(keycode) | (hasCaps ? capsMask : 0)
-                newCharString[outputIndex] = EngineMacroKeyMap.character(for: withCaps)
-                outputIndex += 1
-            } else {
-                willSendControlKey = true
+            if forcePrecomposed && !finalChars.isEmpty {
+                finalChars = Array(String(decoding: finalChars, as: UTF16.self).precomposedStringWithCanonicalMapping.utf16)
             }
-        }
-        if !willContinueSending && engineCode == vRestoreNewCode {
-            PHTVEngineDataBridge.startNewSession()
-        }
-
-        let finalCharSize = willContinueSending ? 16 : outputIndex
-        var finalChars = [UInt16](repeating: 0, count: maxBuf)
-        var actualFinalSize = finalCharSize
-
-        if forcePrecomposed && finalCharSize > 0 {
-            let raw = String(decoding: newCharString[0..<finalCharSize], as: UTF16.self)
-            let precomposed = raw.precomposedStringWithCanonicalMapping
-            let precomposedUtf16 = Array(precomposed.utf16)
-            actualFinalSize = min(precomposedUtf16.count, maxBuf)
-            for i in 0..<actualFinalSize { finalChars[i] = precomposedUtf16[i] }
-        } else {
-            for i in 0..<finalCharSize { finalChars[i] = newCharString[i] }
-        }
-
-        finalChars.withUnsafeBufferPointer { buf in
-            let ptr = buf.baseAddress!
-            if isSpotlightTarget {
-                let insertStr = String(
-                    decoding: UnsafeBufferPointer(start: ptr, count: actualFinalSize),
-                    as: UTF16.self)
-                let backspaceCount = PHTVEventRuntimeContextService.takePendingBackspaceCount()
-                let axSucceeded = PHTVEventContextBridgeService.replaceFocusedTextViaAX(
-                    backspaceCount: backspaceCount,
-                    insertText: insertStr,
-                    verify: backspaceCount > 0,
-                    safeMode: PHTVEngineRuntimeFacade.safeModeEnabled())
-                if !axSucceeded {
-                    PHTVKeyEventSenderService.sendBackspaceSequenceWithDelay(backspaceCount)
+            finalChars.withUnsafeBufferPointer { chars in
+                if isSpotlightTarget {
+                    let backspaceCount = PHTVEventRuntimeContextService.takePendingBackspaceCount()
+                    let axSucceeded = PHTVEventContextBridgeService.replaceFocusedTextViaAX(
+                        backspaceCount: backspaceCount,
+                        insertText: String(decoding: chars, as: UTF16.self),
+                        verify: backspaceCount > 0,
+                        safeMode: PHTVEngineRuntimeFacade.safeModeEnabled())
+                    if !axSucceeded {
+                        PHTVKeyEventSenderService.sendBackspaceSequenceWithDelay(backspaceCount)
+                        if let ptr = chars.baseAddress, !chars.isEmpty {
+                            PHTVKeyEventSenderService.sendUnicodeStringChunked(
+                                ptr, len: Int32(chars.count),
+                                chunkSize: Int32(chars.count), interDelayUs: 0)
+                        }
+                    }
+                } else if let ptr = chars.baseAddress, !chars.isEmpty {
+                    let isCli = PHTVEventRuntimeContextService.isCliTargetEnabled()
                     PHTVKeyEventSenderService.sendUnicodeStringChunked(
-                        ptr, len: Int32(actualFinalSize),
-                        chunkSize: Int32(actualFinalSize), interDelayUs: 0)
+                        ptr, len: Int32(chars.count),
+                        chunkSize: isCli ? max(1, PHTVCliRuntimeStateService.cliTextChunkSize()) : Int32(chars.count),
+                        interDelayUs: isCli ? PHTVCliRuntimeStateService.cliTextDelayUs() : 0)
                 }
-            } else if PHTVEventRuntimeContextService.isCliTargetEnabled() {
-                let chunkSize = max(1, PHTVCliRuntimeStateService.cliTextChunkSize())
-                PHTVKeyEventSenderService.sendUnicodeStringChunked(
-                    ptr, len: Int32(actualFinalSize),
-                    chunkSize: chunkSize,
-                    interDelayUs: PHTVCliRuntimeStateService.cliTextDelayUs())
-            } else {
-                PHTVKeyEventSenderService.sendUnicodeStringChunked(
-                    ptr, len: Int32(actualFinalSize),
-                    chunkSize: Int32(actualFinalSize), interDelayUs: 0)
             }
-        }
+        } while sourceOffset < sourceCount
 
-        if willContinueSending {
-            let nextOffset: UInt16 = dataFromMacro ? UInt16(loopIndex) : 16
-            sendNewCharString(dataFromMacro: dataFromMacro,
-                              offset: nextOffset, keycode: keycode, flags: flags)
-        }
         if willSendControlKey {
             PHTVKeyEventSenderService.sendKeyCode(UInt32(keycode))
         }
@@ -254,7 +214,7 @@ final class PHTVCharacterOutputService: NSObject {
             PHTVSendSequenceService.sendItemsStepByStep(count: macroData.count) { index in
                 let macroItem = macroData[index]
                 if (macroItem & pureCharMask) != 0 {
-                    PHTVKeyEventSenderService.sendPureCharacter(UInt16(macroItem & 0xFFFF))
+                    PHTVKeyEventSenderService.sendPureScalar(macroItem & ~pureCharMask)
                 } else {
                     PHTVKeyEventSenderService.sendKeyCode(macroItem)
                 }
@@ -270,57 +230,4 @@ final class PHTVCharacterOutputService: NSObject {
         return false
     }
 
-    // MARK: - Private helpers
-
-    private static func buildChar(_ tempChar: UInt32,
-                                  codeTable: Int,
-                                  pureCharMask: UInt32,
-                                  charCodeMask: UInt32,
-                                  into newCharString: inout [UInt16],
-                                  outputIndex: inout Int) {
-        if (tempChar & pureCharMask) != 0 {
-            newCharString[outputIndex] = UInt16(tempChar & 0xFFFF)
-            outputIndex += 1
-            if EngineInputClassification.isDoubleCodeTable(Int32(codeTable)) {
-                PHTVKeyEventSenderService.insertKeyLength(1)
-            }
-        } else if (tempChar & charCodeMask) == 0 {
-            if EngineInputClassification.isDoubleCodeTable(Int32(codeTable)) {
-                PHTVKeyEventSenderService.insertKeyLength(1)
-            }
-            newCharString[outputIndex] = EngineMacroKeyMap.character(for: tempChar)
-            outputIndex += 1
-        } else {
-            switch codeTable {
-            case 0: // Unicode — 2-byte code
-                newCharString[outputIndex] = UInt16(tempChar & 0xFFFF)
-                outputIndex += 1
-            case 1, 2, 4: // TCVN3, VNI Windows, CP1258 — 1-byte codes
-                let newCharHi = UInt16(EnginePackedData.highByte(tempChar))
-                let newCharLo = UInt16(EnginePackedData.lowByte(tempChar))
-                newCharString[outputIndex] = newCharLo
-                outputIndex += 1
-                if newCharHi > 32 {
-                    if codeTable == 2 { PHTVKeyEventSenderService.insertKeyLength(2) }
-                    newCharString[outputIndex] = newCharHi
-                    outputIndex += 1
-                } else {
-                    if codeTable == 2 { PHTVKeyEventSenderService.insertKeyLength(1) }
-                }
-            case 3: // Unicode Compound
-                var newChar = UInt16(tempChar & 0xFFFF)
-                let newCharHi = UInt16(newChar >> 13)
-                newChar &= 0x1FFF
-                PHTVKeyEventSenderService.insertKeyLength(newCharHi > 0 ? 2 : 1)
-                newCharString[outputIndex] = newChar
-                outputIndex += 1
-                if newCharHi > 0 {
-                    newCharString[outputIndex] = EnginePackedData.unicodeCompoundMark(at: Int32(newCharHi) - 1)
-                    outputIndex += 1
-                }
-            default:
-                break
-            }
-        }
-    }
 }

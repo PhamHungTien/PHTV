@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Sửa giữ dư bộ nhớ khi trả lại sự kiện bàn phím gốc trong event tap.
+- Lịch sử Clipboard bỏ qua các marker nhạy cảm/tạm thời và nguồn password
+  manager được nhận diện; kiểm tra lại clipboard trước khi lưu kết quả.
+- Capture Clipboard bị hủy hoặc quá hạn không tạo thêm worker chồng nhau;
+  kết quả về muộn được bỏ và cache tạm tương ứng được dọn.
+- Giữ đủ dấu Unicode tổ hợp ở ranh giới chia đoạn, bảo toàn emoji/ký tự ngoài
+  BMP khi gửi macro và không cắt đôi surrogate pair trong sự kiện bàn phím.
+- Thay dấu qua Accessibility xóa cả cụm ký tự Unicode tách dấu, tránh để sót
+  ký tự gốc như trường hợp `aà`.
+
+### Chất lượng
+
+- Tách cấu hình `Testing` với bundle ID riêng; không xóa cấu hình Debug/Release,
+  dừng dịch vụ preferences hoặc đóng PHTV của người dùng khi chạy test.
+- Bổ sung regression cho ownership sự kiện, Unicode output, phạm vi xóa AX,
+  metadata clipboard và vòng đời capture; fixture không dùng clipboard thật.
+
 ## [3.5.3] - 2026-09-07
 
 ### Tổng quan

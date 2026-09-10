@@ -318,36 +318,18 @@ final class PHTVAccessibilityService: NSObject {
 
     @objc(calculateDeleteStartForAX:caretLocation:backspaceCount:)
     class func calculateDeleteStartForAX(_ value: String?, caretLocation: Int, backspaceCount: Int) -> Int {
-        guard let value else {
-            return max(0, caretLocation)
-        }
-        if backspaceCount <= 0 {
-            return caretLocation
-        }
-
+        guard let value else { return 0 }
         let valueNSString = value as NSString
-        var start = caretLocation - backspaceCount
-        if start < 0 {
-            start = 0
+        var start = max(0, min(caretLocation, valueNSString.length))
+        var remaining = max(0, backspaceCount)
+        // Engine backspaces count logical characters. Looking only at the last
+        // N UTF-16 units can start on a combining mark ("a◌́" -> "aà") or split
+        // a surrogate pair; normalization of that suffix cannot recover its
+        // missing base. Walk complete composed sequences from the caret.
+        while start > 0 && remaining > 0 {
+            start = valueNSString.rangeOfComposedCharacterSequence(at: start - 1).location
+            remaining -= 1
         }
-
-        if start < caretLocation && caretLocation <= valueNSString.length {
-            let textToDelete = valueNSString.substring(with: NSRange(location: start, length: caretLocation - start))
-            let composedLen = (textToDelete.precomposedStringWithCanonicalMapping as NSString).length
-            if composedLen != backspaceCount && composedLen > 0 {
-                var actualStart = caretLocation
-                var composedCount = 0
-                while actualStart > 0 && composedCount < backspaceCount {
-                    actualStart -= 1
-                    let c = valueNSString.character(at: actualStart)
-                    if !isCombiningMark(c) {
-                        composedCount += 1
-                    }
-                }
-                start = actualStart
-            }
-        }
-
         return start
     }
 
@@ -404,6 +386,7 @@ final class PHTVAccessibilityService: NSObject {
         if caretLocation > valueLength {
             caretLocation = valueLength
         }
+        selectedLength = max(0, min(selectedLength, valueLength - caretLocation))
 
         // Calculate replacement position
         var start = caretLocation
@@ -485,13 +468,6 @@ final class PHTVAccessibilityService: NSObject {
         }
 
         return false
-    }
-
-    private class func isCombiningMark(_ scalar: unichar) -> Bool {
-        (scalar >= 0x0300 && scalar <= 0x036F) ||
-        (scalar >= 0x1DC0 && scalar <= 0x1DFF) ||
-        (scalar >= 0x20D0 && scalar <= 0x20FF) ||
-        (scalar >= 0xFE20 && scalar <= 0xFE2F)
     }
 
     private class func stringAttribute(_ element: AXUIElement, _ attribute: String) -> String? {

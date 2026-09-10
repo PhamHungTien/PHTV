@@ -14,6 +14,16 @@ import Foundation
 
 #if DEBUG
 func phtvRemoveUserDefaultsSuiteFilesForTesting(_ suiteName: String) {
+    // This helper may reach cfprefsd's real preferences directory. Only
+    // UUID-scoped suites created by these tests are eligible for removal.
+    let fixturePrefixes = [
+        "com.phamhungtien.phtv.debugtests.",
+        "com.phamhungtien.phtv.tests.sparkle.",
+        "SystemTextReplacementServiceTests."
+    ]
+    guard fixturePrefixes.contains(where: { prefix in
+        suiteName.hasPrefix(prefix) && UUID(uuidString: String(suiteName.dropFirst(prefix.count))) != nil
+    }) else { return }
     let fileManager = FileManager.default
     let preferencesDirectories = Set([
         fileManager.homeDirectoryForCurrentUser

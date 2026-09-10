@@ -18,19 +18,27 @@ enum ClipboardHistoryFileCache {
             .appendingPathComponent("ClipboardHistoryFiles", isDirectory: true)
     }
 
-    static func references(for urls: [URL], itemID: UUID, fileManager: FileManager = .default) -> [ClipboardHistoryFileReference] {
-        urls.map { url in
+    static func references(
+        for urls: [URL],
+        itemID: UUID,
+        fileManager: FileManager = .default,
+        shouldContinue: () -> Bool = { true }
+    ) -> [ClipboardHistoryFileReference] {
+        var references: [ClipboardHistoryFileReference] = []
+        for url in urls {
+            guard shouldContinue() else { break }
             let originalPath = url.path
             let size = regularFileSize(at: url, fileManager: fileManager)
             let cachedURL = cacheFileIfReasonable(url, itemID: itemID, size: size, fileManager: fileManager)
 
-            return ClipboardHistoryFileReference(
+            references.append(ClipboardHistoryFileReference(
                 originalPath: originalPath,
                 cachedPath: cachedURL?.path,
                 displayName: url.lastPathComponent,
                 sizeBytes: size
-            )
+            ))
         }
+        return references
     }
 
     @discardableResult

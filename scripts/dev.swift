@@ -144,12 +144,12 @@ func capture(_ executable: String, _ arguments: [String], allowFailure: Bool = f
     return output.trimmingCharacters(in: .whitespacesAndNewlines)
 }
 
-func xcodebuildProject(_ extraArguments: [String]) throws {
+func xcodebuildProject(_ extraArguments: [String], configuration: String = "Debug") throws {
     requireXcode()
     try run("/usr/bin/xcodebuild", [
         "-project", projectPath,
         "-scheme", scheme,
-        "-configuration", "Debug",
+        "-configuration", configuration,
         "-destination", destination,
         "-derivedDataPath", derivedDataPath,
     ] + extraArguments)
@@ -211,19 +211,19 @@ do {
         try xcodebuildProject(["analyze"])
 
     case "test":
-        try xcodebuildProject(testBuildArguments + ["test"])
+        try xcodebuildProject(testBuildArguments + ["test"], configuration: "Testing")
 
     case "engine-test":
         try xcodebuildProject(testBuildArguments + [
             "-only-testing:PHEngineTests/EngineRegressionTests",
             "test",
-        ])
+        ], configuration: "Testing")
 
     case "hotkey-test":
         try xcodebuildProject(testBuildArguments + [
             "-only-testing:PHEngineTests/HotkeyReliabilityTests",
             "test",
-        ])
+        ], configuration: "Testing")
 
     case "dict-check":
         try run("/usr/bin/xcrun", [
