@@ -1,6 +1,6 @@
 # Quyền riêng tư trong PHTV
 
-Cập nhật lần cuối: 10/09/2026
+Cập nhật lần cuối: 11/09/2026
 
 PHTV xử lý phím gõ và chuyển đổi tiếng Việt trực tiếp trên máy. Nội dung bạn gõ
 trong các ứng dụng khác không được gửi tới máy chủ của PHTV. Một số tính năng
@@ -33,6 +33,7 @@ trong `PrivacyInfo.xcprivacy`.
 | Lịch sử Clipboard | Application Support của PHTV | Theo giới hạn số lượng/thời gian người dùng chọn |
 | Mục Clipboard đã ghim | Application Support của PHTV | Đến khi người dùng bỏ ghim hoặc xóa |
 | Bản sao file Clipboard | `ClipboardHistoryFiles` trong Application Support | Đi cùng mục lịch sử; file trên 25 MB không được sao chép vào cache |
+| Bản khôi phục lịch sử Clipboard | `clipboard_history.recovery-<UUID>.json` trong Application Support | Giữ đến khi người dùng xử lý phục hồi/xóa bản sao; không áp dụng tự động thời hạn lịch sử |
 | Log chẩn đoán | `PHTV/Logs/phtv_debug.log` trong Application Support | Tối đa khoảng 2 MB và được dọn theo chu kỳ 24 giờ |
 | GIF/Sticker tạm dùng để dán | Thư mục tạm `PHTPMedia` | Thường xóa sau khi dán; cơ chế dự phòng dọn file cũ hơn 7 ngày và giới hạn cache |
 | ID GIF/Sticker gần đây | `UserDefaults` | Tối đa 20 ID mỗi loại, đến khi reset dữ liệu |
@@ -46,6 +47,14 @@ Generation và metadata clipboard được kiểm tra lại trước khi lưu; k
 bị hủy/quá hạn bị bỏ, cache tạm được dọn khi worker hoàn tất. Đây không phải bảo đảm
 nhận diện mọi bí mật: nội dung không được ứng dụng nguồn đánh dấu vẫn có thể được
 lưu, nhất là khi copy từ ứng dụng không nằm trong danh sách nhận diện.
+
+Khi chuyển dữ liệu cũ, PHTV chỉ xóa nguồn sau khi ghi file mới thành công. Dữ liệu
+cũ không đọc được vẫn được giữ; file đích cần bảo vệ được sao lưu trước khi ghi
+đè. Khi có bản khôi phục hoặc nguồn cũ bị lỗi, cache ảnh/file được giữ cả qua lần
+khởi động sau, kể cả khi mục đã rời lịch sử hoạt động. Xử lý các bản sao/nguồn cũ
+trước khi khởi động lại để cho phép dọn cache; thao tác xóa lịch sử thông thường
+không xóa các bản khôi phục này. Ảnh cũ hoặc ảnh chưa ghi được cache được giữ
+inline trong JSON, không bị bỏ khỏi bản lưu.
 
 ## Quyền macOS
 

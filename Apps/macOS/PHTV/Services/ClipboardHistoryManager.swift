@@ -112,6 +112,9 @@ final class ClipboardHistoryManager {
 
     private(set) var items: [ClipboardHistoryItem] = []
     private(set) var savedLibrary = ClipboardSavedLibrary()
+    private(set) var storageWarning: String?
+    private(set) var pasteError: String?
+    private let historyStore = ClipboardHistoryStore(fileURL: ClipboardHistoryManager.historyFileURL)
     var selectedSection: ClipboardPanelSection = .history
 
     private let panelSession = FloatingPanelSession<ClipboardHistoryView>()
@@ -161,7 +164,7 @@ final class ClipboardHistoryManager {
         // Remove duplicate if exists. Re-copying pinned content must not cost
         // the item its pin, so the fresh entry inherits it.
         let duplicateItems = items.filter { $0.isDuplicate(of: item) }
-        duplicateItems.forEach { ClipboardHistoryFileCache.removeCache(for: $0) }
+        historyStore.retireCaches(for: duplicateItems.map(\.id))
         let duplicateIDs = Set(duplicateItems.map(\.id))
         items.removeAll { duplicateIDs.contains($0.id) }
 
@@ -223,7 +226,7 @@ final class ClipboardHistoryManager {
 
     func removeItem(_ item: ClipboardHistoryItem) {
         items.removeAll { $0.id == item.id }
-        ClipboardHistoryFileCache.removeCache(for: item)
+        historyStore.retireCaches(for: [item.id])
         saveHistory()
         postClipboardItemHotkeysChanged()
     }
@@ -232,13 +235,8 @@ final class ClipboardHistoryManager {
     /// explicit unpin or per-item delete.
     func clearAll() {
         let keptItems = items.filter(\.isPinned)
-        if keptItems.isEmpty {
-            items.removeAll()
-            ClipboardHistoryFileCache.removeAll()
-        } else {
-            cleanupCaches(forRemovedItemsFrom: items, keeping: keptItems)
-            items = keptItems
-        }
+        cleanupCaches(forRemovedItemsFrom: items, keeping: keptItems)
+        items = keptItems
         saveHistory()
         postClipboardItemHotkeysChanged()
     }
@@ -312,7 +310,10 @@ final class ClipboardHistoryManager {
         try validateItemHotkey(hotkey, excludingPinnedHistoryItemID: itemID)
         let previousItem = items[index]
         items[index] = items[index].withHotkey(hotkey)
-        saveHistory()
+        guard saveHistory() else {
+            items[index] = previousItem
+            throw CocoaError(.fileWriteUnknown)
+        }
         postClipboardItemHotkeysChanged()
         if let hotkey, !ClipboardItemHotkeyManager.shared.isAvailable(hotkey) {
             items[index] = previousItem
@@ -344,39 +345,24 @@ final class ClipboardHistoryManager {
     }()
 
     private func loadHistory() {
-        // Migrate from UserDefaults if needed
-        if let legacyData = UserDefaults.standard.data(forKey: UserDefaultsKey.clipboardHistoryData) {
-            do {
-                items = try JSONDecoder().decode([ClipboardHistoryItem].self, from: legacyData)
-                enforceStoragePolicies()
-                saveHistory()
-                UserDefaults.standard.removeObject(forKey: UserDefaultsKey.clipboardHistoryData)
-                NSLog("[ClipboardHistory] Migrated history from UserDefaults to file storage")
-            } catch {
-                NSLog("[ClipboardHistory] Failed to migrate legacy history: %@", error.localizedDescription)
-                UserDefaults.standard.removeObject(forKey: UserDefaultsKey.clipboardHistoryData)
-            }
-            return
-        }
-
-        let url = Self.historyFileURL
-        guard FileManager.default.fileExists(atPath: url.path),
-              let data = try? Data(contentsOf: url) else { return }
-        do {
-            items = try JSONDecoder().decode([ClipboardHistoryItem].self, from: data)
-            enforceStoragePolicies()
+        let result = historyStore.load()
+        items = result.items
+        storageWarning = result.warning
+        if result.canCleanupOrphans, enforceStoragePolicies() {
             cleanupOrphanedCaches()
-        } catch {
-            NSLog("[ClipboardHistory] Failed to decode history: %@", error.localizedDescription)
         }
     }
 
-    private func saveHistory() {
+    @discardableResult
+    private func saveHistory() -> Bool {
         do {
-            let data = try JSONEncoder().encode(items)
-            try data.write(to: Self.historyFileURL, options: .atomic)
+            try historyStore.save(items)
+            storageWarning = historyStore.recoveryWarning
+            return true
         } catch {
+            storageWarning = "Chưa lưu được thay đổi lịch sử Clipboard. Dữ liệu đã lưu trước đó và cache vẫn được giữ."
             NSLog("[ClipboardHistory] Failed to save history: %@", error.localizedDescription)
+            return false
         }
     }
 
@@ -448,23 +434,23 @@ final class ClipboardHistoryManager {
 
     /// Applies both storage limits: the retention window (age) and the maximum
     /// item count. Safe to call often — it only writes when something changed.
-    private func enforceStoragePolicies() {
+    @discardableResult
+    private func enforceStoragePolicies() -> Bool {
         let keptItems = ClipboardHistoryStoragePolicy.enforced(
             items,
             retention: ClipboardHistoryStoragePolicy.retention(),
             maxItems: ClipboardHistoryStoragePolicy.maxItems()
         )
-        guard keptItems != items else { return }
+        guard keptItems != items else { return true }
         cleanupCaches(forRemovedItemsFrom: items, keeping: keptItems)
         items = keptItems
-        saveHistory()
+        return saveHistory()
     }
 
     private func cleanupCaches(forRemovedItemsFrom oldItems: [ClipboardHistoryItem], keeping newItems: [ClipboardHistoryItem]) {
         let keptIDs = Set(newItems.map(\.id))
-        oldItems
-            .filter { !keptIDs.contains($0.id) }
-            .forEach { ClipboardHistoryFileCache.removeCache(for: $0) }
+        // Retire now, delete only after the next durable snapshot succeeds.
+        historyStore.retireCaches(for: oldItems.map(\.id).filter { !keptIDs.contains($0) })
     }
 
     private func cleanupOrphanedCaches() {
@@ -535,13 +521,22 @@ final class ClipboardHistoryManager {
     // MARK: - Paste
 
     private func handleItemSelected(_ item: ClipboardHistoryItem) {
-        hide()
-
         pendingPasteTask?.cancel()
+        let prepared: ClipboardHistoryPasteService.Prepared
+        do {
+            // Keep the panel open on unavailable content; preparing must not
+            // mutate the current clipboard or send a key to the target app.
+            prepared = try ClipboardHistoryPasteService.prepare(item)
+        } catch {
+            reportPasteFailure(error)
+            return
+        }
+        pasteError = nil
+        hide()
         pendingPasteTask = Task { @MainActor [weak self] in
             try? await Task.sleep(for: .milliseconds(100))
             guard !Task.isCancelled else { return }
-            self?.pasteItem(item)
+            self?.pastePrepared(prepared, promoting: item)
         }
     }
 
@@ -570,60 +565,50 @@ final class ClipboardHistoryManager {
     }
 
     private func pasteItem(_ item: ClipboardHistoryItem) {
-        isPasting = true
-
-        let pasteboard = NSPasteboard.general
-        pasteboard.clearContents()
-
-        guard setPasteboardContents(for: item, pasteboard: pasteboard) else {
-            NSLog("[ClipboardHistory] Unable to prepare pasteboard for item %@", item.id.uuidString)
-            scheduleClearPasting()
-            return
+        do {
+            let prepared = try ClipboardHistoryPasteService.prepare(item)
+            pastePrepared(prepared, promoting: item)
+        } catch {
+            reportPasteFailure(error)
         }
-
-        // Most-recently-used ordering: bump the pasted item back to the top.
-        promoteItemToTop(item)
-
-        postPasteShortcut()
-        scheduleClearPasting()
     }
 
     private func pasteText(_ text: String) {
-        isPasting = true
-
-        let pasteboard = NSPasteboard.general
-        pasteboard.clearContents()
-        guard pasteboard.setString(text, forType: .string) else {
-            scheduleClearPasting()
-            return
+        do {
+            let prepared = try ClipboardHistoryPasteService.prepare(text: text)
+            pastePrepared(prepared)
+        } catch {
+            reportPasteFailure(error)
         }
-
-        postPasteShortcut()
-        scheduleClearPasting()
     }
 
-    private func setPasteboardContents(for item: ClipboardHistoryItem, pasteboard: NSPasteboard) -> Bool {
-        guard let payload = ClipboardHistoryPastePayloadResolver.resolve(item) else { return false }
-
-        switch payload {
-        case .image(let imageData):
-            var wroteContent = false
-            if let image = NSImage(data: imageData) {
-                wroteContent = pasteboard.writeObjects([image]) || wroteContent
-                if let tiffData = image.tiffRepresentation {
-                    wroteContent = pasteboard.setData(tiffData, forType: .tiff) || wroteContent
-                }
-            }
-            wroteContent = pasteboard.setData(imageData, forType: .png) || wroteContent
-            return wroteContent
-
-        case .files(let filePaths):
-            let urls = filePaths.map { URL(fileURLWithPath: $0) as NSURL }
-            return pasteboard.writeObjects(urls)
-
-        case .text(let text):
-            return pasteboard.setString(text, forType: .string)
+    private func pastePrepared(
+        _ prepared: ClipboardHistoryPasteService.Prepared,
+        promoting item: ClipboardHistoryItem? = nil
+    ) {
+        clearPastingTask?.cancel()
+        isPasting = true
+        defer { scheduleClearPasting() }
+        do {
+            try ClipboardHistoryPasteService.commit(prepared, to: .general)
+            pasteError = nil
+            if let item { promoteItemToTop(item) }
+            postPasteShortcut()
+        } catch {
+            // A failed write must never send Command-V (which could paste an
+            // unrelated payload). AppKit does not offer atomic clear + write.
+            reportPasteFailure(error)
         }
+    }
+
+    func clearPasteError() {
+        pasteError = nil
+    }
+
+    private func reportPasteFailure(_ error: Error) {
+        pasteError = error.localizedDescription
+        NSSound.beep()
+        if !isVisible { show() }
     }
 
     private func postPasteShortcut() {

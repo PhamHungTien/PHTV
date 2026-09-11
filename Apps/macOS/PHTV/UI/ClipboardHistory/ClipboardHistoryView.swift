@@ -111,6 +111,26 @@ struct ClipboardHistoryView: View {
                 VStack(spacing: 0) {
                     headerView
 
+                    if let warning = manager.pasteError ?? manager.storageWarning {
+                        HStack(alignment: .top, spacing: 8) {
+                            Image(systemName: "exclamationmark.triangle")
+                                .foregroundStyle(.orange)
+                            Text(warning)
+                                .font(.caption)
+                                .fixedSize(horizontal: false, vertical: true)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                            if manager.pasteError != nil {
+                                Button(action: manager.clearPasteError) {
+                                    Image(systemName: "xmark")
+                                }
+                                .buttonStyle(.plain)
+                                .accessibilityLabel("Đóng thông báo lỗi dán")
+                            }
+                        }
+                        .padding(10)
+                        .background(.orange.opacity(0.08))
+                    }
+
                     if manager.selectedSection == .history {
                         searchBar
 

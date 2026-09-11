@@ -350,7 +350,8 @@ final class ClipboardMonitor {
             }
             guard isCurrent() else { return nil }
 
-            // Save image to disk immediately so it is never held in RAM after capture
+            // Prefer the disk cache. If that write fails, retain the bounded
+            // payload so history persistence can preserve it inline instead.
             var imageFilePath: String?
             if let data = payload.imageData {
                 imageFilePath = ClipboardHistoryFileCache.saveImageData(data, for: request.itemID)?.path
@@ -361,7 +362,7 @@ final class ClipboardMonitor {
                 id: request.itemID,
                 timestamp: Date(),
                 textContent: payload.textContent,
-                imageData: nil,
+                imageData: imageFilePath == nil ? payload.imageData : nil,
                 filePaths: payload.filePaths,
                 fileReferences: fileReferences,
                 sourceApp: snapshot.sourceApp,

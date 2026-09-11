@@ -18,6 +18,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   BMP khi gửi macro và không cắt đôi surrogate pair trong sự kiện bàn phím.
 - Thay dấu qua Accessibility xóa cả cụm ký tự Unicode tách dấu, tránh để sót
   ký tự gốc như trường hợp `aà`.
+- Chuyển lịch sử Clipboard cũ theo thứ tự ghi thành công rồi mới xóa nguồn;
+  giữ dữ liệu lỗi và sao lưu file đích đang có trước khi thay thế khi cần.
+  Cache chỉ được dọn sau khi lưu thành công, và được giữ khi còn bản khôi phục.
+- Giải mã ảnh Clipboard cũ không tự ghi file hoặc bỏ mất dữ liệu ảnh khi lỗi;
+  giữ ảnh inline nếu chưa lưu được vào cache.
+- Kiểm tra và chuẩn bị nội dung Clipboard trước khi thay clipboard hiện tại;
+  báo rõ ảnh hỏng/file không còn khả dụng và không gửi lệnh dán nếu ghi thất bại.
 
 ### Chất lượng
 
@@ -25,6 +32,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   dừng dịch vụ preferences hoặc đóng PHTV của người dùng khi chạy test.
 - Bổ sung regression cho ownership sự kiện, Unicode output, phạm vi xóa AX,
   metadata clipboard và vòng đời capture; fixture không dùng clipboard thật.
+- Bổ sung regression cho migration, lỗi ghi/sao lưu, khởi động lại, bảo toàn
+  cache và thao tác dán bằng pasteboard riêng của test.
 
 ## [3.5.3] - 2026-09-07
 

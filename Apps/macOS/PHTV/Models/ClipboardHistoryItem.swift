@@ -138,7 +138,7 @@ struct ClipboardHistoryItem: Identifiable, Codable, Equatable, Sendable {
     let id: UUID
     let timestamp: Date
     let textContent: String?
-    /// Path to the image file on disk. Not kept in memory as raw bytes.
+    /// Path to an image already stored on disk. Path-backed items omit inline bytes.
     let imageFilePath: String?
     let filePaths: [String]?
     let fileReferences: [ClipboardHistoryFileReference]?
@@ -149,8 +149,8 @@ struct ClipboardHistoryItem: Identifiable, Codable, Equatable, Sendable {
     /// A pinned item may be pasted directly through this global shortcut.
     let hotkey: ClipboardItemHotkey?
 
-    // Non-Codable: only populated for freshly captured items before first save.
-    // After decoding from disk this is always nil; use imageFilePath instead.
+    /// Inline bytes for legacy records or captures without a durable image path.
+    /// Retained through encoding until storage can safely persist the image to disk.
     let imageData: Data?
 
     init(
@@ -214,7 +214,7 @@ struct ClipboardHistoryItem: Identifiable, Codable, Equatable, Sendable {
 
     private enum CodingKeys: String, CodingKey {
         case id, timestamp, textContent, imageFilePath, filePaths, fileReferences, sourceApp, isPinned, hotkey
-        // Legacy key for migration only — not written on encode
+        // Legacy records retain their inline payload until a durable path exists.
         case legacyImageData = "imageData"
     }
 
@@ -234,14 +234,11 @@ struct ClipboardHistoryItem: Identifiable, Codable, Equatable, Sendable {
             // New format: image already on disk
             imageFilePath = existingPath
             imageData = nil
-        } else if let legacyData = try c.decodeIfPresent(Data.self, forKey: .legacyImageData) {
-            // Migration: old format stored imageData inline. Save to disk now.
-            let savedURL = ClipboardHistoryFileCache.saveImageData(legacyData, for: id)
-            imageFilePath = savedURL?.path
-            imageData = nil
         } else {
+            // Decoding is side-effect-free: a later record may still fail to decode.
+            // Storage owns migration; keep these bytes until it commits a durable path.
             imageFilePath = nil
-            imageData = nil
+            imageData = try c.decodeIfPresent(Data.self, forKey: .legacyImageData)
         }
     }
 
@@ -258,7 +255,10 @@ struct ClipboardHistoryItem: Identifiable, Codable, Equatable, Sendable {
             try c.encode(isPinned, forKey: .isPinned)
         }
         try c.encodeIfPresent(hotkey, forKey: .hotkey)
-        // imageData is intentionally excluded — it lives on disk only
+        if imageFilePath == nil {
+            // Failed or deferred image migration must not silently discard payloads.
+            try c.encodeIfPresent(imageData, forKey: .legacyImageData)
+        }
     }
 
     // MARK: - Content
