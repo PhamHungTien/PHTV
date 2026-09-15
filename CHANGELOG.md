@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.5.4] - 2026-09-15
+
+### Tổng quan
+
+PHTV 3.5.4 cải thiện độ ổn định khi gõ tiếng Việt và sử dụng Lịch sử Clipboard.
+Bản cập nhật bảo toàn dấu Unicode, emoji và dữ liệu Clipboard khi gặp lỗi lưu,
+đồng thời kiểm tra nội dung trước khi dán và lọc dữ liệu nhạy cảm được nhận diện.
+
 ### Fixed
 
 - Sửa giữ dư bộ nhớ khi trả lại sự kiện bàn phím gốc trong event tap.
@@ -1534,7 +1542,8 @@ Phạm Hùng Tiến
 - Macro (gõ tắt)
 - Hoàn toàn offline
 
-[Unreleased]: https://github.com/PhamHungTien/PHTV/compare/v3.2.5...HEAD
+[Unreleased]: https://github.com/PhamHungTien/PHTV/compare/v3.5.4...HEAD
+[3.5.4]: https://github.com/PhamHungTien/PHTV/compare/v3.5.3...v3.5.4
 [3.2.5]: https://github.com/PhamHungTien/PHTV/compare/v3.2.4...v3.2.5
 [3.2.4]: https://github.com/PhamHungTien/PHTV/compare/v3.1.8...v3.2.4
 [3.1.8]: https://github.com/PhamHungTien/PHTV/compare/v3.1.7...v3.1.8
