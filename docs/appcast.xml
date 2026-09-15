@@ -7,6 +7,36 @@
         <language>vi</language>
         <!-- Most recent version first -->
         <item>
+            <title>3.5.4</title>
+            <pubDate>Tue, 15 Sep 2026 22:12:27 +0700</pubDate>
+            <sparkle:version>321</sparkle:version>
+            <sparkle:shortVersionString>3.5.4</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[
+                <h2>PHTV 3.5.4</h2>
+                <h3>Tổng quan</h3>
+                <p>PHTV 3.5.4 cải thiện độ ổn định khi gõ tiếng Việt và sử dụng Lịch sử Clipboard. Bản cập nhật bảo toàn dấu Unicode, emoji và dữ liệu Clipboard khi gặp lỗi lưu, đồng thời kiểm tra nội dung trước khi dán và lọc dữ liệu nhạy cảm được nhận diện.</p>
+                <h3>Fixed</h3>
+                <ul>
+                <li>Sửa giữ dư bộ nhớ khi trả lại sự kiện bàn phím gốc trong event tap.</li>
+                <li>Lịch sử Clipboard bỏ qua các marker nhạy cảm/tạm thời và nguồn password manager được nhận diện; kiểm tra lại clipboard trước khi lưu kết quả.</li>
+                <li>Capture Clipboard bị hủy hoặc quá hạn không tạo thêm worker chồng nhau; kết quả về muộn được bỏ và cache tạm tương ứng được dọn.</li>
+                <li>Giữ đủ dấu Unicode tổ hợp ở ranh giới chia đoạn, bảo toàn emoji/ký tự ngoài BMP khi gửi macro và không cắt đôi surrogate pair trong sự kiện bàn phím.</li>
+                <li>Thay dấu qua Accessibility xóa cả cụm ký tự Unicode tách dấu, tránh để sót ký tự gốc như trường hợp <code>aà</code>.</li>
+                <li>Chuyển lịch sử Clipboard cũ theo thứ tự ghi thành công rồi mới xóa nguồn; giữ dữ liệu lỗi và sao lưu file đích đang có trước khi thay thế khi cần. Cache chỉ được dọn sau khi lưu thành công, và được giữ khi còn bản khôi phục.</li>
+                <li>Giải mã ảnh Clipboard cũ không tự ghi file hoặc bỏ mất dữ liệu ảnh khi lỗi; giữ ảnh inline nếu chưa lưu được vào cache.</li>
+                <li>Kiểm tra và chuẩn bị nội dung Clipboard trước khi thay clipboard hiện tại; báo rõ ảnh hỏng/file không còn khả dụng và không gửi lệnh dán nếu ghi thất bại.</li>
+                </ul>
+                <h3>Chất lượng</h3>
+                <ul>
+                <li>Tách cấu hình <code>Testing</code> với bundle ID riêng; không xóa cấu hình Debug/Release, dừng dịch vụ preferences hoặc đóng PHTV của người dùng khi chạy test.</li>
+                <li>Bổ sung regression cho ownership sự kiện, Unicode output, phạm vi xóa AX, metadata clipboard và vòng đời capture; fixture không dùng clipboard thật.</li>
+                <li>Bổ sung regression cho migration, lỗi ghi/sao lưu, khởi động lại, bảo toàn cache và thao tác dán bằng pasteboard riêng của test.</li>
+                </ul>
+            ]]></description>
+            <enclosure url="https://github.com/PhamHungTien/PHTV/releases/download/v3.5.4/PHTV-3.5.4-arm64.dmg" length="9397373" type="application/octet-stream" sparkle:edSignature="wpx5M8i7Z8xtfCQlAmzHn361RaArE9iLTU8LMSYAQ6NRSJ+MvsQwg8jpFZMUcwJvym9CUeiFIVDQfPOOa06uAw=="/>
+        </item>
+        <item>
             <title>3.5.3</title>
             <pubDate>Mon, 07 Sep 2026 18:46:07 +0700</pubDate>
             <sparkle:version>320</sparkle:version>
@@ -658,14 +688,6 @@
             <sparkle:shortVersionString>3.2.5</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
             <enclosure url="https://github.com/PhamHungTien/PHTV/releases/download/v3.2.5/PHTV-3.2.5-arm64.dmg" length="9660998" type="application/octet-stream" sparkle:edSignature="gFURrnmXfR9KsbNr2FtG5IzJLIj95m+s5TXWgKar+MQcie9tZz0QeviCkuvwUC/qh4dOfW2aelfUVV+n52XPDQ=="/>
-        </item>
-        <item>
-            <title>3.2.4</title>
-            <pubDate>Thu, 11 Jun 2026 19:44:14 +0700</pubDate>
-            <sparkle:version>291</sparkle:version>
-            <sparkle:shortVersionString>3.2.4</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <enclosure url="https://github.com/PhamHungTien/PHTV/releases/download/v3.2.4/PHTV-3.2.4-arm64.dmg" length="9657853" type="application/octet-stream" sparkle:edSignature="MXxzSEILJhXnpGbElXjC8WcnullT7AvBBo0I4Gau/FqnYnL8G5mxhaKXYrr6Q/pD9CdvUnflG7tyYXmERMh6Bg=="/>
         </item>
         <item>
             <title>2.8.9</title>
