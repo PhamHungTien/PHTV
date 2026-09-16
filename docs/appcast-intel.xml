@@ -7,6 +7,30 @@
         <language>vi</language>
         <!-- Intel (x86_64) feed — Most recent version first -->
         <item>
+            <title>3.5.5</title>
+            <pubDate>Thu, 17 Sep 2026 01:54:30 +0700</pubDate>
+            <sparkle:version>322</sparkle:version>
+            <sparkle:shortVersionString>3.5.5</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[
+                <h2>PHTV 3.5.5</h2>
+                <h3>Tổng quan</h3>
+                <p>PHTV 3.5.5 khắc phục lỗi gõ tắt từ Text Replacements của macOS không mở rộng khi viết hoa đầu câu hoặc viết hoa toàn bộ shortcut.</p>
+                <h3>Fixed</h3>
+                <ul>
+                <li>Với Text Replacement <code>vd</code> → <code>ví dụ</code>, gõ <code>Vd</code> sẽ mở rộng thành <code>Ví dụ</code>, còn <code>VD</code> sẽ mở rộng thành <code>VÍ DỤ</code>, kể cả khi tắt “Tự động viết hoa”.</li>
+                <li>PHTV trực tiếp xử lý các biến thể viết hoa; shortcut khớp nguyên dạng vẫn được giao cho macOS trong ứng dụng hỗ trợ Text Replacements gốc.</li>
+                <li>Giữ nguyên tùy chọn “Tự động viết hoa” đối với gõ tắt do người dùng tạo trong PHTV.</li>
+                </ul>
+                <h3>Chất lượng</h3>
+                <ul>
+                <li>Bổ sung kiểm thử hồi quy cho shortcut viết thường, viết hoa đầu và viết hoa toàn bộ khi bật/tắt chế độ xử lý Text Replacements gốc.</li>
+                <li>Toàn bộ <strong>195 kiểm thử</strong> thuộc các bộ EngineRegressionTests, MacroCodeTableTests và SystemTextReplacementServiceTests đều đạt.</li>
+                </ul>
+            ]]></description>
+            <enclosure url="https://github.com/PhamHungTien/PHTV/releases/download/v3.5.5/PHTV-3.5.5-intel.dmg" length="9678419" type="application/octet-stream" sparkle:edSignature="lQmVp5d70UjqdjtstnAuMqYzjORUxjI1u0nFi0TBSCvTcb+ABoW5cjEs76YZTnlXXymSifgQSDtfDkzTPg9lAA=="/>
+        </item>
+        <item>
             <title>3.5.4</title>
             <pubDate>Tue, 15 Sep 2026 22:15:11 +0700</pubDate>
             <sparkle:version>321</sparkle:version>
@@ -680,14 +704,6 @@
             <sparkle:shortVersionString>3.2.6</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
             <enclosure url="https://github.com/PhamHungTien/PHTV/releases/download/v3.2.6/PHTV-3.2.6-intel.dmg" length="9921476" type="application/octet-stream" sparkle:edSignature="8AjUuJTmze7XO8jkKOvIXfCX1PEhYG/ooJJoI1P7Sjfziip+y96sXXsh7/PIkkx/wQvZsaeFHt+Tk8nt+JMQBQ=="/>
-        </item>
-        <item>
-            <title>3.2.5</title>
-            <pubDate>Thu, 11 Jun 2026 20:08:12 +0700</pubDate>
-            <sparkle:version>292</sparkle:version>
-            <sparkle:shortVersionString>3.2.5</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <enclosure url="https://github.com/PhamHungTien/PHTV/releases/download/v3.2.5/PHTV-3.2.5-intel.dmg" length="9914508" type="application/octet-stream" sparkle:edSignature="SjKKKy1GRC5xYnmXUa0HgXZej3BLlSvTj8q6fNNjYnkNbZ+vyg7j09uucAK0yfF/92Sk1AmXrdg//Y7d5tQnCA=="/>
         </item>
         <item>
             <title>2.8.9</title>
