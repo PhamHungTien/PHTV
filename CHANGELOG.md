@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.5.5] - 2026-09-17
+
+### Tổng quan
+
+PHTV 3.5.5 khắc phục lỗi gõ tắt từ Text Replacements của macOS không mở rộng
+khi viết hoa đầu câu hoặc viết hoa toàn bộ shortcut.
+
+### Fixed
+
+- Với Text Replacement `vd` → `ví dụ`, gõ `Vd` sẽ mở rộng thành `Ví dụ`,
+  còn `VD` sẽ mở rộng thành `VÍ DỤ`, kể cả khi tắt “Tự động viết hoa”.
+- PHTV trực tiếp xử lý các biến thể viết hoa; shortcut khớp nguyên dạng vẫn
+  được giao cho macOS trong ứng dụng hỗ trợ Text Replacements gốc.
+- Giữ nguyên tùy chọn “Tự động viết hoa” đối với gõ tắt do người dùng tạo
+  trong PHTV.
+
+### Chất lượng
+
+- Bổ sung kiểm thử hồi quy cho shortcut viết thường, viết hoa đầu và viết hoa
+  toàn bộ khi bật/tắt chế độ xử lý Text Replacements gốc.
+- Toàn bộ **195 kiểm thử** thuộc các bộ EngineRegressionTests,
+  MacroCodeTableTests và SystemTextReplacementServiceTests đều đạt.
+
 ## [3.5.4] - 2026-09-15
 
 ### Tổng quan
