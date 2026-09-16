@@ -44,6 +44,7 @@ private final class MacroLookupStateBox: @unchecked Sendable {
 private final class MatchedMacroStateBox: @unchecked Sendable {
     let lock = NSLock()
     var snippetType: Int32 = EngineMacroSnippetType.staticContent
+    var isExactMatch = false
 }
 
 private final class RuntimeSettingsStateBox: @unchecked Sendable {
@@ -99,9 +100,10 @@ private let macroLookupState = MacroLookupStateBox()
 private let matchedMacroState = MatchedMacroStateBox()
 private let runtimeSettingsState = RuntimeSettingsStateBox()
 
-private func setLastMatchedMacroSnippetType(_ snippetType: Int32) {
+private func setLastMatchedMacroSnippetType(_ snippetType: Int32, isExactMatch: Bool = false) {
     matchedMacroState.lock.lock()
     matchedMacroState.snippetType = snippetType
+    matchedMacroState.isExactMatch = isExactMatch
     matchedMacroState.lock.unlock()
 }
 
@@ -601,11 +603,11 @@ private func findMacroContentForNormalizedKeys(
     let map = macroLookupState.mapLocked(forCodeTable: codeTable)
 
     if let directEntry = map[keys] {
-        setLastMatchedMacroSnippetType(directEntry.snippetType)
+        setLastMatchedMacroSnippetType(directEntry.snippetType, isExactMatch: true)
         return macroContentCode(for: directEntry, codeTable: codeTable)
     }
 
-    guard autoCapsEnabled, !keys.isEmpty else {
+    guard !keys.isEmpty else {
         return nil
     }
 
@@ -629,7 +631,9 @@ private func findMacroContentForNormalizedKeys(
         }
     }
 
-    guard let entry = map[candidate] else {
+    // System replacements inherit capitalization even when user macro auto-caps is off.
+    guard let entry = map[candidate],
+          autoCapsEnabled || entry.snippetType == EngineMacroSnippetType.systemTextReplacement else {
         return nil
     }
     setLastMatchedMacroSnippetType(entry.snippetType)
@@ -1318,6 +1322,12 @@ final class PHTVEngineRuntimeFacade: NSObject {
 
     class func engineDataMatchedMacroSnippetType() -> Int32 {
         lastMatchedMacroSnippetType()
+    }
+
+    class func engineDataMatchedMacroIsExactMatch() -> Bool {
+        matchedMacroState.lock.lock()
+        defer { matchedMacroState.lock.unlock() }
+        return matchedMacroState.isExactMatch
     }
 
     class func singleModifierSwitchKeys() -> Int32 {

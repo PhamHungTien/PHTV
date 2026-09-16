@@ -118,8 +118,8 @@ final class MacroCodeTableTests: XCTestCase {
             engine.vKeyHandleEvent(
                 event: .keyboard,
                 state: .keyDown,
-                data: keyCode(for: ch),
-                capsStatus: 0,
+                data: keyCode(for: Character(ch.lowercased())),
+                capsStatus: ch.isUppercase ? 1 : 0,
                 otherControlKey: false
             )
         }
@@ -247,6 +247,44 @@ final class MacroCodeTableTests: XCTestCase {
 
         XCTAssertEqual(snippetType(of: "đc", in: merged), .static)
         XCTAssertEqual(snippetType(of: "omw", in: merged), .systemTextReplacement)
+    }
+
+    func testSystemReplacementCapitalizationWithAutoCapsDisabled() {
+        let macros = PHTVSystemTextReplacementService.mergedRuntimeMacros(
+            userMacros: [],
+            useSystemTextReplacements: true,
+            rawItems: [["replace": "vd", "with": "ví dụ", "on": 1]]
+        )
+        loadMacros(macros)
+
+        for nativeMode in [false, true] {
+            PHTVEngineRuntimeFacade.setNativeSystemTextReplacementMode(nativeMode)
+            for (token, expected) in [("Vd", "Ví dụ"), ("VD", "VÍ DỤ")] {
+                let result = macroResult(afterTyping: token)
+                XCTAssertTrue(result.didTrigger, "token=\(token), native=\(nativeMode)")
+                XCTAssertEqual(result.backspaceCount, 2)
+                XCTAssertEqual(
+                    PHTVEngineDataBridge.macroString(fromMacroData: result.macroData, codeTable: 0),
+                    expected
+                )
+            }
+            let exact = macroResult(afterTyping: "vd")
+            XCTAssertEqual(exact.didTrigger, !nativeMode)
+            if !nativeMode {
+                XCTAssertEqual(
+                    PHTVEngineDataBridge.macroString(fromMacroData: exact.macroData, codeTable: 0),
+                    "ví dụ"
+                )
+            }
+        }
+    }
+
+    func testUserMacroStillRequiresAutoCapsForCapitalizedShortcut() {
+        loadMacros([MacroItem(shortcut: "vd", expansion: "ví dụ")])
+        XCTAssertFalse(typedTokenTriggersMacro("Vd"))
+        PHTVEngineRuntimeFacade.setAutoCapsMacro(1)
+        XCTAssertTrue(typedTokenTriggersMacro("Vd"))
+        PHTVEngineRuntimeFacade.setAutoCapsMacro(0)
     }
 
     func testVNISystemTextReplacementExpandsThroughPHTV() {

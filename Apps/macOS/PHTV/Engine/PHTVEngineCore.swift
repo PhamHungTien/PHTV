@@ -244,11 +244,13 @@ final class PHTVVietnameseEngine {
         if required == 0 { macroContent = []; return true }
 
         // In a native Text Replacement context, leave system entries to
-        // macOS. The raw shortcut has already passed through unchanged; if
+        // macOS only for an exact match. Capitalized variants are expanded by
+        // PHTV because native substitution may not recognize them. If
         // PHTV consumes it here, macOS would expand it a second time.
         if phtvRuntimeNativeSystemTextReplacementEnabled() != 0,
            PHTVEngineRuntimeFacade.engineDataMatchedMacroSnippetType()
-                == EngineMacroSnippetType.systemTextReplacement {
+                == EngineMacroSnippetType.systemTextReplacement,
+           PHTVEngineRuntimeFacade.engineDataMatchedMacroIsExactMatch() {
             macroContent = []
             return false
         }

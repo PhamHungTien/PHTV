@@ -118,6 +118,7 @@ final class PHTVCharacterOutputService: NSObject {
 
         if phtvRuntimeNativeSystemTextReplacementEnabled() != 0,
            PHTVEngineRuntimeFacade.engineDataMatchedMacroSnippetType() == EngineMacroSnippetType.systemTextReplacement,
+           PHTVEngineRuntimeFacade.engineDataMatchedMacroIsExactMatch(),
            PHTVSystemTextReplacementService.shouldDeferToNativeTextReplacement(
                forBundleId: effectiveTarget,
                document: PHTVAccessibilityService.focusedWindowDocumentForFrontmostAppValue(),
