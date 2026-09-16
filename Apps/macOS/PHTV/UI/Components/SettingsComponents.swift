@@ -295,6 +295,12 @@ struct StatusCard: View {
                 Text(statusTitle)
                     .font(.headline)
                     .foregroundStyle(.primary)
+                if runtimeHealth.phase == .secureInputActive {
+                    Text(PHTVSecureInputStatus.guidance)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
             }
 
             Spacer(minLength: 12)
@@ -326,6 +332,8 @@ struct StatusCard: View {
             return .orange
         case .relaunchPending:
             return .blue
+        case .secureInputActive:
+            return .orange
         case .waitingForEventTap:
             return .yellow
         }
@@ -341,6 +349,8 @@ struct StatusCard: View {
             return "eye.fill"
         case .relaunchPending:
             return "arrow.clockwise.circle.fill"
+        case .secureInputActive:
+            return "lock.shield.fill"
         case .waitingForEventTap:
             return "clock.badge.exclamationmark.fill"
         }
@@ -356,6 +366,8 @@ struct StatusCard: View {
             return "Thiếu quyền Giám sát đầu vào"
         case .relaunchPending:
             return "Đang tự khởi động lại"
+        case .secureInputActive:
+            return "Tạm dừng do nhập liệu bảo mật"
         case .waitingForEventTap:
             return "Đang hoàn tất khởi tạo"
         }
@@ -363,7 +375,7 @@ struct StatusCard: View {
 
     private var shouldShowPermissionButton: Bool {
         switch runtimeHealth.phase {
-        case .ready, .relaunchPending:
+        case .ready, .relaunchPending, .secureInputActive:
             return false
         case .accessibilityRequired, .inputMonitoringRequired, .waitingForEventTap:
             return true

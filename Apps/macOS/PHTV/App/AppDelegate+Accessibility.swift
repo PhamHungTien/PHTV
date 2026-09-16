@@ -188,7 +188,8 @@ private nonisolated func phtvAttemptTCCRepairInBackground() async -> (fixed: Boo
             relaunchPending: isRelaunchingAfterPermissionGrant,
             safeModeEnabled: PHTVManager.isSafeModeEnabled(),
             activeAppProfile: profile.kind,
-            activeBundleId: activeBundleId
+            activeBundleId: activeBundleId,
+            secureInputEnabled: PHTVSecureInputStatus.isEnabled
         )
     }
 
@@ -198,6 +199,11 @@ private nonisolated func phtvAttemptTCCRepairInBackground() async -> (fixed: Boo
             eventTapReady: eventTapReady,
             frontmostBundleId: frontmostBundleId
         )
+        if lastPublishedTypingRuntimeHealth?.secureInputEnabled == true,
+           !snapshot.secureInputEnabled {
+            // Key-up and word-boundary events may have been hidden by macOS.
+            PHTVEventTapService.resetAfterSecureInput()
+        }
         let runtimeHealthChanged = lastPublishedTypingRuntimeHealth != snapshot
         if snapshot.isTypingPermissionReady {
             lastPresentedPermissionGuidanceStep = nil
@@ -210,14 +216,15 @@ private nonisolated func phtvAttemptTCCRepairInBackground() async -> (fixed: Boo
                 object: snapshot
             )
             NSLog(
-                "[Accessibility] Runtime health: phase=%@ profile=%@ ax=%@ input=%@ tap=%@ relaunch=%@ safeMode=%@",
+                "[Accessibility] Runtime health: phase=%@ profile=%@ ax=%@ input=%@ tap=%@ relaunch=%@ safeMode=%@ secureInput=%@",
                 snapshot.phase.rawValue,
                 snapshot.activeAppProfile.rawValue,
                 snapshot.axTrusted ? "YES" : "NO",
                 snapshot.inputMonitoringTrusted ? "YES" : "NO",
                 snapshot.eventTapReady ? "YES" : "NO",
                 snapshot.relaunchPending ? "YES" : "NO",
-                snapshot.safeModeEnabled ? "YES" : "NO"
+                snapshot.safeModeEnabled ? "YES" : "NO",
+                snapshot.secureInputEnabled ? "YES" : "NO"
             )
         }
 
@@ -284,7 +291,7 @@ private nonisolated func phtvAttemptTCCRepairInBackground() async -> (fixed: Boo
 
         healthCheckTask = Task { @MainActor [weak self] in
             while let self, !Task.isCancelled {
-                try? await Task.sleep(for: .seconds(10))
+                try? await Task.sleep(for: .seconds(2))
                 guard !Task.isCancelled else { break }
                 self.runHealthCheck()
             }
@@ -300,6 +307,10 @@ private nonisolated func phtvAttemptTCCRepairInBackground() async -> (fixed: Boo
         if !AXIsProcessTrusted() || !PHTVPermissionService.hasInputMonitoringPermission() {
             publishTypingPermissionState(eventTapReady: false)
             continuePermissionGuidanceIfNeeded()
+            return
+        }
+        if PHTVSecureInputStatus.isEnabled {
+            publishTypingPermissionState()
             return
         }
         PHTVManager.ensureEventTapAlive()
@@ -397,6 +408,12 @@ private nonisolated func phtvAttemptTCCRepairInBackground() async -> (fixed: Boo
             return
         }
 
+        if PHTVSecureInputStatus.isEnabled {
+            publishTypingPermissionState()
+            startHealthCheckMonitoring()
+            return
+        }
+
         if phtvShouldRelaunchAfterAccessibilityGrant(
             axTrusted: axTrusted,
             inputMonitoringTrusted: inputMonitoringTrusted,
@@ -417,6 +434,12 @@ private nonisolated func phtvAttemptTCCRepairInBackground() async -> (fixed: Boo
     }
 
     private func tryInitEventTap(attempt: Int) {
+        if PHTVSecureInputStatus.isEnabled {
+            isInitializingEventTap = false
+            publishTypingPermissionState()
+            startHealthCheckMonitoring()
+            return
+        }
         if attempt == 1 {
             guard !isInitializingEventTap else {
                 NSLog("[EventTap] Already initializing, ignoring redundant request")

@@ -9,6 +9,84 @@ import XCTest
 @testable import PHTV
 
 final class TypingRuntimeScenarioTests: XCTestCase {
+    func testSecureInputBlocksReadinessEvenWhenTapIsEnabledInAnotherApp() {
+        for tapReady in [false, true] {
+            let snapshot = PHTVTypingRuntimeStateMachine.snapshot(
+                axTrusted: true,
+                eventTapReady: tapReady,
+                relaunchPending: false,
+                safeModeEnabled: false,
+                activeAppProfile: .chat,
+                activeBundleId: "ru.keepcoder.Telegram",
+                secureInputEnabled: true
+            )
+            XCTAssertEqual(snapshot.phase, .secureInputActive)
+            XCTAssertEqual(snapshot.permissionState, .secureInputActive)
+            XCTAssertEqual(snapshot.guidanceStep, .secureInputActive)
+            XCTAssertTrue(snapshot.hasAccessibilityPermission)
+            XCTAssertTrue(snapshot.hasInputMonitoringPermission)
+            XCTAssertFalse(snapshot.isTypingPermissionReady)
+            XCTAssertFalse(PHTVTypingRuntimeStateMachine.shouldScheduleEventTapRecovery(snapshot: snapshot))
+            XCTAssertFalse(PHTVTypingRuntimeStateMachine.shouldPerformInProcessRecovery(snapshot: snapshot))
+            XCTAssertFalse(PHTVTypingRuntimeStateMachine.shouldRelaunchAfterGrant(
+                snapshot: snapshot, needsRelaunchAfterPermission: true, isEventTapInitialized: false
+            ))
+            XCTAssertFalse(PHTVTypingRuntimeStateMachine.shouldFallbackRelaunchAfterEventTapFailures(
+                snapshot: snapshot, needsRelaunchAfterPermission: true
+            ))
+        }
+    }
+
+    func testSecureInputDoesNotHideMissingPermissions() {
+        for axTrusted in [false, true] {
+            let snapshot = PHTVTypingRuntimeHealthSnapshot.resolve(
+                axTrusted: axTrusted,
+                inputMonitoringTrusted: false,
+                eventTapReady: true,
+                relaunchPending: false,
+                safeModeEnabled: false,
+                activeAppProfile: .browser,
+                secureInputEnabled: true
+            )
+            XCTAssertEqual(snapshot.phase, axTrusted ? .inputMonitoringRequired : .accessibilityRequired)
+        }
+    }
+
+    func testSecureInputReleaseRestoresReadinessOrSchedulesTapRecovery() {
+        for tapReady in [false, true] {
+            let snapshot = PHTVTypingRuntimeHealthSnapshot.resolve(
+                axTrusted: true,
+                eventTapReady: tapReady,
+                relaunchPending: false,
+                safeModeEnabled: false,
+                activeAppProfile: .chat,
+                secureInputEnabled: false
+            )
+            XCTAssertEqual(snapshot.phase, tapReady ? .ready : .waitingForEventTap)
+            XCTAssertEqual(snapshot.isTypingPermissionReady, tapReady)
+            XCTAssertEqual(
+                PHTVTypingRuntimeStateMachine.shouldScheduleEventTapRecovery(snapshot: snapshot),
+                !tapReady
+            )
+        }
+    }
+
+    @MainActor
+    func testSecureInputRecoveryClearsMissedModifierEventsWithoutChangingLanguage() {
+        let language = PHTVEngineRuntimeFacade.currentLanguage()
+        defer { PHTVEventTapService.resetAfterSecureInput() }
+        PHTVModifierRuntimeStateService.setLastFlagsValue(UInt64.max)
+        PHTVModifierRuntimeStateService.setPausePressedValue(true)
+        PHTVModifierRuntimeStateService.setRestoreModifierPressedValue(true)
+
+        PHTVEventTapService.resetAfterSecureInput()
+
+        XCTAssertEqual(PHTVModifierRuntimeStateService.lastFlagsValue(), 0)
+        XCTAssertFalse(PHTVModifierRuntimeStateService.pausePressedValue())
+        XCTAssertFalse(PHTVModifierRuntimeStateService.restoreModifierPressedValue())
+        XCTAssertEqual(PHTVEngineRuntimeFacade.currentLanguage(), language)
+    }
+
     private struct TypingScenario {
         let name: String
         let snapshot: PHTVTypingRuntimeHealthSnapshot

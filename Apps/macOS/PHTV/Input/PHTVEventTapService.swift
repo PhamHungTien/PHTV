@@ -122,6 +122,12 @@ import Foundation
         PHTVEventCallbackService.resetTransientStateForTapLifecycle()
     }
 
+    @MainActor static func resetAfterSecureInput() {
+        resetTransientTapRuntimeState()
+        PHTVEngineSessionService.requestNewSessionInternal(allowUppercasePrime: false)
+        NSLog("[EventTap] Secure Input ended; reset transient typing state")
+    }
+
     @objc static func hasPermissionLost() -> Bool {
         runtimeState.withLock { $0.permissionLost }
     }

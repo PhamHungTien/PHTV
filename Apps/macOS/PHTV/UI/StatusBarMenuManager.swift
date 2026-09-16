@@ -447,6 +447,12 @@ final class StatusBarMenuManager: NSObject, NSMenuDelegate {
             item.image = sfImage("arrow.clockwise.circle")
             item.isEnabled = false
             m.addItem(item)
+        case .secureInputActive:
+            let item = NSMenuItem(title: "Tạm dừng do nhập liệu bảo mật", action: nil, keyEquivalent: "")
+            item.image = sfImage("lock.shield")
+            item.toolTip = PHTVSecureInputStatus.guidance
+            item.isEnabled = false
+            m.addItem(item)
         case .waitingForEventTap:
             let item = NSMenuItem(title: "Đã cấp đủ quyền, đang khởi tạo", action: nil, keyEquivalent: "")
             item.image = sfImage("clock.badge.exclamationmark")

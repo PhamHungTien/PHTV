@@ -66,7 +66,7 @@ func phtvShouldRepairPermissionEntryBeforeGuidance(
         case .waitingForEventTap:
             NSLog("[PermissionFlow] Retrying event tap initialization")
             retryTypingPermissionRecovery(reason: "permission-guidance")
-        case .ready:
+        case .ready, .secureInputActive:
             break
         }
     }

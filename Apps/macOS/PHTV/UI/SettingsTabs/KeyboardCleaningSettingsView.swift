@@ -169,6 +169,8 @@ struct KeyboardCleaningSettingsView: View {
             return "Cần cấp Giám sát đầu vào"
         case .accessibilityRequired:
             return "Cần cấp Accessibility"
+        case .secureInputActive:
+            return "Tạm dừng do nhập liệu bảo mật"
         case .waitingForEventTap:
             return "Đã cấp quyền, đang khởi tạo bộ lắng nghe phím"
         case .relaunchPending:

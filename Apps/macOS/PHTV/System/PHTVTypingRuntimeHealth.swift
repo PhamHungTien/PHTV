@@ -6,6 +6,15 @@
 //
 
 import Foundation
+import Carbon
+
+enum PHTVSecureInputStatus {
+    // Carbon documents this query as not thread-safe. Sample it from the
+    // main-actor health monitor, never from the keyboard callback.
+    @MainActor static var isEnabled: Bool { IsSecureEventInputEnabled() }
+
+    static let guidance = "macOS đang bật nhập liệu bảo mật nên PHTV tạm thời không nhận được phím. Hãy rời ô mật khẩu; nếu vẫn bị chặn, đóng tab hoặc ứng dụng vừa dùng ô mật khẩu. PHTV sẽ tự tiếp tục khi chế độ này kết thúc."
+}
 
 enum PHTVActiveAppProfile: String, CaseIterable, Equatable, Sendable {
     case generic
@@ -44,6 +53,7 @@ enum PHTVTypingRuntimePhase: String, Equatable, Sendable {
     case inputMonitoringRequired
     case relaunchPending
     case waitingForEventTap
+    case secureInputActive
     case ready
 
     var isReady: Bool {
@@ -59,6 +69,7 @@ struct PHTVTypingRuntimeHealthSnapshot: Equatable, Sendable {
     let safeModeEnabled: Bool
     let activeAppProfile: PHTVActiveAppProfile
     let activeBundleId: String?
+    let secureInputEnabled: Bool
 
     var phase: PHTVTypingRuntimePhase {
         guard axTrusted else {
@@ -69,6 +80,9 @@ struct PHTVTypingRuntimeHealthSnapshot: Equatable, Sendable {
         }
         if relaunchPending && !eventTapReady {
             return .relaunchPending
+        }
+        if secureInputEnabled {
+            return .secureInputActive
         }
         return eventTapReady ? .ready : .waitingForEventTap
     }
@@ -104,7 +118,8 @@ struct PHTVTypingRuntimeHealthSnapshot: Equatable, Sendable {
         relaunchPending: Bool,
         safeModeEnabled: Bool,
         activeAppProfile: PHTVActiveAppProfile,
-        activeBundleId: String? = nil
+        activeBundleId: String? = nil,
+        secureInputEnabled: Bool = false
     ) -> Self {
         Self(
             axTrusted: axTrusted,
@@ -113,7 +128,8 @@ struct PHTVTypingRuntimeHealthSnapshot: Equatable, Sendable {
             relaunchPending: relaunchPending,
             safeModeEnabled: safeModeEnabled,
             activeAppProfile: activeAppProfile,
-            activeBundleId: activeBundleId
+            activeBundleId: activeBundleId,
+            secureInputEnabled: secureInputEnabled
         )
     }
 }
@@ -126,7 +142,8 @@ enum PHTVTypingRuntimeStateMachine {
         relaunchPending: Bool,
         safeModeEnabled: Bool,
         activeAppProfile: PHTVActiveAppProfile,
-        activeBundleId: String? = nil
+        activeBundleId: String? = nil,
+        secureInputEnabled: Bool = false
     ) -> PHTVTypingRuntimeHealthSnapshot {
         PHTVTypingRuntimeHealthSnapshot.resolve(
             axTrusted: axTrusted,
@@ -135,7 +152,8 @@ enum PHTVTypingRuntimeStateMachine {
             relaunchPending: relaunchPending,
             safeModeEnabled: safeModeEnabled,
             activeAppProfile: activeAppProfile,
-            activeBundleId: activeBundleId
+            activeBundleId: activeBundleId,
+            secureInputEnabled: secureInputEnabled
         )
     }
 
@@ -146,6 +164,7 @@ enum PHTVTypingRuntimeStateMachine {
     ) -> Bool {
         snapshot.axTrusted
             && snapshot.inputMonitoringTrusted
+            && !snapshot.secureInputEnabled
             && needsRelaunchAfterPermission
             && !isEventTapInitialized
             && !snapshot.isRelaunchPending
@@ -157,6 +176,7 @@ enum PHTVTypingRuntimeStateMachine {
     ) -> Bool {
         snapshot.axTrusted
             && snapshot.inputMonitoringTrusted
+            && !snapshot.secureInputEnabled
             && needsRelaunchAfterPermission
             && !snapshot.isRelaunchPending
     }
@@ -164,7 +184,7 @@ enum PHTVTypingRuntimeStateMachine {
     static func shouldPerformInProcessRecovery(
         snapshot: PHTVTypingRuntimeHealthSnapshot
     ) -> Bool {
-        !snapshot.isRelaunchPending
+        !snapshot.isRelaunchPending && !snapshot.secureInputEnabled
     }
 
     static func shouldScheduleEventTapRecovery(
@@ -172,6 +192,7 @@ enum PHTVTypingRuntimeStateMachine {
     ) -> Bool {
         snapshot.axTrusted
             && snapshot.inputMonitoringTrusted
+            && !snapshot.secureInputEnabled
             && !snapshot.eventTapReady
             && !snapshot.isRelaunchPending
     }

@@ -14,6 +14,7 @@ import Observation
 enum PHTVTypingPermissionState: Equatable {
     case ready
     case waitingForEventTap
+    case secureInputActive
     case inputMonitoringRequired
     case accessibilityRequired
 
@@ -25,6 +26,8 @@ enum PHTVTypingPermissionState: Equatable {
             return .inputMonitoringRequired
         case .waitingForEventTap, .relaunchPending:
             return .waitingForEventTap
+        case .secureInputActive:
+            return .secureInputActive
         case .ready:
             return .ready
         }
@@ -53,7 +56,7 @@ enum PHTVTypingPermissionState: Equatable {
 
     var hasInputMonitoringPermission: Bool {
         switch self {
-        case .ready, .waitingForEventTap:
+        case .ready, .waitingForEventTap, .secureInputActive:
             return true
         case .inputMonitoringRequired, .accessibilityRequired:
             return false
@@ -70,6 +73,7 @@ enum PHTVPermissionGuidanceStep: Equatable {
     case accessibility
     case inputMonitoring
     case waitingForEventTap
+    case secureInputActive
 
     static func resolve(snapshot: PHTVTypingRuntimeHealthSnapshot) -> Self {
         switch snapshot.phase {
@@ -79,6 +83,8 @@ enum PHTVPermissionGuidanceStep: Equatable {
             return .inputMonitoring
         case .waitingForEventTap, .relaunchPending:
             return .waitingForEventTap
+        case .secureInputActive:
+            return .secureInputActive
         case .ready:
             return .ready
         }
@@ -509,7 +515,8 @@ final class SystemState {
             relaunchPending: isRelaunchPending,
             safeModeEnabled: safeMode,
             activeAppProfile: profile.kind,
-            activeBundleId: activeBundleId
+            activeBundleId: activeBundleId,
+            secureInputEnabled: PHTVSecureInputStatus.isEnabled
         )
     }
 
