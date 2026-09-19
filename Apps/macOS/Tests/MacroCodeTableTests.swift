@@ -79,6 +79,55 @@ final class MacroCodeTableTests: XCTestCase {
         super.tearDown()
     }
 
+    func testExcludedAppBlocksUserAndSystemMacrosInBothLanguages() {
+        PHTVEngineRuntimeFacade.setMacroExcludedBundleIDs(["com.example.Editor"])
+        defer {
+            PHTVEngineRuntimeFacade.setMacroExcludedBundleIDs([])
+            PHTVEngineRuntimeFacade.configureMacroTarget(bundleIdentifier: nil)
+        }
+        for type in [SnippetType.static, .systemTextReplacement] {
+            loadMacros([MacroItem(shortcut: "zz", expansion: "Xin chào", snippetType: type)])
+            for bundle in ["com.example.editor", "COM.EXAMPLE.EDITOR"] {
+                PHTVEngineRuntimeFacade.configureMacroTarget(bundleIdentifier: bundle)
+                XCTAssertEqual(PHTVEngineRuntimeFacade.useMacro(), 1, "Keep the global preference enabled")
+                XCTAssertFalse(typedTokenTriggersMacro("zz"))
+                let english = PHTVVietnameseEngine()
+                for key in [KEY_Z, KEY_Z, KEY_SPACE] {
+                    english.vEnglishMode(state: .keyDown, data: key, isCaps: false, otherControlKey: false)
+                }
+                XCTAssertNotEqual(english.hCode, HookCodeState.replaceMacro.rawValue)
+                XCTAssertEqual(PHTVEngineRuntimeFacade.currentLanguage(), 1)
+            }
+            for bundle in ["com.example.editor.beta", "com.apple.TextEdit", nil] {
+                PHTVEngineRuntimeFacade.configureMacroTarget(bundleIdentifier: bundle)
+                XCTAssertTrue(typedTokenTriggersMacro("zz"))
+                let english = PHTVVietnameseEngine()
+                for key in [KEY_Z, KEY_Z, KEY_SPACE] {
+                    english.vEnglishMode(state: .keyDown, data: key, isCaps: false, otherControlKey: false)
+                }
+                XCTAssertEqual(english.hCode, HookCodeState.replaceMacro.rawValue)
+            }
+        }
+    }
+
+    func testExclusionBoundaryClearsPartialShortcutAndRespectsGlobalOff() {
+        loadMacros([MacroItem(shortcut: "zz", expansion: "Xin chào")])
+        PHTVEngineRuntimeFacade.setMacroExcludedBundleIDs(["com.example.Editor"])
+        defer {
+            PHTVEngineRuntimeFacade.setMacroExcludedBundleIDs([])
+            PHTVEngineRuntimeFacade.configureMacroTarget(bundleIdentifier: nil)
+        }
+        PHTVEngineRuntimeFacade.configureMacroTarget(bundleIdentifier: "com.apple.TextEdit")
+        engineHandleEnglishMode(0, KEY_Z, 0, 0)
+        engineHandleEnglishMode(0, KEY_Z, 0, 0)
+        PHTVEngineRuntimeFacade.configureMacroTarget(bundleIdentifier: "com.example.Editor")
+        PHTVEngineRuntimeFacade.configureMacroTarget(bundleIdentifier: "com.apple.TextEdit")
+        engineHandleEnglishMode(0, KEY_SPACE, 0, 0)
+        XCTAssertNotEqual(PHTVEngineRuntimeFacade.engineDataCode(), EngineSignalCode.replaceMacro)
+        PHTVEngineRuntimeFacade.setUseMacro(0)
+        XCTAssertFalse(typedTokenTriggersMacro("zz"))
+    }
+
     // MARK: - Helpers
 
     private func loadMacros(_ macros: [MacroItem]) {

@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Thêm danh sách loại trừ ứng dụng trong Gõ tắt, áp dụng cho cả chế độ Việt/Anh
+  và Text Replacements do PHTV xử lý. Hỗ trợ chọn ứng dụng đang chạy, file ứng dụng
+  hoặc Bundle ID; lưu và khôi phục cùng bản sao lưu cài đặt.
+
 ### Fixed
 
 - Khôi phục ngôn ngữ trước khi tạm ngưng gõ nếu Secure Input làm mất sự kiện

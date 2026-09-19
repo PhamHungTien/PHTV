@@ -55,6 +55,8 @@ private final class RuntimeSettingsStateBox: @unchecked Sendable {
     var isEnglishLanguageLocked = false
     var switchKeyStatus: Int32 = Int32(Defaults.defaultSwitchKeyStatus)
     var fixRecommendBrowser: Int32 = Defaults.fixRecommendBrowser ? 1 : 0
+    var macroExcludedBundleIDs: Set<String> = []
+    var macroExcludedForCurrentTarget = false
     var useMacro: Int32 = 1
     var useMacroInEnglishMode: Int32 = 0
     /// When enabled for a browser/editor that owns macOS Text Replacements,
@@ -824,7 +826,7 @@ func phtvRuntimeDoubleSpacePeriodEnabled() -> Int32 {
 
 @_cdecl("phtvRuntimeUseMacroEnabled")
 func phtvRuntimeUseMacroEnabled() -> Int32 {
-    runtimeUseMacro
+    withRuntimeSettings { $0.macroExcludedForCurrentTarget ? 0 : $0.useMacro }
 }
 
 @_cdecl("phtvRuntimeNativeSystemTextReplacementEnabled")
@@ -1106,6 +1108,26 @@ final class PHTVEngineRuntimeFacade: NSObject {
 
     class func setFreeMark(_ value: Int32) {
         runtimeFreeMark = value
+    }
+
+    @nonobjc class func setMacroExcludedBundleIDs(_ bundleIDs: [String]) {
+        withRuntimeSettings { state in
+            state.macroExcludedBundleIDs = Set(bundleIDs.map {
+                $0.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+            }.filter { !$0.isEmpty })
+        }
+    }
+
+    /// Resolve once per event, without disk access or Accessibility queries.
+    @nonobjc class func configureMacroTarget(bundleIdentifier: String?) {
+        let changed = withRuntimeSettings { state in
+            let excluded = bundleIdentifier.map { state.macroExcludedBundleIDs.contains($0.lowercased()) } ?? false
+            let changed = excluded != state.macroExcludedForCurrentTarget
+            state.macroExcludedForCurrentTarget = excluded
+            return changed
+        }
+        // Do not carry a partial shortcut across an exclusion boundary.
+        if changed { engineStartNewSession() }
     }
 
     class func useMacro() -> Int32 {

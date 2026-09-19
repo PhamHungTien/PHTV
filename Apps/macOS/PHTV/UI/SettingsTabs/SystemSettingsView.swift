@@ -483,7 +483,8 @@ struct SystemSettingsView: View {
             excludedApps: nil,  // Legacy format no longer used
             excludedAppsV2: excludedAppsV2,
             sendKeyStepByStepApps: stepByStepApps,
-            upperCaseExcludedApps: upperCaseExcludedApps
+            upperCaseExcludedApps: upperCaseExcludedApps,
+            macroExcludedApps: MacroState.loadExcludedApps(defaults: defaults)
         )
     }
 
@@ -532,6 +533,10 @@ struct SystemSettingsView: View {
         // Apply macros
         if let macros = backup.macros {
             _ = MacroStorage.save(macros, defaults: defaults)
+        }
+
+        if let apps = backup.macroExcludedApps {
+            saveStoredValue(apps, key: UserDefaultsKey.macroExcludedApps, defaults: defaults)
         }
 
         // Apply categories
@@ -708,6 +713,7 @@ struct SettingsBackup: Codable, Sendable {
     var excludedAppsV2: [ExcludedApp]?  // New format with full app info
     var sendKeyStepByStepApps: [ExcludedApp]?  // Apps with step-by-step key sending
     var upperCaseExcludedApps: [ExcludedApp]?  // Apps excluded from uppercase first char
+    var macroExcludedApps: [MacroExcludedApp]? = nil
 }
 
 enum AnyCodableValue: Codable, Sendable {

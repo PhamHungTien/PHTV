@@ -2485,6 +2485,10 @@ final class PHTVVietnameseEngine {
     func vEnglishMode(state: VKeyEventState, data: UInt16, isCaps: Bool, otherControlKey: Bool) {
         refreshRuntimeLayoutSnapshot()
         hCode = HookCodeState.doNothing.rawValue
+        guard phtvRuntimeUseMacroEnabled() != 0 else {
+            hMacroKey.removeAll(); hMacroRawKey.removeAll(); hasHandledMacro = false
+            return
+        }
         if state == .mouseDown || (otherControlKey && !isCaps) {
             hMacroKey.removeAll(); hMacroRawKey.removeAll(); hasHandledMacro = false; willTempOffEngine = false
         } else if data == KEY_SPACE || isMacroBreakCode(data) {

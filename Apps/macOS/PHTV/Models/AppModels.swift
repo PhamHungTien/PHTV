@@ -197,3 +197,31 @@ struct SendKeyStepByStepApp: Codable, Identifiable, Hashable {
 
 extension ExcludedApp: AppSelectionEntry {}
 extension SendKeyStepByStepApp: AppSelectionEntry {}
+
+struct MacroExcludedApp: Codable, Identifiable, Hashable {
+    var id: String { bundleIdentifier }
+    let bundleIdentifier: String
+    let name: String
+    let path: String
+
+    init(bundleIdentifier: String, name: String, path: String) {
+        self.bundleIdentifier = bundleIdentifier
+        self.name = name
+        self.path = path
+    }
+
+    init?(from url: URL) {
+        guard let bundle = Bundle(url: url),
+            let bundleId = bundle.bundleIdentifier,
+            let name = bundle.infoDictionary?["CFBundleName"] as? String ?? bundle.infoDictionary?[
+                "CFBundleDisplayName"] as? String
+        else { return nil }
+
+        self.bundleIdentifier = bundleId
+        self.name = name
+        self.path = url.path
+    }
+}
+
+
+extension MacroExcludedApp: AppSelectionEntry {}

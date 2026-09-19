@@ -59,6 +59,9 @@ struct SettingsItem: Identifiable {
         // MARK: - Gõ tắt (Macro)
         // ═══════════════════════════════════════════
         SettingsItem(
+            title: "Loại trừ ứng dụng khỏi gõ tắt", iconName: "text.badge.minus", tab: .macro,
+            keywords: ["macro", "loại trừ", "ứng dụng", "exclude", "bundle id"]),
+        SettingsItem(
             title: "Bật gõ tắt", iconName: "text.badge.plus", tab: .macro,
             keywords: ["macro", "shortcut", "expansion", "viết tắt", "gõ tắt", "enable", "bật"]),
         SettingsItem(

@@ -111,6 +111,11 @@ extension AppState {
 
     // MARK: Macro State
 
+    var macroExcludedApps: [MacroExcludedApp] {
+        get { trackedSubstate(macroState.macroExcludedApps) }
+        set { macroState.macroExcludedApps = newValue }
+    }
+
     var useMacro: Bool {
         get { trackedSubstate(macroState.useMacro) }
         set { macroState.useMacro = newValue }

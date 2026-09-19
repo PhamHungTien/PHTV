@@ -284,6 +284,28 @@ final class EngineRegressionTests: XCTestCase {
         return output
     }
 
+    func testMacroExcludedAppStillTypesVietnameseWithTelexAndVNI() {
+        let previousMacro = PHTVEngineRuntimeFacade.useMacro()
+        let previousCodeTable = PHTVEngineRuntimeFacade.currentCodeTable()
+        PHTVEngineRuntimeFacade.setMacroExcludedBundleIDs(["com.example.Editor"])
+        PHTVEngineRuntimeFacade.configureMacroTarget(bundleIdentifier: "com.example.Editor")
+        PHTVEngineRuntimeFacade.setUseMacro(1)
+        PHTVEngineRuntimeFacade.setCurrentCodeTable(0)
+        defer {
+            PHTVEngineRuntimeFacade.setMacroExcludedBundleIDs([])
+            PHTVEngineRuntimeFacade.configureMacroTarget(bundleIdentifier: nil)
+            PHTVEngineRuntimeFacade.setUseMacro(previousMacro)
+            PHTVEngineRuntimeFacade.setCurrentInputType(0)
+            PHTVEngineRuntimeFacade.setCurrentCodeTable(previousCodeTable)
+            engineInitialize()
+        }
+        for (inputType, token) in [(Int32(0), "tieengs vieetj"), (Int32(1), "tie6ng1 vie6t5")] {
+            PHTVEngineRuntimeFacade.setCurrentInputType(inputType)
+            let events = token.map { (keyCode(for: $0), UInt8(0)) }
+            XCTAssertEqual(runtimeRenderedKeySequence(events), "tiếng việt")
+        }
+    }
+
     @MainActor
     func testVietnameseOutputAfterRepeatedSecureInputRecovery() {
         let previousCodeTable = PHTVEngineRuntimeFacade.currentCodeTable()

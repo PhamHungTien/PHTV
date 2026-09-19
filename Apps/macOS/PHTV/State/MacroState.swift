@@ -13,6 +13,10 @@ import Observation
 @MainActor
 @Observable
 final class MacroState {
+    var macroExcludedApps: [MacroExcludedApp] = [] {
+        didSet { handleMacroSettingsDidChange(oldValue: oldValue, newValue: macroExcludedApps) }
+    }
+
     // Macro settings
     var useMacro: Bool = true {
         didSet { handleMacroSettingsDidChange(oldValue: oldValue, newValue: useMacro) }
@@ -124,8 +128,12 @@ final class MacroState {
 
     // MARK: - Load/Save Settings
 
-    func loadSettings() {
-        let defaults = UserDefaults.standard
+    func loadSettings(defaults: UserDefaults = .standard) {
+        let wasLoadingSettings = isLoadingSettings
+        isLoadingSettings = true
+        defer { isLoadingSettings = wasLoadingSettings }
+
+        macroExcludedApps = Self.loadExcludedApps(defaults: defaults)
 
         // Load macro settings
         useMacro = defaults.bool(forKey: UserDefaultsKey.useMacro, default: Defaults.useMacro)
@@ -184,9 +192,18 @@ final class MacroState {
         }
     }
 
+    nonisolated static func loadExcludedApps(defaults: UserDefaults) -> [MacroExcludedApp] {
+        guard let data = defaults.data(forKey: UserDefaultsKey.macroExcludedApps) else { return [] }
+        return (try? JSONDecoder().decode([MacroExcludedApp].self, from: data)) ?? []
+    }
+
     func saveSettings() {
         SettingsObserver.shared.suspendNotifications()
         let defaults = UserDefaults.standard
+
+        if let data = try? JSONEncoder().encode(macroExcludedApps) {
+            defaults.set(data, forKey: UserDefaultsKey.macroExcludedApps)
+        }
 
         // Save macro settings
         defaults.set(useMacro, forKey: UserDefaultsKey.useMacro)
@@ -229,6 +246,7 @@ final class MacroState {
         useSystemTextReplacements = Defaults.useSystemTextReplacements
         autoCapsMacro = Defaults.autoCapsMacro
         macroCategories = []
+        macroExcludedApps = []
 
         enableEmojiHotkey = Defaults.enableEmojiHotkey
         emojiHotkeyModifiersRaw = Int(Defaults.emojiHotkeyModifiers)

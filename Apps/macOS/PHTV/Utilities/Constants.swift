@@ -52,6 +52,7 @@ enum UserDefaultsKey {
     static let quickTelex = "QuickTelex"
     static let fixRecommendBrowser = "FixRecommendBrowser"
     static let sendKeyStepByStep = "SendKeyStepByStep"
+    static let macroExcludedApps = "MacroExcludedApps"
     static let useMacro = "UseMacro"
     static let useMacroInEnglishMode = "UseMacroInEnglishMode"
     static let useSystemTextReplacements = "UseSystemTextReplacements"

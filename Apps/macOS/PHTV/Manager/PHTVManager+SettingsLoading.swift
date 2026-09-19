@@ -159,6 +159,7 @@ private let phtvCoreSettingsLogState = PHTVCoreSettingsLogState()
             UserDefaultsKey.modernOrthography,
             UserDefaultsKey.quickTelex,
             UserDefaultsKey.useMacro,
+            UserDefaultsKey.macroExcludedApps,
             UserDefaultsKey.useMacroInEnglishMode,
             UserDefaultsKey.autoCapsMacro,
             UserDefaultsKey.sendKeyStepByStep,
@@ -347,6 +348,9 @@ private let phtvCoreSettingsLogState = PHTVCoreSettingsLogState()
             )
         )
 
+        PHTVEngineRuntimeFacade.setMacroExcludedBundleIDs(
+            MacroState.loadExcludedApps(defaults: defaults).map(\.bundleIdentifier)
+        )
         PHTVEngineRuntimeFacade.setUseMacro(
             phtv_readIntWithFallback(
                 defaults: defaults,

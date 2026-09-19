@@ -387,6 +387,7 @@ final class PHTVEventCallbackService {
                 ? PHTVAppContextService.bundleId(fromPID: eventTargetPID, safeMode: true)
                 : nil)
             ?? PHTVAppContextService.currentFrontmostBundleId()
+        PHTVEngineRuntimeFacade.configureMacroTarget(bundleIdentifier: preliminaryTargetBundleId)
         let contextSafeMode =
             safeModeEnabled ||
             PHTVAppDetectionService.prefersLowLatencyEventContext(preliminaryTargetBundleId)
@@ -664,7 +665,7 @@ final class PHTVEventCallbackService {
                 }
             }
 
-            if settings.useMacro != 0 && settings.useMacroInEnglishMode != 0 &&
+            if phtvRuntimeUseMacroEnabled() != 0 && settings.useMacroInEnglishMode != 0 &&
                type == .keyDown {
                 phtvEngineHandleEnglishMode(
                     keyEventStateKeyDown,

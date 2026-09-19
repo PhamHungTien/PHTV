@@ -132,6 +132,8 @@ struct MacroSettingsView: View {
                     }
                 }
 
+                MacroExcludedAppsSettingsCard()
+
                 // Categories
                 SettingsCard(
                     title: "Danh mục",
@@ -943,4 +945,88 @@ struct MacroRowView: View {
     MacroSettingsView()
         .environment(AppState.shared)
         .frame(width: 500, height: 800)
+}
+
+private struct MacroExcludedAppsSettingsCard: View {
+    @Environment(AppState.self) private var appState
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var pickerDestination: AppSelectionPickerDestination?
+
+    var body: some View {
+        SettingsCard(
+            title: "Loại trừ ứng dụng",
+            subtitle: "Không mở rộng gõ tắt trong các ứng dụng đã chọn, ở cả chế độ Việt và Anh",
+            icon: "text.badge.minus",
+            displaysSubtitle: true,
+            trailing: {
+                AppSelectionAddMenu { pickerDestination = $0 }
+            }
+        ) {
+            VStack(alignment: .leading, spacing: 0) {
+                if appState.macroExcludedApps.isEmpty {
+                    AppSelectionEmptyStateView(
+                        iconName: "text.badge.minus",
+                        title: "Chưa có ứng dụng loại trừ",
+                        subtitle: "Thêm ứng dụng không muốn dùng gõ tắt",
+                        showsQuickActions: false,
+                        onPickRunningApps: {},
+                        onPickFromApplications: {}
+                    )
+                    .transition(.opacity)
+                } else {
+                    AppSelectionList(apps: appState.macroExcludedApps) { app in
+                        appState.macroExcludedApps.removeAll { $0.id == app.id }
+                    }
+                    .transition(.opacity)
+                }
+            }
+            .animation(
+                reduceMotion ? nil : .easeInOut(duration: 0.18),
+                value: appState.macroExcludedApps
+            )
+        }
+        .fileImporter(
+            isPresented: presentationBinding(for: .applicationsFolder),
+            allowedContentTypes: [.application],
+            allowsMultipleSelection: true
+        ) { result in
+            guard case .success(let urls) = result else { return }
+            urls.compactMap(MacroExcludedApp.init(from:)).forEach(addApp)
+        }
+        .sheet(isPresented: presentationBinding(for: .runningApps)) {
+            AppSelectionRunningAppsPickerView<MacroExcludedApp> { apps in
+                apps.forEach(addApp)
+            }
+        }
+        .sheet(isPresented: presentationBinding(for: .bundleIdentifier)) {
+            ManualBundleIdInputView { bundleIdentifier in
+                let metadata = AppSelectionResolver.metadata(for: bundleIdentifier)
+                addApp(MacroExcludedApp(
+                    bundleIdentifier: bundleIdentifier,
+                    name: metadata.name,
+                    path: metadata.path
+                ))
+            }
+        }
+    }
+
+    private func addApp(_ app: MacroExcludedApp) {
+        guard !appState.macroExcludedApps.contains(where: {
+            $0.bundleIdentifier.caseInsensitiveCompare(app.bundleIdentifier) == .orderedSame
+        }) else { return }
+        appState.macroExcludedApps.append(app)
+    }
+
+    private func presentationBinding(for destination: AppSelectionPickerDestination) -> Binding<Bool> {
+        Binding(
+            get: { pickerDestination == destination },
+            set: { isPresented in
+                if isPresented {
+                    pickerDestination = destination
+                } else if pickerDestination == destination {
+                    pickerDestination = nil
+                }
+            }
+        )
+    }
 }

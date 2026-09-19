@@ -280,7 +280,7 @@ private struct AdvancedCompatibilitySettingsCard: View {
     }
 }
 
-private enum AppSelectionResolver {
+enum AppSelectionResolver {
     static func metadata(for bundleIdentifier: String) -> (name: String, path: String) {
         if let runningApp = NSWorkspace.shared.runningApplications.first(where: {
             $0.bundleIdentifier == bundleIdentifier
