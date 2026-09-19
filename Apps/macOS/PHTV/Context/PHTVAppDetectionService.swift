@@ -269,11 +269,12 @@ final class PHTVAppDetectionService: NSObject {
         "com.microsoft.teams"
     ])
 
-    // Real-time media apps can make synchronous Accessibility queries stall
-    // while preview/playback is active. Keep their event-tap path free of AX
-    // work so transport shortcuts such as Space remain responsive.
+    // Media and canvas apps can stall synchronous Accessibility queries
+    // during playback or panning. Avoid AX work on their event-tap path,
+    // including repeated Space keydowns and mouse-triggered session resets.
     private static let lowLatencyEventContextApps = BundlePatternSet([
-        "com.blackmagic-design.DaVinciResolve*"
+        "com.blackmagic-design.DaVinciResolve*",
+        "com.adobe.Photoshop*"
     ])
 
     private static let stepByStepApps = BundlePatternSet([

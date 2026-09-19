@@ -247,9 +247,14 @@ final class EngineRegressionTests: XCTestCase {
         return (keyCode(for: lowercasedCharacter), isUppercase ? 1 : 0)
     }
 
-    private func runtimeRenderedKeySequence(_ events: [(keyCode: UInt16, capsStatus: UInt8)]) -> String {
-        engineInitialize()
-        engineStartNewSession()
+    private func runtimeRenderedKeySequence(
+        _ events: [(keyCode: UInt16, capsStatus: UInt8)],
+        resetSession: Bool = true
+    ) -> String {
+        if resetSession {
+            engineInitialize()
+            engineStartNewSession()
+        }
         var output = ""
 
         for event in events {
@@ -264,6 +269,10 @@ final class EngineRegressionTests: XCTestCase {
                 continue
             }
 
+            if !resetSession {
+                XCTAssertLessThanOrEqual(Int(engineHookBackspaceCount()), output.count,
+                                         "Recovery must not delete text from before the new typing session")
+            }
             let backspaceCount = min(Int(engineHookBackspaceCount()), output.count)
             if backspaceCount > 0 {
                 output.removeLast(backspaceCount)
@@ -273,6 +282,30 @@ final class EngineRegressionTests: XCTestCase {
         }
 
         return output
+    }
+
+    @MainActor
+    func testVietnameseOutputAfterRepeatedSecureInputRecovery() {
+        let previousCodeTable = PHTVEngineRuntimeFacade.currentCodeTable()
+        defer {
+            PHTVEngineRuntimeFacade.setCurrentInputType(0)
+            PHTVEngineRuntimeFacade.setCurrentCodeTable(previousCodeTable)
+            engineInitialize()
+        }
+        PHTVEngineRuntimeFacade.setCurrentCodeTable(0)
+        for (inputType, token) in [(Int32(0), "tieengs vieetj"), (Int32(1), "tie6ng1 vie6t5")] {
+            PHTVEngineRuntimeFacade.setCurrentInputType(inputType)
+            for _ in 0..<20 {
+                engineInitialize()
+                // The secure interval hides subsequent keystrokes and word boundaries.
+                feedWord("ban")
+                engineTempOff(1)
+                PHTVEventTapService.resetAfterSecureInput()
+                let events = token.map { (keyCode(for: $0), UInt8(0)) }
+                XCTAssertEqual(runtimeRenderedKeySequence(events, resetSession: false), "tiếng việt")
+                XCTAssertEqual(PHTVEngineRuntimeFacade.currentLanguage(), 1)
+            }
+        }
     }
 
     private func runSpaceCase(

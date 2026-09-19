@@ -6,6 +6,7 @@
 //
 
 import XCTest
+import Carbon
 @testable import PHTV
 
 final class TypingRuntimeScenarioTests: XCTestCase {
@@ -75,6 +76,7 @@ final class TypingRuntimeScenarioTests: XCTestCase {
     func testSecureInputRecoveryClearsMissedModifierEventsWithoutChangingLanguage() {
         let language = PHTVEngineRuntimeFacade.currentLanguage()
         defer { PHTVEventTapService.resetAfterSecureInput() }
+        PHTVModifierRuntimeStateService.setSavedLanguageValue(language)
         PHTVModifierRuntimeStateService.setLastFlagsValue(UInt64.max)
         PHTVModifierRuntimeStateService.setPausePressedValue(true)
         PHTVModifierRuntimeStateService.setRestoreModifierPressedValue(true)
@@ -85,6 +87,69 @@ final class TypingRuntimeScenarioTests: XCTestCase {
         XCTAssertFalse(PHTVModifierRuntimeStateService.pausePressedValue())
         XCTAssertFalse(PHTVModifierRuntimeStateService.restoreModifierPressedValue())
         XCTAssertEqual(PHTVEngineRuntimeFacade.currentLanguage(), language)
+    }
+
+    @MainActor
+    func testLiveSecureInputTransitionResetsTypingStateExactlyOnce() throws {
+        try XCTSkipIf(PHTVSecureInputStatus.isEnabled,
+                      "Another application owns Secure Input; do not change its state")
+        let delegate = AppDelegate()
+        // This fixture must not create a real event tap or schedule relaunches.
+        delegate.isRelaunchingAfterPermissionGrant = true
+        delegate.publishTypingPermissionState(eventTapReady: false)
+        PHTVModifierRuntimeStateService.setSavedLanguageValue(PHTVEngineRuntimeFacade.currentLanguage())
+        PHTVModifierRuntimeStateService.setPausePressedValue(true)
+
+        let enabled = EnableSecureEventInput()
+        XCTAssertEqual(enabled, noErr)
+        guard enabled == noErr else { return }
+        var ownsSecureInput = true
+        defer {
+            if ownsSecureInput { _ = DisableSecureEventInput() }
+            PHTVEventTapService.resetAfterSecureInput()
+            delegate.cancelEventTapRecovery(reason: "secure-input-test-cleanup")
+        }
+
+        XCTAssertTrue(PHTVSecureInputStatus.isEnabled)
+        delegate.publishTypingPermissionState(eventTapReady: false)
+        delegate.publishTypingPermissionState(eventTapReady: false)
+        XCTAssertEqual(delegate.lastPublishedTypingRuntimeHealth?.secureInputEnabled, true)
+        XCTAssertTrue(PHTVModifierRuntimeStateService.pausePressedValue())
+
+        let disabled = DisableSecureEventInput()
+        XCTAssertEqual(disabled, noErr)
+        guard disabled == noErr else { return }
+        ownsSecureInput = false
+        XCTAssertFalse(PHTVSecureInputStatus.isEnabled)
+        delegate.publishTypingPermissionState(eventTapReady: false)
+        XCTAssertEqual(delegate.lastPublishedTypingRuntimeHealth?.secureInputEnabled, false)
+        XCTAssertFalse(PHTVModifierRuntimeStateService.pausePressedValue())
+
+        // Repeated healthy polls must not reset a newly pressed modifier.
+        PHTVModifierRuntimeStateService.setPausePressedValue(true)
+        delegate.publishTypingPermissionState(eventTapReady: false)
+        XCTAssertTrue(PHTVModifierRuntimeStateService.pausePressedValue())
+    }
+
+    @MainActor
+    func testSecureInputRecoveryRestoresPausedLanguageAndHonorsEnglishLock() {
+        let language = PHTVEngineRuntimeFacade.currentLanguage()
+        let locked = PHTVEngineRuntimeFacade.isEnglishLanguageLocked()
+        defer {
+            PHTVEngineRuntimeFacade.setEnglishLanguageLocked(locked)
+            PHTVEngineRuntimeFacade.setCurrentLanguage(language)
+            PHTVModifierRuntimeStateService.resetTransientHotkeyState(savedLanguage: language)
+        }
+        for englishLocked in [false, true] {
+            PHTVEngineRuntimeFacade.setEnglishLanguageLocked(englishLocked)
+            PHTVEngineRuntimeFacade.setCurrentLanguage(0)
+            PHTVModifierRuntimeStateService.setSavedLanguageValue(1)
+            PHTVModifierRuntimeStateService.setPausePressedValue(true)
+            // Secure Input swallowed release of the temporary-English modifier.
+            PHTVEventTapService.resetAfterSecureInput()
+            XCTAssertEqual(PHTVEngineRuntimeFacade.currentLanguage(), englishLocked ? 0 : 1)
+            XCTAssertFalse(PHTVModifierRuntimeStateService.pausePressedValue())
+        }
     }
 
     private struct TypingScenario {

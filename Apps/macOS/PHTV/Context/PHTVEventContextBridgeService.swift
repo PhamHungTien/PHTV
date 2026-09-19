@@ -605,6 +605,15 @@ final class PHTVModifierRuntimeStateService: NSObject {
 
     private static let runtimeState = ModifierRuntimeStateBox()
 
+    /// Consume a temporary language override when its release event was lost.
+    class func takePausedLanguageForRecovery() -> Int32? {
+        runtimeState.withLock { state in
+            guard state.pausePressed else { return nil }
+            state.pausePressed = false
+            return state.savedLanguage
+        }
+    }
+
     @objc(resetTransientHotkeyStateWithSavedLanguage:)
     class func resetTransientHotkeyState(savedLanguage: Int32) {
         runtimeState.withLock { state in

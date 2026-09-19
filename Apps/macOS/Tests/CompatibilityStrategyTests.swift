@@ -28,6 +28,16 @@ final class CompatibilityStrategyTests: XCTestCase {
         )
     }
 
+    func testPhotoshopUsesLowLatencyContextWithoutDisablingVietnamese() {
+        for bundleId in ["com.adobe.Photoshop", "com.adobe.PhotoshopBeta", "COM.ADOBE.PHOTOSHOP"] {
+            XCTAssertTrue(PHTVAppDetectionService.prefersLowLatencyEventContext(bundleId), bundleId)
+            XCTAssertFalse(PHTVAppContextService.shouldDisableVietnamese(forBundleId: bundleId), bundleId)
+        }
+        for bundleId in ["com.adobe.Reader", "com.apple.TextEdit", "com.google.Chrome"] {
+            XCTAssertFalse(PHTVAppDetectionService.prefersLowLatencyEventContext(bundleId), bundleId)
+        }
+    }
+
     func testOutlookNeedsLegacySpaceCommitFix() {
         XCTAssertTrue(PHTVAppDetectionService.needsLegacySpaceCommitFix("com.microsoft.Outlook"))
         XCTAssertTrue(PHTVAppDetectionService.needsLegacySpaceCommitFix("com.microsoft.outlook"))

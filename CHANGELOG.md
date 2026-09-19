@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Khôi phục ngôn ngữ trước khi tạm ngưng gõ nếu Secure Input làm mất sự kiện
+  nhả phím; vẫn tôn trọng quy tắc khóa tiếng Anh của ứng dụng (#226).
+- Áp dụng luồng xử lý ít độ trễ cho Photoshop: tránh truy vấn Accessibility
+  đồng bộ khi xử lý phím và đặt lại phiên gõ, nhằm giảm khựng khi giữ Space
+  để kéo canvas; không vô hiệu hóa gõ tiếng Việt (#228).
+
+### Chất lượng
+
+- Bổ sung kiểm thử khôi phục ngôn ngữ, 40 lượt phục hồi Telex/VNI và chuyển
+  trạng thái Secure Input qua API macOS. Kiểm thử API tự bỏ qua nếu ứng dụng
+  khác đang giữ Secure Input.
+- Bổ sung kiểm thử phạm vi nhận diện Photoshop và giữ khả năng gõ tiếng Việt.
+
 ## [3.5.5] - 2026-09-17
 
 ### Tổng quan
