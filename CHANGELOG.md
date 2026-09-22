@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.5.6] - 2026-09-22
+
+### Tổng quan
+
+PHTV 3.5.6 bổ sung khả năng loại trừ Gõ tắt theo từng ứng dụng, đồng thời
+cải thiện độ ổn định và độ phản hồi khi gõ trong Photoshop hoặc khi macOS bật
+Secure Input.
+
 ### Added
 
 - Thêm danh sách loại trừ ứng dụng trong Gõ tắt, áp dụng cho cả chế độ Việt/Anh
