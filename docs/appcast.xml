@@ -7,6 +7,35 @@
         <language>vi</language>
         <!-- Most recent version first -->
         <item>
+            <title>3.5.9</title>
+            <pubDate>Thu, 24 Sep 2026 20:37:42 +0700</pubDate>
+            <sparkle:version>326</sparkle:version>
+            <sparkle:shortVersionString>3.5.9</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[
+                <h2>PHTV 3.5.9</h2>
+                <h3>Tổng quan</h3>
+                <p>PHTV 3.5.9 tăng tốc xử lý Text Replacements của macOS khi người dùng có nhiều shortcut, đồng thời cho phép gõ tiếng Việt trực tiếp trong iPhone Mirroring.</p>
+                <h3>Performance</h3>
+                <ul>
+                <li>Thay phép quét toàn bộ Text Replacements trên mỗi phím bằng prefix trie bất biến theo từng bảng mã. Trong benchmark với 2.000 shortcut và 1.000 lượt tra cứu, thời gian giảm từ khoảng 1,55 giây xuống 0,00056 giây.</li>
+                <li>Xây dựng chỉ mục khi nạp macro và tái sử dụng snapshot theo bảng mã, giúp thời gian tra cứu chỉ phụ thuộc vào độ dài shortcut và giữ mức sử dụng bộ nhớ tuyến tính.</li>
+                </ul>
+                <h3>Fixed</h3>
+                <ul>
+                <li>Loại bỏ iPhone Mirroring (<code>com.apple.ScreenContinuity</code>) khỏi danh sách ứng dụng tự động vô hiệu hóa tiếng Việt; App Launcher vẫn giữ hành vi hiện tại.</li>
+                <li>Xóa đầy đủ shortcut macro đang nhập dở khi chuyển vào hoặc rời ứng dụng bị loại trừ Gõ tắt, tránh macro cũ được mở rộng nhầm sau khi đổi ứng dụng.</li>
+                </ul>
+                <h3>Chất lượng</h3>
+                <ul>
+                <li>Bổ sung kiểm thử vi sai cho prefix lookup, reload macro, khóa trùng, viết hoa, chuyển bảng mã, truy cập đồng thời và shortcut dài 200 ký tự.</li>
+                <li>Bổ sung kiểm thử hồi quy cho iPhone Mirroring và benchmark hiệu năng opt-in.</li>
+                <li>Toàn bộ <strong>557 kiểm thử</strong> đạt; static analyzer và kiểm tra metadata đều thành công.</li>
+                </ul>
+            ]]></description>
+            <enclosure url="https://github.com/PhamHungTien/PHTV/releases/download/v3.5.9/PHTV-3.5.9-arm64.dmg" length="9936489" type="application/octet-stream" sparkle:edSignature="fncozdyrCUWemsBU39xltOyCJUqfde5iPNTuJam6af2ZjWCJJBbS6nlh9TriVj75GvJbbXoQIYbX0R7ItBBUDw=="/>
+        </item>
+        <item>
             <title>3.5.8</title>
             <pubDate>Thu, 24 Sep 2026 18:11:34 +0700</pubDate>
             <sparkle:version>325</sparkle:version>
@@ -749,14 +778,6 @@
             <sparkle:shortVersionString>3.3.1</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
             <enclosure url="https://github.com/PhamHungTien/PHTV/releases/download/v3.3.1/PHTV-3.3.1-arm64.dmg" length="8892403" type="application/octet-stream" sparkle:edSignature="kh8bfs91wfrIb6Dca7OroT7iIA1HHrS4HJRKAce4S2l8Zgbtz7nMdvZLq5xQkpsK9kI3BOxLNuPx5TWVWMziDA=="/>
-        </item>
-        <item>
-            <title>3.3.0</title>
-            <pubDate>Wed, 08 Jul 2026 12:14:16 +0700</pubDate>
-            <sparkle:version>296</sparkle:version>
-            <sparkle:shortVersionString>3.3.0</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <enclosure url="https://github.com/PhamHungTien/PHTV/releases/download/v3.3.0/PHTV-3.3.0-arm64.dmg" length="8881328" type="application/octet-stream" sparkle:edSignature="si7JPVYsf+OBJX/Erc/m9z0cVsMvAOwAyg2Ehbd1cBbEQ4eJ+qS1hKWbXOr4eV0Uqo5cbx4n2T+HD4UCHjhpDw=="/>
         </item>
         <item>
             <title>2.8.9</title>
