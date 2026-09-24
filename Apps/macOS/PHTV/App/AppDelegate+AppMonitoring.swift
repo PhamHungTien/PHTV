@@ -471,9 +471,9 @@ private func phtvEnglishBehavior(
             if !savedSendKeyStepByStepBeforeApp && sendKeyStepByStepEnabled {
                 PHTVManager.setSendKeyStepByStepEnabled(false)
                 UserDefaults.standard.set(false, forKey: phtvDefaultsKeySendKeyStepByStep)
-                NSLog("[SendKeyStepByStepApp] Left app '%@' - disabled send key step by step", bundleIdentifier)
+                NSLog("[SendKeyStepByStepApp] Left step-by-step app (now in '%@') - disabled send key step by step", bundleIdentifier)
             } else {
-                NSLog("[SendKeyStepByStepApp] Left app '%@' - keeping send key step by step state", bundleIdentifier)
+                NSLog("[SendKeyStepByStepApp] Left step-by-step app (now in '%@') - keeping send key step by step state", bundleIdentifier)
             }
         } else if isInList && isInSendKeyStepByStepApp {
             NSLog("[SendKeyStepByStepApp] Moved to another app in list '%@' - keeping enabled", bundleIdentifier)

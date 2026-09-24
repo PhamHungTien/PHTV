@@ -21,7 +21,18 @@ private let phtvSwitchHotkeyModifierMask: UInt32 = UInt32(
     | KeyCode.shiftMask
     | KeyCode.fnMask
 )
+private let phtvSwitchHotkeyLeftRightMask: UInt32 = UInt32(
+    KeyCode.leftControlMask
+    | KeyCode.rightControlMask
+    | KeyCode.leftOptionMask
+    | KeyCode.rightOptionMask
+    | KeyCode.leftCommandMask
+    | KeyCode.rightCommandMask
+    | KeyCode.leftShiftMask
+    | KeyCode.rightShiftMask
+)
 private let phtvSwitchHotkeyAllowedMask: UInt32 = phtvSwitchHotkeyModifierMask
+    | phtvSwitchHotkeyLeftRightMask
     | UInt32(KeyCode.beepMask)
     | UInt32(KeyCode.keyMask)
 private let phtvConvertHotkeyModifierMask: UInt32 = 0x0100 | 0x0200 | 0x0400 | 0x0800
@@ -29,14 +40,23 @@ private let phtvConvertHotkeyAllowedMask: UInt32 = phtvConvertHotkeyModifierMask
 private let phtvConvertEmptyHotkey: Int32 = Int32(bitPattern: 0xFE0000FE)
 
 private func phtvSwitchHotkeyLooksValid(_ status: Int32) -> Bool {
+    if status == 0 || status == Int32(KeyCode.noKey) {
+        return true
+    }
+
     let value = UInt32(bitPattern: status)
     if (value & ~phtvSwitchHotkeyAllowedMask) != 0 {
         return false
     }
 
     let modifiers = value & phtvSwitchHotkeyModifierMask
+    let leftRight = value & phtvSwitchHotkeyLeftRightMask
     let key = value & UInt32(KeyCode.keyMask)
-    return modifiers != 0 && key != UInt32(KeyCode.keyMask)
+    let hasModifier = (modifiers != 0) || (leftRight != 0)
+    let hasPhysicalKey = (key != UInt32(KeyCode.noKey)) && (key != UInt32(KeyCode.keyMask))
+    let isNotSet = (key == UInt32(KeyCode.noKey) || key == 0) && !hasModifier
+
+    return (key != UInt32(KeyCode.keyMask)) && (hasModifier || hasPhysicalKey || isNotSet)
 }
 
 private func phtvConvertHotkeyLooksValid(_ hotkey: Int32) -> Bool {

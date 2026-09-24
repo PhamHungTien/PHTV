@@ -84,8 +84,10 @@ final class CompatibilityStrategyTests: XCTestCase {
         XCTAssertTrue(plan.shouldLogSpaceSkip)
     }
 
-    func testCocCocNeedsStrictAddressBarDetection() {
+    func testCocCocAndEdgeNeedStrictAddressBarDetection() {
         XCTAssertTrue(PHTVAppDetectionService.needsStrictAddressBarDetection("com.coccoc.browser"))
+        XCTAssertTrue(PHTVAppDetectionService.needsStrictAddressBarDetection("com.microsoft.edgemac"))
+        XCTAssertTrue(PHTVAppDetectionService.needsStrictAddressBarDetection("com.microsoft.Edge"))
         XCTAssertFalse(PHTVAppDetectionService.needsStrictAddressBarDetection("com.google.Chrome"))
     }
 

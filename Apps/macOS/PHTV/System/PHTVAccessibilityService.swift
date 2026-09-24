@@ -910,17 +910,17 @@ final class PHTVAccessibilityService: NSObject {
             return cache.result
         }
 
-        var isAddressBar = true // Default to YES (Address Bar) for safety
+        var isAddressBar = false // Default to NO (Address Bar) for safety in web pages
         let bundleId = focusedAppBundleId()
         let strictDetection = PHTVCompatibilityProfileResolver.resolve(forBundleId: bundleId)
             .needsStrictAddressBarDetection
 
         guard let focused = focusedElement() else {
-            // AX failed: use recent cached result, otherwise safe default.
+            // AX failed: use recent cached result, otherwise safe default (false).
             if cache.checkTime > 0 && elapsedMs < 2000 {
                 isAddressBar = cache.result
             } else {
-                isAddressBar = true
+                isAddressBar = false
             }
             writeAddressBarCache(result: isAddressBar, checkTime: now)
             return isAddressBar
@@ -945,12 +945,13 @@ final class PHTVAccessibilityService: NSObject {
         }
 
         // Strategy 2: negative identification via parent hierarchy
-        var foundWebArea = false
+        var foundWebArea = (role == "AXWebArea")
         var current: AXUIElement? = focused
 
-        // Walk up to 12 levels to find AXWebArea
-        for _ in 0..<12 {
-            guard let currentElement = current,
+        // Walk up to 16 levels to find AXWebArea in deep web DOM hierarchies
+        for _ in 0..<16 {
+            guard !foundWebArea,
+                  let currentElement = current,
                   let parent = elementAttribute(currentElement, kAXParentAttribute) else {
                 break
             }

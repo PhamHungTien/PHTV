@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.5.8] - 2026-09-24
+
+### Tổng quan
+
+PHTV 3.5.8 khắc phục hiện tượng gõ chập chờn, mất chữ hoặc nhảy ký tự trên
+Microsoft Edge và các ô nhập văn bản trên nền web, đồng thời hoàn thiện cơ chế
+kiểm tra tính hợp lệ của phím chuyển ngôn ngữ.
+
+### Fixed
+
+- Ngăn chặn việc nhận diện nhầm các ô nhập văn bản trên web thành thanh địa chỉ (Omnibox)
+  trên Microsoft Edge bằng cách áp dụng strict address-bar detection tương tự Cốc Cốc.
+- Thay đổi giá trị an toàn mặc định của `isFocusedElementAddressBar` về `false` khi
+  truy vấn Accessibility (AX) thất bại hoặc timeout, đồng thời mở rộng độ sâu duyệt cây
+  DOM (16 cấp) để nhận diện chính xác `AXWebArea` trên các ứng dụng web phức tạp.
+- Cập nhật kiểm tra hợp lệ cho phím chuyển (`phtvSwitchHotkeyLooksValid`), hỗ trợ đầy đủ
+  các modifier trái/phải (`leftRightMask`), hotkey phím đơn và trạng thái tắt hotkey,
+  loại bỏ vòng lặp self-healing và reset session không cần thiết.
+- Làm rõ log trạng thái khi rời ứng dụng trong danh sách gửi phím từng bước (`SendKeyStepByStepApp`).
+
+### Chất lượng
+
+- Bổ sung kiểm tra nhận diện thanh địa chỉ nghiêm ngặt cho Microsoft Edge trong
+  `CompatibilityStrategyTests`.
+
 ## [3.5.7] - 2026-09-24
 
 ### Tổng quan

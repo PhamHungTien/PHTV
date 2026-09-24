@@ -316,7 +316,19 @@ final class PHTVAppDetectionService: NSObject {
     // fields, so this is safe.
     private static let strictAddressBarDetectionApps = BundlePatternSet([
         "com.coccoc.browser",
-        "com.coccoc.browser.app.*"
+        "com.coccoc.browser.app.*",
+        "com.microsoft.edgemac",
+        "com.microsoft.edgemac.Dev",
+        "com.microsoft.edgemac.Beta",
+        "com.microsoft.edgemac.Canary",
+        "com.microsoft.edgemac.app.*",
+        "com.microsoft.edgemac.Dev.app.*",
+        "com.microsoft.edgemac.Beta.app.*",
+        "com.microsoft.edgemac.Canary.app.*",
+        "com.microsoft.Edge",
+        "com.microsoft.Edge.Dev",
+        "com.microsoft.Edge.app.*",
+        "com.microsoft.Edge.Dev.app.*"
     ])
 
     private static let disableVietnameseApps = BundlePatternSet([
