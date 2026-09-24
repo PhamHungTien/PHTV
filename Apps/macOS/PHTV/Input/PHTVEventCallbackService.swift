@@ -592,8 +592,7 @@ final class PHTVEventCallbackService {
         }
 
         // Also check correct event hooked
-        guard type == .keyDown || type == .keyUp ||
-              type == .leftMouseDown || type == .rightMouseDown else {
+        guard type == .keyDown || type == .keyUp else {
             return Unmanaged.passUnretained(event)
         }
 
@@ -687,14 +686,6 @@ final class PHTVEventCallbackService {
                     return nil
                 }
             }
-            return Unmanaged.passUnretained(event)
-        }
-
-        // Handle mouse - reset session to avoid stale typing state
-        if type == .leftMouseDown || type == .rightMouseDown {
-            PHTVEngineSessionService.requestNewSessionInternal(allowUppercasePrime: true)
-            PHTVModifierRuntimeStateService.setSingleModifierSwitchPressedKeyValue(0)
-            PHTVModifierRuntimeStateService.setKeyPressedWhileSingleModifierHeldValue(false)
             return Unmanaged.passUnretained(event)
         }
 

@@ -18,7 +18,6 @@ import Foundation
         var eventTap: CFMachPort?
         var runLoopSource: CFRunLoopSource?
         var mouseClickMonitor: Any?
-        var usedFallbackKeyboardOnlyMask = false
         var tapReenableCount: UInt = 0
         var tapRecreateCount: UInt = 0
     }
@@ -193,13 +192,10 @@ import Foundation
 
         PHTVEngineSessionService.boot()
 
-        let fullMask = eventMaskBit(.keyDown)
-            | eventMaskBit(.keyUp)
-            | eventMaskBit(.flagsChanged)
-            | eventMaskBit(.leftMouseDown)
-            | eventMaskBit(.rightMouseDown)
-
-        let keyboardOnlyMask = eventMaskBit(.keyDown)
+        // Keep the privileged event tap focused on typing. macOS can refuse
+        // or disable broader event masks during Secure Input and session
+        // transitions; mouse clicks are observed separately below.
+        let keyboardMask = eventMaskBit(.keyDown)
             | eventMaskBit(.keyUp)
             | eventMaskBit(.flagsChanged)
 
@@ -207,34 +203,18 @@ import Foundation
             return PHTVEventCallbackService.handle(proxy: proxy, type: type, event: event, refcon: refcon)
         }
 
-        // Try full mask (keyboard + mouse) first
-        NSLog("[EventTap] Attempting tap creation with full mask (keyboard + mouse)...")
-        var tap = CGEvent.tapCreate(
+        NSLog("[EventTap] Attempting keyboard-only tap creation")
+        let tap = CGEvent.tapCreate(
             tap: .cgSessionEventTap,
             place: .headInsertEventTap,
             options: .defaultTap,
-            eventsOfInterest: fullMask,
+            eventsOfInterest: keyboardMask,
             callback: callback,
             userInfo: nil
         )
-        var usedFallback = false
-
-        // Fallback: keyboard-only mask if full mask fails
-        if tap == nil {
-            NSLog("[EventTap] ⚠️ Full mask failed — falling back to keyboard-only mask")
-            tap = CGEvent.tapCreate(
-                tap: .cgSessionEventTap,
-                place: .headInsertEventTap,
-                options: .defaultTap,
-                eventsOfInterest: keyboardOnlyMask,
-                callback: callback,
-                userInfo: nil
-            )
-            usedFallback = true
-        }
 
         guard let tap else {
-            NSLog("[EventTap] ❌ Both full and keyboard-only tap creation FAILED")
+            NSLog("[EventTap] ❌ Keyboard-only tap creation FAILED")
             publishTypingReadiness(false)
             return false
         }
@@ -243,7 +223,6 @@ import Foundation
         runtimeState.withLock { state in
             state.eventTap = tap
             state.runLoopSource = source
-            state.usedFallbackKeyboardOnlyMask = usedFallback
             state.isInited = true
         }
 
@@ -256,11 +235,11 @@ import Foundation
         CGEvent.tapEnable(tap: tap, enable: true)
         let isReady = CGEvent.tapIsEnabled(tap: tap)
 
-        if usedFallback {
+        if isReady {
             NSLog("[EventTap] ✅ Keyboard-only tap enabled — installing NSEvent mouse monitor")
             installMouseClickMonitor()
         } else {
-            NSLog("[EventTap] ✅ Full tap enabled (keyboard + mouse) on dedicated tap thread")
+            NSLog("[EventTap] ⚠️ Keyboard-only tap was created but could not be enabled")
         }
 
         publishTypingReadiness(isReady)
@@ -278,7 +257,6 @@ import Foundation
             state.eventTap = nil
             state.isInited = false
             state.permissionLost = false
-            state.usedFallbackKeyboardOnlyMask = false
             return (true, tap, source)
         }
         if didStop {
@@ -309,7 +287,7 @@ import Foundation
         return true
     }
 
-    // MARK: - NSEvent Mouse Click Monitor (Fallback)
+    // MARK: - NSEvent Mouse Click Monitor
 
     private static func installMouseClickMonitor() {
         removeMouseClickMonitor()
@@ -317,6 +295,8 @@ import Foundation
             matching: [.leftMouseDown, .rightMouseDown]
         ) { _ in
             PHTVEngineSessionService.requestNewSessionInternal(allowUppercasePrime: true)
+            PHTVModifierRuntimeStateService.setSingleModifierSwitchPressedKeyValue(0)
+            PHTVModifierRuntimeStateService.setKeyPressedWhileSingleModifierHeldValue(false)
         }
         runtimeState.withLock { state in
             state.mouseClickMonitor = monitor

@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.5.7] - 2026-09-24
+
+### Tổng quan
+
+PHTV 3.5.7 tăng độ bền của bộ gõ sau khi máy thức dậy, đăng nhập lại hoặc
+macOS tạm thời chặn sự kiện bàn phím bằng Secure Input. Event tap giờ tập
+trung riêng vào việc gõ, giúp giảm các điều kiện có thể làm bộ gõ bị gián đoạn.
+
+### Fixed
+
+- Tự duy trì watchdog khôi phục bộ gõ sau khi wake, session hoạt động lại hoặc
+  PHTV trở về trạng thái active. Khi Secure Input kết thúc, event tap được tự
+  kiểm tra và khởi tạo lại thay vì chờ một sự kiện vòng đời khác (#230).
+- Chuyển event tap sang chỉ nhận sự kiện bàn phím; click chuột vẫn đặt lại
+  phiên gõ qua monitor riêng và đồng thời xóa trạng thái modifier tạm thời.
+  Cách này giảm phạm vi tap đặc quyền và cải thiện độ ổn định trên macOS 27.
+
+### Changed
+
+- Cập nhật mã QR ủng hộ trong ứng dụng.
+
+### Chất lượng
+
+- Xác minh các tình huống Secure Input và ownership của event callback bằng
+  `TypingRuntimeScenarioTests` và `EventCallbackOwnershipTests`.
+
 ## [3.5.6] - 2026-09-22
 
 ### Tổng quan
