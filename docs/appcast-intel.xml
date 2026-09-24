@@ -7,6 +7,32 @@
         <language>vi</language>
         <!-- Intel (x86_64) feed — Most recent version first -->
         <item>
+            <title>3.5.7</title>
+            <pubDate>Thu, 24 Sep 2026 15:48:35 +0700</pubDate>
+            <sparkle:version>324</sparkle:version>
+            <sparkle:shortVersionString>3.5.7</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[
+                <h2>PHTV 3.5.7</h2>
+                <h3>Tổng quan</h3>
+                <p>PHTV 3.5.7 tăng độ bền của bộ gõ sau khi máy thức dậy, đăng nhập lại hoặc macOS tạm thời chặn sự kiện bàn phím bằng Secure Input. Event tap giờ tập trung riêng vào việc gõ, giúp giảm các điều kiện có thể làm bộ gõ bị gián đoạn.</p>
+                <h3>Fixed</h3>
+                <ul>
+                <li>Tự duy trì watchdog khôi phục bộ gõ sau khi wake, session hoạt động lại hoặc PHTV trở về trạng thái active. Khi Secure Input kết thúc, event tap được tự kiểm tra và khởi tạo lại thay vì chờ một sự kiện vòng đời khác (#230).</li>
+                <li>Chuyển event tap sang chỉ nhận sự kiện bàn phím; click chuột vẫn đặt lại phiên gõ qua monitor riêng và đồng thời xóa trạng thái modifier tạm thời. Cách này giảm phạm vi tap đặc quyền và cải thiện độ ổn định trên macOS 27.</li>
+                </ul>
+                <h3>Changed</h3>
+                <ul>
+                <li>Cập nhật mã QR ủng hộ trong ứng dụng.</li>
+                </ul>
+                <h3>Chất lượng</h3>
+                <ul>
+                <li>Xác minh các tình huống Secure Input và ownership của event callback bằng <code>TypingRuntimeScenarioTests</code> và <code>EventCallbackOwnershipTests</code>.</li>
+                </ul>
+            ]]></description>
+            <enclosure url="https://github.com/PhamHungTien/PHTV/releases/download/v3.5.7/PHTV-3.5.7-intel.dmg" length="10203228" type="application/octet-stream" sparkle:edSignature="yIzEOUm1e3EMDlmGFxPU4+MQGrJkghxAZQPFrp1VM6rylhOIVI7cAjotKeAVu0tmGh7qwCZeB/39r7OzcUs8CA=="/>
+        </item>
+        <item>
             <title>3.5.6</title>
             <pubDate>Tue, 22 Sep 2026 09:16:05 +0700</pubDate>
             <sparkle:version>323</sparkle:version>
@@ -715,14 +741,6 @@
             <sparkle:shortVersionString>3.2.8</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
             <enclosure url="https://github.com/PhamHungTien/PHTV/releases/download/v3.2.8/PHTV-3.2.8-intel.dmg" length="9936744" type="application/octet-stream" sparkle:edSignature="Y97sQfGGYD3X8d2+EK/aIYXVMsEFslzhPPxKZ40XSITaFGJz28zhFx1SDR/qgv2PdFF828VQ/oL03Qg4j7L4CA=="/>
-        </item>
-        <item>
-            <title>3.2.7</title>
-            <pubDate>Sun, 21 Jun 2026 23:30:52 +0700</pubDate>
-            <sparkle:version>294</sparkle:version>
-            <sparkle:shortVersionString>3.2.7</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <enclosure url="https://github.com/PhamHungTien/PHTV/releases/download/v3.2.7/PHTV-3.2.7-intel.dmg" length="9936759" type="application/octet-stream" sparkle:edSignature="ZiIeyxh4p8C+sFuGG6xwNXuEqvzDz9sUv0pt0hna9ZrwwV06qS12kEhBu9aeZ64Gjo0wRG9Pwtjo2l/E+z/5Cg=="/>
         </item>
         <item>
             <title>2.8.9</title>
