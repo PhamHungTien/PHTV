@@ -9,35 +9,105 @@
 
 import Foundation
 
-private struct MacroLookupEntry {
+private struct MacroLookupEntry: Sendable {
     let snippetType: Int32
     let snippetFormat: String
     let staticContentCode: [UInt32]
 }
 
+private struct MacroPrefixIndex: Sendable {
+    private struct Node: Sendable {
+        var children: [UInt32: Int] = [:]
+    }
+
+    private let nodes: [Node]
+
+    static let empty = MacroPrefixIndex(nodes: [Node()])
+
+    init(entries: [[UInt32]: MacroLookupEntry]) {
+        var builtNodes = [Node()]
+        for (key, entry) in entries
+        where entry.snippetType == EngineMacroSnippetType.systemTextReplacement {
+            var nodeIndex = 0
+            for code in key {
+                if let nextIndex = builtNodes[nodeIndex].children[code] {
+                    nodeIndex = nextIndex
+                } else {
+                    let nextIndex = builtNodes.count
+                    builtNodes.append(Node())
+                    builtNodes[nodeIndex].children[code] = nextIndex
+                    nodeIndex = nextIndex
+                }
+            }
+        }
+        nodes = builtNodes
+    }
+
+    private init(nodes: [Node]) {
+        self.nodes = nodes
+    }
+
+    func containsPrefix(_ candidate: [UInt32]) -> Bool {
+        guard !candidate.isEmpty else { return false }
+
+        var nodeIndex = 0
+        for code in candidate {
+            guard let nextIndex = nodes[nodeIndex].children[code] else {
+                return false
+            }
+            nodeIndex = nextIndex
+        }
+        return true
+    }
+}
+
+private struct MacroLookupSnapshot: Sendable {
+    let entries: [[UInt32]: MacroLookupEntry]
+    let nativeTextReplacementPrefixIndex: MacroPrefixIndex
+
+    static let empty = MacroLookupSnapshot(
+        entries: [:],
+        nativeTextReplacementPrefixIndex: .empty
+    )
+
+    init(entries: [[UInt32]: MacroLookupEntry]) {
+        self.entries = entries
+        nativeTextReplacementPrefixIndex = MacroPrefixIndex(entries: entries)
+    }
+
+    private init(
+        entries: [[UInt32]: MacroLookupEntry],
+        nativeTextReplacementPrefixIndex: MacroPrefixIndex
+    ) {
+        self.entries = entries
+        self.nativeTextReplacementPrefixIndex = nativeTextReplacementPrefixIndex
+    }
+}
+
 private final class MacroLookupStateBox: @unchecked Sendable {
     let lock = NSLock()
-    /// Raw macro payload as loaded; kept so lookup maps can be rebuilt for
+    /// Raw macro payload as loaded; kept so lookup snapshots can be rebuilt for
     /// whichever code table is active (issue #146: maps baked with the
     /// load-time table stopped matching after a code-table change).
     var binary: [UInt8] = []
-    var mapsByCodeTable: [Int32: [[UInt32]: MacroLookupEntry]] = [:]
+    var snapshotsByCodeTable: [Int32: MacroLookupSnapshot] = [:]
 
-    /// Returns the lookup map for `codeTable`, building and memoizing it from
-    /// the stored payload on first use. Callers must hold `lock`.
-    func mapLocked(forCodeTable codeTable: Int32) -> [[UInt32]: MacroLookupEntry] {
-        if let cached = mapsByCodeTable[codeTable] {
+    /// Returns the lookup snapshot for `codeTable`, building and memoizing it
+    /// from the stored payload on first use. Callers must hold `lock`.
+    func snapshotLocked(forCodeTable codeTable: Int32) -> MacroLookupSnapshot {
+        if let cached = snapshotsByCodeTable[codeTable] {
             return cached
         }
         guard !binary.isEmpty else {
-            return [:]
+            return .empty
         }
-        let built = binary.withUnsafeBufferPointer { buffer -> [[UInt32]: MacroLookupEntry] in
+        let entries = binary.withUnsafeBufferPointer { buffer -> [[UInt32]: MacroLookupEntry] in
             guard let base = buffer.baseAddress else { return [:] }
             return macroMapFromBinaryData(base, size: buffer.count, codeTable: codeTable)
         }
-        mapsByCodeTable[codeTable] = built
-        return built
+        let snapshot = MacroLookupSnapshot(entries: entries)
+        snapshotsByCodeTable[codeTable] = snapshot
+        return snapshot
     }
 }
 
@@ -602,9 +672,9 @@ private func findMacroContentForNormalizedKeys(
         macroLookupState.lock.unlock()
     }
 
-    let map = macroLookupState.mapLocked(forCodeTable: codeTable)
+    let entries = macroLookupState.snapshotLocked(forCodeTable: codeTable).entries
 
-    if let directEntry = map[keys] {
+    if let directEntry = entries[keys] {
         setLastMatchedMacroSnippetType(directEntry.snippetType, isExactMatch: true)
         return macroContentCode(for: directEntry, codeTable: codeTable)
     }
@@ -634,43 +704,13 @@ private func findMacroContentForNormalizedKeys(
     }
 
     // System replacements inherit capitalization even when user macro auto-caps is off.
-    guard let entry = map[candidate],
+    guard let entry = entries[candidate],
           autoCapsEnabled || entry.snippetType == EngineMacroSnippetType.systemTextReplacement else {
         return nil
     }
     setLastMatchedMacroSnippetType(entry.snippetType)
     let baseContent = macroContentCode(for: entry, codeTable: codeTable)
     return applyAutoCapsToMacroContent(baseContent, allCaps: allCaps, codeTable: codeTable)
-}
-
-private func nativeTextReplacementKeyMatchesPrefix(
-    _ macroKey: [UInt32],
-    candidate: ArraySlice<UInt32>,
-    codeTable: Int32
-) -> Bool {
-    guard macroKey.count >= candidate.count else { return false }
-
-    let candidateArray = Array(candidate)
-    let exactMatch = zip(macroKey.prefix(candidateArray.count), candidateArray)
-        .allSatisfy { $0 == $1 }
-    if exactMatch { return true }
-
-    // Auto-capitalization and a final Shift/Caps Lock must not prevent native
-    // Text Replacement from recognizing a lowercase shortcut.
-    var loweredCandidate = candidateArray
-    var changed = false
-    for index in loweredCandidate.indices {
-        guard let lowered = lowercasedMacroLookupCode(
-            loweredCandidate[index],
-            codeTable: codeTable
-        ) else { continue }
-        if lowered != loweredCandidate[index] { changed = true }
-        loweredCandidate[index] = lowered
-    }
-    guard changed else { return false }
-
-    return zip(macroKey.prefix(loweredCandidate.count), loweredCandidate)
-        .allSatisfy { $0 == $1 }
 }
 
 @_cdecl("phtvHasNativeTextReplacementPrefix")
@@ -685,17 +725,26 @@ func phtvHasNativeTextReplacementPrefix(
     macroLookupState.lock.lock()
     defer { macroLookupState.lock.unlock() }
 
-    let map = macroLookupState.mapLocked(forCodeTable: codeTable)
-    for (macroKey, entry) in map where entry.snippetType == EngineMacroSnippetType.systemTextReplacement {
-        if nativeTextReplacementKeyMatchesPrefix(
-            macroKey,
-            candidate: candidate[candidate.startIndex..<candidate.endIndex],
-            codeTable: codeTable
-        ) {
-            return 1
-        }
+    let prefixIndex = macroLookupState.snapshotLocked(forCodeTable: codeTable)
+        .nativeTextReplacementPrefixIndex
+    if prefixIndex.containsPrefix(candidate) {
+        return 1
     }
-    return 0
+
+    // Auto-capitalization and a final Shift/Caps Lock must not prevent native
+    // Text Replacement from recognizing a lowercase shortcut.
+    var loweredCandidate = candidate
+    var changed = false
+    for index in loweredCandidate.indices {
+        guard let lowered = lowercasedMacroLookupCode(
+            loweredCandidate[index],
+            codeTable: codeTable
+        ) else { continue }
+        changed = true
+        loweredCandidate[index] = lowered
+    }
+
+    return changed && prefixIndex.containsPrefix(loweredCandidate) ? 1 : 0
 }
 
 @_cdecl("phtvLoadMacroMapFromBinary")
@@ -706,7 +755,7 @@ func phtvLoadMacroMapFromBinary(
     guard let data, size > 0 else {
         macroLookupState.lock.lock()
         macroLookupState.binary = []
-        macroLookupState.mapsByCodeTable = [:]
+        macroLookupState.snapshotsByCodeTable = [:]
         macroLookupState.lock.unlock()
         setLastMatchedMacroSnippetType(EngineMacroSnippetType.staticContent)
         return
@@ -716,10 +765,10 @@ func phtvLoadMacroMapFromBinary(
     let activeCodeTable = PHTVEngineRuntimeFacade.currentCodeTable()
     macroLookupState.lock.lock()
     macroLookupState.binary = binary
-    macroLookupState.mapsByCodeTable = [:]
+    macroLookupState.snapshotsByCodeTable = [:]
     // Prebuild for the active table so the first keystroke pays nothing;
     // other tables are built lazily on their first lookup.
-    _ = macroLookupState.mapLocked(forCodeTable: activeCodeTable)
+    _ = macroLookupState.snapshotLocked(forCodeTable: activeCodeTable)
     macroLookupState.lock.unlock()
     setLastMatchedMacroSnippetType(EngineMacroSnippetType.staticContent)
 }
@@ -1127,7 +1176,15 @@ final class PHTVEngineRuntimeFacade: NSObject {
             return changed
         }
         // Do not carry a partial shortcut across an exclusion boundary.
-        if changed { engineStartNewSession() }
+        if changed {
+            engineHandleEvent(
+                PHTV_ENGINE_EVENT_MOUSE,
+                PHTV_ENGINE_EVENT_STATE_MOUSE_DOWN,
+                0,
+                0,
+                0
+            )
+        }
     }
 
     class func useMacro() -> Int32 {

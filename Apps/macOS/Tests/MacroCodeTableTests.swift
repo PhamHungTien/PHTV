@@ -135,6 +135,44 @@ final class MacroCodeTableTests: XCTestCase {
         PHTVEngineDataBridge.initializeMacroMap(with: data)
     }
 
+    private func nativeKeyCodes(for token: String) -> [UInt32] {
+        token.map { character in
+            let keyCode = UInt32(keyCode(for: Character(character.lowercased())))
+            return character.isUppercase ? keyCode | EngineBitMask.caps : keyCode
+        }
+    }
+
+    private func nativePrefixMatches(_ token: String) -> Bool {
+        let candidate = nativeKeyCodes(for: token)
+        return candidate.withUnsafeBufferPointer { buffer in
+            phtvHasNativeTextReplacementPrefix(buffer.baseAddress, Int32(buffer.count)) != 0
+        }
+    }
+
+    private func legacyNativePrefixMatch(
+        _ candidate: [UInt32],
+        macros: [MacroItem]
+    ) -> Bool {
+        var finalEntries: [[UInt32]: SnippetType] = [:]
+        for macro in macros {
+            finalEntries[nativeKeyCodes(for: macro.shortcut)] = macro.snippetType
+        }
+
+        for (macroKey, snippetType) in finalEntries
+        where snippetType == .systemTextReplacement && macroKey.count >= candidate.count {
+            let prefix = Array(macroKey.prefix(candidate.count))
+            if prefix == candidate {
+                return true
+            }
+
+            let loweredCandidate = candidate.map { $0 & ~EngineBitMask.caps }
+            if loweredCandidate != candidate, prefix == loweredCandidate {
+                return true
+            }
+        }
+        return false
+    }
+
     private func keyCode(for ch: Character) -> UInt16 {
         switch ch {
         case "a": return KEY_A; case "b": return KEY_B; case "c": return KEY_C
@@ -356,5 +394,143 @@ final class MacroCodeTableTests: XCTestCase {
             ),
             "được"
         )
+    }
+
+    // MARK: - Native Text Replacement prefix index
+
+    func testNativeTextReplacementPrefixIndexMatchesLegacyScanSemantics() {
+        let macros = [
+            MacroItem(shortcut: "btw", expansion: "by the way", snippetType: .systemTextReplacement),
+            MacroItem(shortcut: "hello", expansion: "hello world", snippetType: .systemTextReplacement),
+            MacroItem(shortcut: "VIP", expansion: "important", snippetType: .systemTextReplacement),
+            MacroItem(shortcut: "dup", expansion: "system", snippetType: .systemTextReplacement),
+            MacroItem(shortcut: "dup", expansion: "user", snippetType: .static),
+            MacroItem(shortcut: "win", expansion: "user", snippetType: .static),
+            MacroItem(shortcut: "win", expansion: "system", snippetType: .systemTextReplacement),
+            MacroItem(shortcut: "static", expansion: "local", snippetType: .static)
+        ]
+        loadMacros(macros)
+
+        let candidates = [
+            "b", "bt", "btw", "B", "BT", "BTW", "btwx",
+            "h", "HEL", "hello", "helloo",
+            "V", "VI", "VIP", "v", "vip",
+            "d", "du", "dup", "w", "wi", "win", "z"
+        ]
+
+        for candidate in candidates {
+            let keyCodes = nativeKeyCodes(for: candidate)
+            XCTAssertEqual(
+                nativePrefixMatches(candidate),
+                legacyNativePrefixMatch(keyCodes, macros: macros),
+                "candidate=\(candidate)"
+            )
+        }
+    }
+
+    func testNativeTextReplacementPrefixIndexUsesFinalDuplicateEntryType() {
+        loadMacros([
+            MacroItem(shortcut: "dup", expansion: "system", snippetType: .systemTextReplacement),
+            MacroItem(shortcut: "dup", expansion: "user", snippetType: .static)
+        ])
+        XCTAssertFalse(nativePrefixMatches("d"))
+        XCTAssertFalse(nativePrefixMatches("dup"))
+
+        loadMacros([
+            MacroItem(shortcut: "dup", expansion: "user", snippetType: .static),
+            MacroItem(shortcut: "dup", expansion: "system", snippetType: .systemTextReplacement)
+        ])
+        XCTAssertTrue(nativePrefixMatches("d"))
+        XCTAssertTrue(nativePrefixMatches("dup"))
+    }
+
+    func testNativeTextReplacementPrefixIndexReloadRemovesStalePrefixes() {
+        loadMacros([
+            MacroItem(shortcut: "alpha", expansion: "A", snippetType: .systemTextReplacement)
+        ])
+        XCTAssertTrue(nativePrefixMatches("a"))
+        XCTAssertFalse(nativePrefixMatches("b"))
+
+        loadMacros([
+            MacroItem(shortcut: "beta", expansion: "B", snippetType: .systemTextReplacement)
+        ])
+        XCTAssertFalse(nativePrefixMatches("a"))
+        XCTAssertTrue(nativePrefixMatches("b"))
+
+        loadMacros([])
+        XCTAssertFalse(nativePrefixMatches("b"))
+    }
+
+    func testNativeTextReplacementPrefixIndexPreservesCapitalizationSemantics() {
+        loadMacros([
+            MacroItem(shortcut: "lower", expansion: "lowercase", snippetType: .systemTextReplacement),
+            MacroItem(shortcut: "UPPER", expansion: "uppercase", snippetType: .systemTextReplacement)
+        ])
+
+        XCTAssertTrue(nativePrefixMatches("LOW"))
+        XCTAssertTrue(nativePrefixMatches("Lower"))
+        XCTAssertTrue(nativePrefixMatches("UP"))
+        XCTAssertFalse(nativePrefixMatches("up"))
+    }
+
+    func testNativeTextReplacementPrefixIndexSurvivesCodeTableSwitches() {
+        PHTVEngineRuntimeFacade.setCurrentCodeTable(2)
+        loadMacros([
+            MacroItem(shortcut: "btw", expansion: "by the way", snippetType: .systemTextReplacement)
+        ])
+
+        for codeTable in [0, 3, 2, 0] {
+            PHTVEngineRuntimeFacade.setCurrentCodeTable(Int32(codeTable))
+            XCTAssertTrue(nativePrefixMatches("b"), "codeTable=\(codeTable)")
+            XCTAssertTrue(nativePrefixMatches("BTW"), "codeTable=\(codeTable)")
+        }
+    }
+
+    func testNativeTextReplacementPrefixIndexHandlesLongShortcuts() {
+        let shortcut = String(repeating: "a", count: 200)
+        loadMacros([
+            MacroItem(
+                shortcut: shortcut,
+                expansion: "long replacement",
+                snippetType: .systemTextReplacement
+            )
+        ])
+
+        XCTAssertTrue(nativePrefixMatches(String(shortcut.prefix(199))))
+        XCTAssertTrue(nativePrefixMatches(shortcut))
+        XCTAssertFalse(nativePrefixMatches(shortcut + "a"))
+    }
+
+    func testNativeTextReplacementPrefixIndexSupportsConcurrentReloadAndLookup() {
+        let dataA = MacroStorage.engineBinaryData(from: [
+            MacroItem(shortcut: "alpha", expansion: "A", snippetType: .systemTextReplacement)
+        ])
+        let dataB = MacroStorage.engineBinaryData(from: [
+            MacroItem(shortcut: "beta", expansion: "B", snippetType: .systemTextReplacement)
+        ])
+        let candidateA = nativeKeyCodes(for: "a")
+        let candidateB = nativeKeyCodes(for: "b")
+
+        DispatchQueue.concurrentPerform(iterations: 8) { worker in
+            for iteration in 0..<200 {
+                if worker == 0 {
+                    PHTVEngineDataBridge.initializeMacroMap(
+                        with: iteration.isMultiple(of: 2) ? dataA : dataB
+                    )
+                } else {
+                    let candidate = iteration.isMultiple(of: 2) ? candidateA : candidateB
+                    _ = candidate.withUnsafeBufferPointer { buffer in
+                        phtvHasNativeTextReplacementPrefix(
+                            buffer.baseAddress,
+                            Int32(buffer.count)
+                        )
+                    }
+                }
+            }
+        }
+
+        PHTVEngineDataBridge.initializeMacroMap(with: dataB)
+        XCTAssertFalse(nativePrefixMatches("a"))
+        XCTAssertTrue(nativePrefixMatches("b"))
     }
 }
