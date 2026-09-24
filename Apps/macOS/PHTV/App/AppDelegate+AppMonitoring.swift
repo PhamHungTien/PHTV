@@ -249,11 +249,11 @@ private func phtvEnglishBehavior(
         let eventTapReady = initSucceeded && PHTVManager.isEventTapEnabled()
         publishTypingPermissionState(eventTapReady: eventTapReady)
         startInputSourceMonitoring()
-        if eventTapReady {
-            startHealthCheckMonitoring()
-        } else {
-            stopHealthCheckMonitoring()
-        }
+        // A session tap can be unavailable while another app owns Secure
+        // Input. Keep polling after wake so the tap is recreated as soon as
+        // macOS releases it instead of waiting for the 20-second permission
+        // monitor or another lifecycle event (issue #230).
+        startHealthCheckMonitoring()
         syncCurrentFrontmostAppContext(reason: "didWake", forceExcludedRecheck: true)
 
         refreshEmojiHotkeyRegistration(reason: "didWake", settledRetries: true)
@@ -298,11 +298,9 @@ private func phtvEnglishBehavior(
         publishTypingPermissionState(eventTapReady: eventTapReady)
         startInputSourceMonitoring()
         startAccessibilityMonitoring()
-        if eventTapReady {
-            startHealthCheckMonitoring()
-        } else {
-            stopHealthCheckMonitoring()
-        }
+        // See receiveWakeNote: Secure Input may outlive the session transition.
+        // The health monitor detects its release and restores the event tap.
+        startHealthCheckMonitoring()
         syncCurrentFrontmostAppContext(reason: "sessionBecomeActive", forceExcludedRecheck: true)
         refreshEmojiHotkeyRegistration(reason: "sessionBecomeActive", settledRetries: true)
         refreshClipboardHotkeyRegistration(reason: "sessionBecomeActive", settledRetries: true)
@@ -317,6 +315,10 @@ private func phtvEnglishBehavior(
 
     @objc func handleApplicationDidBecomeActive(_ note: Notification) {
         _ = note
+        // This notification can be the only resume signal after some macOS
+        // 27 transitions. Re-arm the watchdog even if the workspace session
+        // notification was missed or Secure Input delayed tap creation.
+        startHealthCheckMonitoring()
         refreshEmojiHotkeyRegistration(reason: "didBecomeActive", settledRetries: false)
         refreshClipboardHotkeyRegistration(reason: "didBecomeActive", settledRetries: false)
         requestEventTapRecovery(reason: "didBecomeActive")
