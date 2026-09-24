@@ -38,6 +38,18 @@ final class CompatibilityStrategyTests: XCTestCase {
         }
     }
 
+    func testIPhoneMirroringAllowsVietnameseInput() {
+        for bundleId in ["com.apple.ScreenContinuity", "com.apple.screencontinuity"] {
+            XCTAssertFalse(
+                PHTVAppContextService.shouldDisableVietnamese(forBundleId: bundleId),
+                bundleId
+            )
+        }
+        XCTAssertTrue(
+            PHTVAppContextService.shouldDisableVietnamese(forBundleId: "com.apple.apps.launcher")
+        )
+    }
+
     func testOutlookNeedsLegacySpaceCommitFix() {
         XCTAssertTrue(PHTVAppDetectionService.needsLegacySpaceCommitFix("com.microsoft.Outlook"))
         XCTAssertTrue(PHTVAppDetectionService.needsLegacySpaceCommitFix("com.microsoft.outlook"))

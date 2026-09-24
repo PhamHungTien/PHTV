@@ -332,8 +332,7 @@ final class PHTVAppDetectionService: NSObject {
     ])
 
     private static let disableVietnameseApps = BundlePatternSet([
-        "com.apple.apps.launcher",
-        "com.apple.ScreenContinuity"
+        "com.apple.apps.launcher"
     ])
 
     private static let appListMatchingAliases: [String: String] = [
