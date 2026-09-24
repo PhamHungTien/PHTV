@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.5.9] - 2026-09-24
+
+### Tổng quan
+
+PHTV 3.5.9 tăng tốc xử lý Text Replacements của macOS khi người dùng có
+nhiều shortcut, đồng thời cho phép gõ tiếng Việt trực tiếp trong iPhone Mirroring.
+
+### Performance
+
+- Thay phép quét toàn bộ Text Replacements trên mỗi phím bằng prefix trie bất biến
+  theo từng bảng mã. Trong benchmark với 2.000 shortcut và 1.000 lượt tra cứu,
+  thời gian giảm từ khoảng 1,55 giây xuống 0,00056 giây.
+- Xây dựng chỉ mục khi nạp macro và tái sử dụng snapshot theo bảng mã, giúp thời gian
+  tra cứu chỉ phụ thuộc vào độ dài shortcut và giữ mức sử dụng bộ nhớ tuyến tính.
+
+### Fixed
+
+- Loại bỏ iPhone Mirroring (`com.apple.ScreenContinuity`) khỏi danh sách ứng dụng
+  tự động vô hiệu hóa tiếng Việt; App Launcher vẫn giữ hành vi hiện tại.
+- Xóa đầy đủ shortcut macro đang nhập dở khi chuyển vào hoặc rời ứng dụng bị loại
+  trừ Gõ tắt, tránh macro cũ được mở rộng nhầm sau khi đổi ứng dụng.
+
+### Chất lượng
+
+- Bổ sung kiểm thử vi sai cho prefix lookup, reload macro, khóa trùng, viết hoa,
+  chuyển bảng mã, truy cập đồng thời và shortcut dài 200 ký tự.
+- Bổ sung kiểm thử hồi quy cho iPhone Mirroring và benchmark hiệu năng opt-in.
+- Toàn bộ **557 kiểm thử** đạt; static analyzer và kiểm tra metadata đều thành công.
+
 ## [3.5.8] - 2026-09-24
 
 ### Tổng quan
