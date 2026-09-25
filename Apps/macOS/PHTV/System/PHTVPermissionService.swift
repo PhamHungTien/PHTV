@@ -10,6 +10,21 @@
 import ApplicationServices
 import Foundation
 
+enum PHTVEventTapProbeAttemptResult: Equatable {
+    case creationFailed
+    case enableFailed
+    case ready
+}
+
+struct PHTVEventTapProbeOutcome: Equatable {
+    let result: PHTVEventTapProbeAttemptResult
+    let attempts: Int
+
+    var isReady: Bool {
+        result == .ready
+    }
+}
+
 @objc final class PHTVPermissionService: NSObject {
     private final class PermissionStateBox: @unchecked Sendable {
         let lock = NSLock()
@@ -45,15 +60,6 @@ import Foundation
         return canCreateEventTap()
     }
 
-    @objc static func hasInputMonitoringPermission() -> Bool {
-        CGPreflightListenEventAccess()
-    }
-
-    @discardableResult
-    @objc static func requestInputMonitoringPermission() -> Bool {
-        CGRequestListenEventAccess()
-    }
-
     private static func cacheMissingPermissionAndReturnFalse(_ message: String) -> Bool {
         let now = Date().timeIntervalSince1970
         var shouldLog = false
@@ -75,12 +81,8 @@ import Foundation
     }
 
     @objc static func canCreateEventTap() -> Bool {
-        let axTrusted = AXIsProcessTrusted()
-        if !axTrusted {
-            return cacheMissingPermissionAndReturnFalse("Accessibility (AX) is NOT granted")
-        }
-        if !hasInputMonitoringPermission() {
-            return cacheMissingPermissionAndReturnFalse("Input Monitoring is NOT granted")
+        guard AXIsProcessTrusted() else {
+            return cacheMissingPermissionAndReturnFalse("AX_NOT_TRUSTED")
         }
 
         let now = Date().timeIntervalSince1970
@@ -112,7 +114,8 @@ import Foundation
             return lastPermissionCheckResult
         }
 
-        let hasPermission = tryCreateTestTapWithRetries()
+        let probeOutcome = tryCreateTestTapWithRetries()
+        let hasPermission = probeOutcome.isReady
         var shouldLogSuccess = false
         var shouldLogFailure = false
         var loggedFailureCount = 0
@@ -128,9 +131,8 @@ import Foundation
             shouldLogSuccess = !previousHasLastOutcome || !previousOutcome
         } else {
             permissionState.permissionFailureCount += 1
-            // At this point AX is trusted and the remaining failure is creating
-            // a live session tap. Treat it as a propagation/readiness delay.
-            // Use a short fixed backoff so recovery happens within ~1s rather than up to 15s.
+            // AX is trusted, so a failed active-tap probe is treated as a short
+            // propagation or session-readiness delay rather than another permission.
             let backoff: TimeInterval = 1.0
             permissionState.permissionBackoffUntil = now + backoff
             loggedFailureCount = permissionState.permissionFailureCount
@@ -145,10 +147,20 @@ import Foundation
         permissionState.lock.unlock()
 
         if shouldLogSuccess {
-            NSLog("[Permission] Check: TestTap=SUCCESS")
-        } else if shouldLogFailure {
             NSLog(
-                "[Permission] Check: TestTap=FAILED (count=%ld) — backing off for %.2fs",
+                "[Permission] ACTIVE_TAP_READY (attempt=%ld)",
+                probeOutcome.attempts
+            )
+        } else if shouldLogFailure {
+            let resultName = switch probeOutcome.result {
+            case .creationFailed: "ACTIVE_TAP_CREATE_FAILED"
+            case .enableFailed: "ACTIVE_TAP_ENABLE_FAILED"
+            case .ready: "ACTIVE_TAP_READY"
+            }
+            NSLog(
+                "[Permission] %@ (attempts=%ld, failures=%ld) — backing off for %.2fs",
+                resultName,
+                probeOutcome.attempts,
                 loggedFailureCount,
                 loggedBackoff
             )
@@ -157,51 +169,55 @@ import Foundation
         return hasPermission
     }
 
-    private static func tryCreateTestTapWithRetries() -> Bool {
+    static func runEventTapProbe(
+        maxRetries: Int,
+        retryDelay: () -> Void,
+        attempt: () -> PHTVEventTapProbeAttemptResult
+    ) -> PHTVEventTapProbeOutcome {
+        guard maxRetries > 0 else {
+            return PHTVEventTapProbeOutcome(result: .creationFailed, attempts: 0)
+        }
+
+        var lastResult = PHTVEventTapProbeAttemptResult.creationFailed
+        for attemptIndex in 0..<maxRetries {
+            lastResult = attempt()
+            if lastResult == .ready {
+                return PHTVEventTapProbeOutcome(result: .ready, attempts: attemptIndex + 1)
+            }
+            if attemptIndex < maxRetries - 1 {
+                retryDelay()
+            }
+        }
+
+        return PHTVEventTapProbeOutcome(result: lastResult, attempts: maxRetries)
+    }
+
+    private static func tryCreateTestTapWithRetries() -> PHTVEventTapProbeOutcome {
+        runEventTapProbe(
+            maxRetries: maxTestTapRetries,
+            retryDelay: { usleep(testTapRetryDelayUsec) },
+            attempt: performTestTapAttempt
+        )
+    }
+
+    private static func performTestTapAttempt() -> PHTVEventTapProbeAttemptResult {
         let callback: CGEventTapCallBack = { _, _, event, _ in
-            return Unmanaged.passUnretained(event)
+            Unmanaged.passUnretained(event)
         }
 
-        let eventsMask = CGEventMask(1 << CGEventType.keyDown.rawValue)
-
-        for attempt in 0..<maxTestTapRetries {
-            guard let testTap = CGEvent.tapCreate(
-                tap: .cgSessionEventTap,
-                place: .tailAppendEventTap,
-                options: .defaultTap,
-                eventsOfInterest: eventsMask,
-                callback: callback,
-                userInfo: nil
-            ) else {
-                if attempt < maxTestTapRetries - 1 {
-                    usleep(testTapRetryDelayUsec)
-                }
-                continue
-            }
-
-            // Verify that the created tap is actually enabled!
-            // In corrupt/stale TCC permission states, macOS may return a non-nil port that remains disabled.
-            CGEvent.tapEnable(tap: testTap, enable: true)
-            guard CGEvent.tapIsEnabled(tap: testTap) else {
-                CFMachPortInvalidate(testTap)
-                if attempt < maxTestTapRetries - 1 {
-                    usleep(testTapRetryDelayUsec)
-                }
-                continue
-            }
-
-            CFMachPortInvalidate(testTap)
-#if DEBUG
-            if attempt > 0 {
-                NSLog("[Permission] Test tap SUCCESS on attempt %d", attempt + 1)
-            }
-#endif
-            return true
+        guard let testTap = CGEvent.tapCreate(
+            tap: PHTVKeyboardEventTapConfiguration.location,
+            place: PHTVKeyboardEventTapConfiguration.placement,
+            options: PHTVKeyboardEventTapConfiguration.options,
+            eventsOfInterest: PHTVKeyboardEventTapConfiguration.eventMask,
+            callback: callback,
+            userInfo: nil
+        ) else {
+            return .creationFailed
         }
+        defer { CFMachPortInvalidate(testTap) }
 
-#if DEBUG
-        NSLog("[Permission] Test tap FAILED after %d attempts", maxTestTapRetries)
-#endif
-        return false
+        CGEvent.tapEnable(tap: testTap, enable: true)
+        return CGEvent.tapIsEnabled(tap: testTap) ? .ready : .enableFailed
     }
 }

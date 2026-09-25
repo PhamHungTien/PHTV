@@ -25,7 +25,6 @@ final class TypingRuntimeScenarioTests: XCTestCase {
             XCTAssertEqual(snapshot.permissionState, .secureInputActive)
             XCTAssertEqual(snapshot.guidanceStep, .secureInputActive)
             XCTAssertTrue(snapshot.hasAccessibilityPermission)
-            XCTAssertTrue(snapshot.hasInputMonitoringPermission)
             XCTAssertFalse(snapshot.isTypingPermissionReady)
             XCTAssertFalse(PHTVTypingRuntimeStateMachine.shouldScheduleEventTapRecovery(snapshot: snapshot))
             XCTAssertFalse(PHTVTypingRuntimeStateMachine.shouldPerformInProcessRecovery(snapshot: snapshot))
@@ -38,19 +37,16 @@ final class TypingRuntimeScenarioTests: XCTestCase {
         }
     }
 
-    func testSecureInputDoesNotHideMissingPermissions() {
-        for axTrusted in [false, true] {
-            let snapshot = PHTVTypingRuntimeHealthSnapshot.resolve(
-                axTrusted: axTrusted,
-                inputMonitoringTrusted: false,
-                eventTapReady: true,
-                relaunchPending: false,
-                safeModeEnabled: false,
-                activeAppProfile: .browser,
-                secureInputEnabled: true
-            )
-            XCTAssertEqual(snapshot.phase, axTrusted ? .inputMonitoringRequired : .accessibilityRequired)
-        }
+    func testSecureInputDoesNotHideMissingAccessibility() {
+        let snapshot = PHTVTypingRuntimeHealthSnapshot.resolve(
+            axTrusted: false,
+            eventTapReady: true,
+            relaunchPending: false,
+            safeModeEnabled: false,
+            activeAppProfile: .browser,
+            secureInputEnabled: true
+        )
+        XCTAssertEqual(snapshot.phase, .accessibilityRequired)
     }
 
     func testSecureInputReleaseRestoresReadinessOrSchedulesTapRecovery() {
@@ -166,8 +162,7 @@ final class TypingRuntimeScenarioTests: XCTestCase {
                 name: "first-install-without-accessibility",
                 snapshot: .resolve(
                     axTrusted: false,
-                    inputMonitoringTrusted: false,
-                    eventTapReady: false,
+                        eventTapReady: false,
                     relaunchPending: false,
                     safeModeEnabled: false,
                     activeAppProfile: .generic
@@ -177,25 +172,10 @@ final class TypingRuntimeScenarioTests: XCTestCase {
                 expectedGuidanceStep: .accessibility
             ),
             TypingScenario(
-                name: "first-install-without-input-monitoring",
-                snapshot: .resolve(
-                    axTrusted: true,
-                    inputMonitoringTrusted: false,
-                    eventTapReady: false,
-                    relaunchPending: false,
-                    safeModeEnabled: false,
-                    activeAppProfile: .generic
-                ),
-                expectedPhase: .inputMonitoringRequired,
-                expectedPermissionState: .inputMonitoringRequired,
-                expectedGuidanceStep: .inputMonitoring
-            ),
-            TypingScenario(
                 name: "grant-accepted-and-relaunch-scheduled",
                 snapshot: .resolve(
                     axTrusted: true,
-                    inputMonitoringTrusted: true,
-                    eventTapReady: false,
+                        eventTapReady: false,
                     relaunchPending: true,
                     safeModeEnabled: false,
                     activeAppProfile: .generic
@@ -208,8 +188,7 @@ final class TypingRuntimeScenarioTests: XCTestCase {
                 name: "accessibility-granted-waiting-for-session-tap",
                 snapshot: .resolve(
                     axTrusted: true,
-                    inputMonitoringTrusted: true,
-                    eventTapReady: false,
+                        eventTapReady: false,
                     relaunchPending: false,
                     safeModeEnabled: false,
                     activeAppProfile: .browser
@@ -222,8 +201,7 @@ final class TypingRuntimeScenarioTests: XCTestCase {
                 name: "typing-ready-in-chat-app",
                 snapshot: .resolve(
                     axTrusted: true,
-                    inputMonitoringTrusted: true,
-                    eventTapReady: true,
+                        eventTapReady: true,
                     relaunchPending: false,
                     safeModeEnabled: false,
                     activeAppProfile: .chat
@@ -244,7 +222,6 @@ final class TypingRuntimeScenarioTests: XCTestCase {
     func testRelaunchAfterGrantRecommendationMatchesFirstInstallScenario() {
         let snapshot = PHTVTypingRuntimeStateMachine.snapshot(
             axTrusted: true,
-            inputMonitoringTrusted: true,
             eventTapReady: false,
             relaunchPending: false,
             safeModeEnabled: false,
@@ -263,7 +240,6 @@ final class TypingRuntimeScenarioTests: XCTestCase {
     func testInProcessRecoveryIsSuppressedOnceRelaunchIsPending() {
         let snapshot = PHTVTypingRuntimeStateMachine.snapshot(
             axTrusted: true,
-            inputMonitoringTrusted: true,
             eventTapReady: false,
             relaunchPending: true,
             safeModeEnabled: false,
@@ -284,7 +260,6 @@ final class TypingRuntimeScenarioTests: XCTestCase {
     func testWaitingForEventTapSchedulesInProcessRecoveryWhenAccessibilityIsTrusted() {
         let snapshot = PHTVTypingRuntimeStateMachine.snapshot(
             axTrusted: true,
-            inputMonitoringTrusted: true,
             eventTapReady: false,
             relaunchPending: false,
             safeModeEnabled: false,
@@ -297,7 +272,6 @@ final class TypingRuntimeScenarioTests: XCTestCase {
     func testEventTapRecoverySchedulingIsSuppressedWithoutAccessibilityOrDuringRelaunch() {
         let missingAccessibility = PHTVTypingRuntimeStateMachine.snapshot(
             axTrusted: false,
-            inputMonitoringTrusted: false,
             eventTapReady: false,
             relaunchPending: false,
             safeModeEnabled: false,
@@ -305,7 +279,6 @@ final class TypingRuntimeScenarioTests: XCTestCase {
         )
         let relaunchPending = PHTVTypingRuntimeStateMachine.snapshot(
             axTrusted: true,
-            inputMonitoringTrusted: true,
             eventTapReady: false,
             relaunchPending: true,
             safeModeEnabled: false,
@@ -316,16 +289,4 @@ final class TypingRuntimeScenarioTests: XCTestCase {
         XCTAssertFalse(PHTVTypingRuntimeStateMachine.shouldScheduleEventTapRecovery(snapshot: relaunchPending))
     }
 
-    func testEventTapRecoverySchedulingIsSuppressedWithoutInputMonitoring() {
-        let missingInputMonitoring = PHTVTypingRuntimeStateMachine.snapshot(
-            axTrusted: true,
-            inputMonitoringTrusted: false,
-            eventTapReady: false,
-            relaunchPending: false,
-            safeModeEnabled: false,
-            activeAppProfile: .generic
-        )
-
-        XCTAssertFalse(PHTVTypingRuntimeStateMachine.shouldScheduleEventTapRecovery(snapshot: missingInputMonitoring))
-    }
 }

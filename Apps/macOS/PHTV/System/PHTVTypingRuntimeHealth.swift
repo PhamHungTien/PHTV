@@ -50,7 +50,6 @@ enum PHTVActiveAppProfile: String, CaseIterable, Equatable, Sendable {
 
 enum PHTVTypingRuntimePhase: String, Equatable, Sendable {
     case accessibilityRequired
-    case inputMonitoringRequired
     case relaunchPending
     case waitingForEventTap
     case secureInputActive
@@ -63,7 +62,6 @@ enum PHTVTypingRuntimePhase: String, Equatable, Sendable {
 
 struct PHTVTypingRuntimeHealthSnapshot: Equatable, Sendable {
     let axTrusted: Bool
-    let inputMonitoringTrusted: Bool
     let eventTapReady: Bool
     let relaunchPending: Bool
     let safeModeEnabled: Bool
@@ -74,9 +72,6 @@ struct PHTVTypingRuntimeHealthSnapshot: Equatable, Sendable {
     var phase: PHTVTypingRuntimePhase {
         guard axTrusted else {
             return .accessibilityRequired
-        }
-        guard inputMonitoringTrusted else {
-            return .inputMonitoringRequired
         }
         if relaunchPending && !eventTapReady {
             return .relaunchPending
@@ -89,10 +84,6 @@ struct PHTVTypingRuntimeHealthSnapshot: Equatable, Sendable {
 
     var hasAccessibilityPermission: Bool {
         axTrusted
-    }
-
-    var hasInputMonitoringPermission: Bool {
-        inputMonitoringTrusted
     }
 
     var isTypingPermissionReady: Bool {
@@ -113,7 +104,6 @@ struct PHTVTypingRuntimeHealthSnapshot: Equatable, Sendable {
 
     static func resolve(
         axTrusted: Bool,
-        inputMonitoringTrusted: Bool = true,
         eventTapReady: Bool,
         relaunchPending: Bool,
         safeModeEnabled: Bool,
@@ -123,8 +113,7 @@ struct PHTVTypingRuntimeHealthSnapshot: Equatable, Sendable {
     ) -> Self {
         Self(
             axTrusted: axTrusted,
-            inputMonitoringTrusted: inputMonitoringTrusted,
-            eventTapReady: axTrusted && inputMonitoringTrusted && eventTapReady,
+            eventTapReady: axTrusted && eventTapReady,
             relaunchPending: relaunchPending,
             safeModeEnabled: safeModeEnabled,
             activeAppProfile: activeAppProfile,
@@ -137,7 +126,6 @@ struct PHTVTypingRuntimeHealthSnapshot: Equatable, Sendable {
 enum PHTVTypingRuntimeStateMachine {
     static func snapshot(
         axTrusted: Bool,
-        inputMonitoringTrusted: Bool = true,
         eventTapReady: Bool,
         relaunchPending: Bool,
         safeModeEnabled: Bool,
@@ -147,7 +135,6 @@ enum PHTVTypingRuntimeStateMachine {
     ) -> PHTVTypingRuntimeHealthSnapshot {
         PHTVTypingRuntimeHealthSnapshot.resolve(
             axTrusted: axTrusted,
-            inputMonitoringTrusted: inputMonitoringTrusted,
             eventTapReady: eventTapReady,
             relaunchPending: relaunchPending,
             safeModeEnabled: safeModeEnabled,
@@ -163,7 +150,6 @@ enum PHTVTypingRuntimeStateMachine {
         isEventTapInitialized: Bool
     ) -> Bool {
         snapshot.axTrusted
-            && snapshot.inputMonitoringTrusted
             && !snapshot.secureInputEnabled
             && needsRelaunchAfterPermission
             && !isEventTapInitialized
@@ -175,7 +161,6 @@ enum PHTVTypingRuntimeStateMachine {
         needsRelaunchAfterPermission: Bool
     ) -> Bool {
         snapshot.axTrusted
-            && snapshot.inputMonitoringTrusted
             && !snapshot.secureInputEnabled
             && needsRelaunchAfterPermission
             && !snapshot.isRelaunchPending
@@ -191,7 +176,6 @@ enum PHTVTypingRuntimeStateMachine {
         snapshot: PHTVTypingRuntimeHealthSnapshot
     ) -> Bool {
         snapshot.axTrusted
-            && snapshot.inputMonitoringTrusted
             && !snapshot.secureInputEnabled
             && !snapshot.eventTapReady
             && !snapshot.isRelaunchPending

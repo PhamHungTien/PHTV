@@ -110,10 +110,6 @@ import Foundation
         )
     }
 
-    private static func eventMaskBit(_ type: CGEventType) -> CGEventMask {
-        CGEventMask(1) << CGEventMask(type.rawValue)
-    }
-
     private static func resetTransientTapRuntimeState() {
         PHTVModifierRuntimeStateService.resetTransientHotkeyState(
             savedLanguage: PHTVEngineRuntimeFacade.currentLanguage()
@@ -195,20 +191,16 @@ import Foundation
         // Keep the privileged event tap focused on typing. macOS can refuse
         // or disable broader event masks during Secure Input and session
         // transitions; mouse clicks are observed separately below.
-        let keyboardMask = eventMaskBit(.keyDown)
-            | eventMaskBit(.keyUp)
-            | eventMaskBit(.flagsChanged)
-
         let callback: CGEventTapCallBack = { proxy, type, event, refcon in
             return PHTVEventCallbackService.handle(proxy: proxy, type: type, event: event, refcon: refcon)
         }
 
         NSLog("[EventTap] Attempting keyboard-only tap creation")
         let tap = CGEvent.tapCreate(
-            tap: .cgSessionEventTap,
-            place: .headInsertEventTap,
-            options: .defaultTap,
-            eventsOfInterest: keyboardMask,
+            tap: PHTVKeyboardEventTapConfiguration.location,
+            place: PHTVKeyboardEventTapConfiguration.placement,
+            options: PHTVKeyboardEventTapConfiguration.options,
+            eventsOfInterest: PHTVKeyboardEventTapConfiguration.eventMask,
             callback: callback,
             userInfo: nil
         )
@@ -240,6 +232,9 @@ import Foundation
             installMouseClickMonitor()
         } else {
             NSLog("[EventTap] ⚠️ Keyboard-only tap was created but could not be enabled")
+            // Do not leave an initialized-but-disabled tap behind. Clean up the
+            // source and port so recovery always retries from a known state.
+            _ = stopEventTap()
         }
 
         publishTypingReadiness(isReady)

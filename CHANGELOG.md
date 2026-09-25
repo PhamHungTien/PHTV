@@ -7,6 +7,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.6.0] - 2026-09-25
+
+### Tổng quan
+
+PHTV 3.6.0 đơn giản hóa thiết lập trên macOS xuống còn đúng một quyền nhập liệu,
+đồng thời cải thiện quy trình gửi báo lỗi để đính kèm báo cáo chẩn đoán tự động.
+
+### Changed
+
+- Chỉ yêu cầu quyền **Trợ năng** trên macOS 26 trở xuống hoặc **Device Control and
+  Data Access** trên macOS 27 trở lên; không còn yêu cầu **Input Monitoring**.
+- Đồng bộ onboarding, Settings, menu trạng thái, Keyboard Cleaning, diagnostics và
+  tài liệu theo mô hình một quyền, với tên quyền tự đổi theo phiên bản macOS.
+- Dùng chung cấu hình active keyboard event tap giữa bước kiểm tra quyền và tap
+  production; chỉ báo sẵn sàng sau khi tap production được tạo và enable thành công.
+- Cập nhật địa chỉ liên hệ và nơi nhận báo lỗi thành `contact@phamhungtien.com`.
+- Bo tròn bốn góc ảnh QR ủng hộ trong popover.
+
+### Added
+
+- Báo lỗi qua email giờ mở trình soạn thư của macOS và đính kèm file Markdown chứa
+  báo cáo đầy đủ, log và crash log mà người dùng đã chọn; nếu không mở được ứng dụng
+  email, báo cáo vẫn được sao chép vào clipboard.
+- Bổ sung kiểm thử cho tên quyền theo phiên bản macOS, readiness của active event
+  tap, retry khi tạo/enable tap thất bại và các trạng thái runtime một quyền.
+
+### Fixed
+
+- Dọn sạch event tap đã tạo nhưng không enable được để các lần khôi phục sau bắt đầu
+  từ trạng thái nhất quán.
+- Giữ luồng relaunch, watchdog và recovery hoạt động chỉ dựa trên Accessibility,
+  trạng thái tap và Secure Input, tránh chuyển người dùng sang mục quyền không cần thiết.
+
+### Chất lượng
+
+- Toàn bộ **556 kiểm thử** hoàn tất với 2 kiểm thử tự bỏ qua và không có lỗi;
+  Debug/Release build, static analyzer, metadata/privacy và kiểm tra định dạng diff
+  đều thành công.
+
 ## [3.5.9] - 2026-09-24
 
 ### Tổng quan

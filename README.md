@@ -41,21 +41,23 @@ open /Applications/PHTV.app
 **Quan trọng:** Trước khi sử dụng, bạn nên tắt các tính năng tự động sửa lỗi của macOS (Correct spelling, Capitalize words, inline predictive text,...) trong **System Settings > Keyboard > Edit Input Sources** để tránh xung đột. Xem [hướng dẫn chi tiết](docs/INSTALL.md#chuẩn-bị-trước-khi-cài-đặt).
 
 **Sau khi cài:**
-1. Mở PHTV và cấp đủ 2 quyền: **Accessibility** và **Input Monitoring**.
+1. Mở PHTV và cấp đúng một quyền theo phiên bản hệ điều hành: **Device Control and Data Access** trên macOS 27 trở lên, hoặc **Trợ năng** trên macOS cũ hơn.
 2. Click icon **En** trên menu bar, chọn **Vi** để bật tiếng Việt.
 3. Nhấn **Control + Shift** để chuyển đổi Việt/Anh (có thể tùy chỉnh trong Settings).
 4. Bắt đầu gõ.
 
 ## Quyền & Riêng tư
 
-PHTV cần 2 quyền của macOS để hoạt động ổn định:
+PHTV chỉ cần đúng một quyền của macOS để hoạt động:
 
-| Quyền | Dùng để làm gì |
-| --- | --- |
-| **Accessibility** | Tương tác với ô nhập liệu, đọc ngữ cảnh cần thiết và commit chữ đã xử lý. |
-| **Input Monitoring** | Nhận phím gõ từ macOS để engine có thể xử lý Telex/VNI trước khi gửi lại ứng dụng đích. |
+| Phiên bản macOS | Quyền cần cấp | Dùng để làm gì |
+| --- | --- | --- |
+| **macOS 27 trở lên** | **Device Control and Data Access** | Cho phép PHTV nhận phím và đưa chữ đã xử lý vào ứng dụng đang dùng. |
+| **macOS 26 trở xuống** | **Trợ năng** | Cho phép PHTV nhận phím và đưa chữ đã xử lý vào ứng dụng đang dùng. |
 
-Engine xử lý dữ liệu gõ **offline trên máy** và không gửi nội dung bạn gõ trong ứng dụng khác ra máy chủ. Sparkle cần mạng để cập nhật; GIF/Sticker chỉ kết nối Klipy khi người dùng mở hoặc tìm nội dung. Xem đầy đủ tại [Quyền riêng tư](docs/PRIVACY.md). Nếu macOS giữ một mục quyền cũ/hỏng, PHTV sẽ hướng dẫn cấp lại và làm mới entry TCC của quyền đang thiếu trước khi mở đúng mục System Settings.
+Các kiểm tra Accessibility/AX và event tap là trạng thái vận hành nội bộ, không phải quyền bổ sung mà người dùng phải cấp.
+
+Engine xử lý dữ liệu gõ **offline trên máy** và không gửi nội dung bạn gõ trong ứng dụng khác ra máy chủ. Sparkle cần mạng để cập nhật; GIF/Sticker chỉ kết nối Klipy khi người dùng mở hoặc tìm nội dung. Xem đầy đủ tại [Quyền riêng tư](docs/PRIVACY.md). Nếu trạng thái quyền chưa cập nhật, PHTV sẽ hướng dẫn mở đúng mục trong System Settings cho phiên bản macOS đang dùng.
 
 ## Tính năng
 
@@ -126,7 +128,7 @@ Engine xử lý dữ liệu gõ **offline trên máy** và không gửi nội du
 - **Tự động cập nhật (Sparkle)** - Kiểm tra và cập nhật phiên bản mới tự động từ GitHub với EdDSA signing bảo mật
 - **Import/Export cài đặt** - Sao lưu và khôi phục toàn bộ settings
 - **Menu bar icon** - Hiển thị trạng thái Vi/En trên thanh menu
-- **Trạng thái quyền rõ ràng** - Nhận diện riêng Accessibility, Input Monitoring, event tap readiness và tự hướng dẫn phục hồi khi thiếu quyền
+- **Trạng thái quyền rõ ràng** - Hiển thị đúng một quyền theo phiên bản macOS và chỉ báo readiness của bộ gõ riêng biệt
 - **Báo lỗi thông minh** - Tự động thu thập log debug, thống kê lỗi, gửi qua GitHub/Email
 
 ## Screenshots
@@ -212,7 +214,7 @@ open PHTV.xcodeproj
 # Build với Cmd+B, chạy với Cmd+R
 ```
 
-Project hiện chỉ có app chính `PHTV` và test target `PHEngineTests`; không còn target InputMethodKit riêng. Khi chạy bản tự build, bạn vẫn cần cấp đủ **Accessibility** và **Input Monitoring** cho bundle vừa build.
+Project hiện chỉ có app chính `PHTV` và test target `PHEngineTests`; không còn target InputMethodKit riêng. Khi chạy bản tự build, hãy cấp đúng một quyền cho bundle vừa build: **Device Control and Data Access** trên macOS 27 trở lên, hoặc **Trợ năng** trên macOS cũ hơn.
 
 Xem chi tiết kiến trúc: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 
@@ -269,7 +271,7 @@ Click biểu tượng **Vi** (Việt) / **En** (Anh) trên menu bar:
 | **macOS** | 14.0+ (Sonoma trở lên) |
 | **Kiến trúc** | DMG riêng cho Intel và Apple Silicon |
 | **Xcode** | Phiên bản mới nhất (nếu build từ source) |
-| **Quyền** | Accessibility + Input Monitoring |
+| **Quyền** | Đúng một quyền: Device Control and Data Access (macOS 27+) hoặc Trợ năng (macOS cũ hơn) |
 
 > **Lưu ý**: PHTV hỗ trợ cả Intel và Apple Silicon (M1/M2/M3/M4/...). Workflow phát hành tạo đúng DMG theo kiến trúc để giảm dung lượng tải.
 
@@ -321,7 +323,7 @@ Mọi đóng góp đều được chào đón! Xem [CONTRIBUTING.md](CONTRIBUTIN
 
 ## Hỗ trợ & Liên hệ
 
-- Email: phamhungtien.contact@gmail.com
+- Email: contact@phamhungtien.com
 - GitHub: [Issues](https://github.com/PhamHungTien/PHTV/issues) | [Discussions](https://github.com/PhamHungTien/PHTV/discussions)
 - Website: [phamhungtien.com/PHTV](https://phamhungtien.com/PHTV/)
 - Facebook: [PHTVInput](https://www.facebook.com/PHTVInput)

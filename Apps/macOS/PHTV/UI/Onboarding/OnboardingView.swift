@@ -882,35 +882,28 @@ struct BasicFeaturesStepView: View {
 
 struct AccessibilityStepView: View {
     @Environment(AppState.self) private var appState
-    /// Called once when both permissions transition from missing to granted
-    /// while this step is visible, so the onboarding can advance on its own.
+    /// Called once when Accessibility and the active tap become ready while
+    /// this step is visible, so onboarding can advance on its own.
     var onPermissionsReady: (() -> Void)? = nil
     @State private var sawMissingPermission = false
 
     var body: some View {
         let runtimeHealth = appState.typingRuntimeHealth
+        let permissionName = PHTVAccessibilityPermissionNaming.displayName
 
         VStack(spacing: 14) {
             OnboardingStepHeader(
                 title: "Cấp quyền nhập liệu",
-                subtitle: "PHTV cần Trợ năng và Giám sát đầu vào để bắt phím ổn định",
+                subtitle: "PHTV cần quyền \(permissionName) để bắt phím ổn định",
                 icon: "hand.raised.fill"
             )
 
             VStack(spacing: 12) {
-                HStack(spacing: 10) {
-                    OnboardingPermissionStateRow(
-                        title: "Trợ năng",
-                        detail: "Cho phép PHTV thao tác với ô nhập liệu.",
-                        granted: runtimeHealth.hasAccessibilityPermission
-                    )
-
-                    OnboardingPermissionStateRow(
-                        title: "Giám sát đầu vào",
-                        detail: "Cho phép PHTV nhận phím gõ từ macOS.",
-                        granted: runtimeHealth.hasInputMonitoringPermission
-                    )
-                }
+                OnboardingPermissionStateRow(
+                    title: permissionName,
+                    detail: "Cho phép PHTV thao tác với ô nhập liệu và xử lý bàn phím.",
+                    granted: runtimeHealth.hasAccessibilityPermission
+                )
 
                 permissionGuidanceContent(for: runtimeHealth)
 
@@ -923,8 +916,7 @@ struct AccessibilityStepView: View {
                     .buttonStyle(OnboardingPrimaryButtonStyle())
                 }
 
-                if runtimeHealth.phase == .accessibilityRequired ||
-                   runtimeHealth.phase == .inputMonitoringRequired {
+                if runtimeHealth.phase == .accessibilityRequired {
                     Text("Bạn có thể tiếp tục và cấp quyền sau — PHTV sẽ nhắc lại khi bộ gõ cần quyền.")
                         .font(.system(size: 11, design: .rounded))
                         .foregroundColor(.secondary)
@@ -948,30 +940,22 @@ struct AccessibilityStepView: View {
 
     @ViewBuilder
     private func permissionGuidanceContent(for runtimeHealth: PHTVTypingRuntimeHealthSnapshot) -> some View {
+        let permissionName = PHTVAccessibilityPermissionNaming.displayName
         switch runtimeHealth.phase {
         case .ready:
             OnboardingStatusCard(
                 icon: "checkmark.seal.fill",
                 title: "PHTV đã sẵn sàng",
-                description: "Hai quyền đã được cấp và bộ gõ đã sẵn sàng hoạt động.",
+                description: "Quyền đã được cấp và bộ gõ đã sẵn sàng hoạt động.",
                 tint: .green
             )
         case .accessibilityRequired:
             guidancePanel(
-                title: "Cấp quyền Trợ năng",
+                title: "Cấp quyền \(permissionName)",
                 rows: [
                     "Nhấn nút bên dưới để PHTV làm mới mục quyền cũ rồi mở Cài đặt Hệ thống.",
-                    "Trong Quyền riêng tư & Bảo mật > Trợ năng, bật lại PHTV.",
-                    "Khi macOS nhận quyền, PHTV sẽ tự chuyển sang bước Giám sát đầu vào."
-                ]
-            )
-        case .inputMonitoringRequired:
-            guidancePanel(
-                title: "Cấp quyền Giám sát đầu vào",
-                rows: [
-                    "Nhấn nút bên dưới để PHTV làm mới mục quyền cũ rồi mở Giám sát đầu vào.",
-                    "Bật lại PHTV trong danh sách ứng dụng được phép giám sát đầu vào.",
-                    "Nếu macOS hỏi mở lại ứng dụng, hãy cho phép. PHTV sẽ tự kiểm tra lại sau đó."
+                    "Trong Quyền riêng tư & Bảo mật > \(permissionName), bật PHTV.",
+                    "Sau khi macOS nhận quyền, PHTV sẽ tự khởi tạo event tap."
                 ]
             )
         case .relaunchPending:
@@ -1001,7 +985,7 @@ struct AccessibilityStepView: View {
             OnboardingStatusCard(
                 icon: "clock.badge.exclamationmark.fill",
                 title: "Đang hoàn tất khởi tạo",
-                description: "Hai quyền đã được cấp, nhưng PHTV vẫn đang chờ khởi tạo lại bộ gõ.",
+                description: "Quyền đã được cấp, nhưng PHTV vẫn đang chờ event tap hoạt động.",
                 tint: .yellow
             )
 
@@ -1010,7 +994,7 @@ struct AccessibilityStepView: View {
                 rows: [
                     "Nhấn Thử lại ngay để PHTV tự kiểm tra và khởi tạo lại bộ gõ.",
                     "Nếu vừa cấp quyền, hãy chờ vài giây để macOS áp dụng thay đổi.",
-                    "Nếu vẫn chưa gõ được, thử tắt rồi bật lại cả hai quyền cho PHTV."
+                    "Nếu vẫn chưa gõ được, hãy đóng rồi mở lại PHTV một lần."
                 ]
             )
         }
@@ -1039,9 +1023,7 @@ struct AccessibilityStepView: View {
     private func permissionActionTitle(for phase: PHTVTypingRuntimePhase) -> String? {
         switch phase {
         case .accessibilityRequired:
-            return "Mở Trợ năng"
-        case .inputMonitoringRequired:
-            return "Mở Giám sát đầu vào"
+            return "Mở \(PHTVAccessibilityPermissionNaming.displayName)"
         case .waitingForEventTap:
             return "Thử lại ngay"
         case .ready, .relaunchPending, .secureInputActive:
@@ -1056,8 +1038,6 @@ struct AccessibilityStepView: View {
             sawMissingPermission = true
             AppDelegate.current()?.continuePermissionGuidanceIfNeeded()
         } else if sawMissingPermission {
-            // Just transitioned to fully granted while the user watched this
-            // step — let the onboarding advance automatically.
             sawMissingPermission = false
             onPermissionsReady?()
         }

@@ -6,6 +6,7 @@
 //  Copyright © 2026 Phạm Hùng Tiến. All rights reserved.
 //
 
+import AppKit
 import SwiftUI
 import Carbon
 import Darwin.Mach
@@ -536,10 +537,8 @@ struct BugReportView: View {
             return "🔒 Secure Input active; keyboard events blocked by macOS"
         case .waitingForEventTap:
             return "⚠️ Permission OK, tap not initialized"
-        case .inputMonitoringRequired:
-            return "❌ No Input Monitoring permission"
         case .accessibilityRequired:
-            return "❌ No accessibility permission"
+            return "❌ No \(PHTVAccessibilityPermissionNaming.displayName) permission"
         }
     }
 
@@ -749,8 +748,7 @@ struct BugReportView: View {
             ## 🔐 Quyền & Trạng thái
             - **Runtime Session:** \(PHTVLogger.shared.currentSessionID())
             - **Runtime Phase:** \(appState.typingRuntimeHealth.phase.rawValue)
-            - **Accessibility Permission:** \(appState.hasAccessibilityPermission ? "✅ Granted" : "❌ Denied")
-            - **Input Monitoring Permission:** \(appState.hasInputMonitoringPermission ? "✅ Granted" : "❌ Denied")
+            - **\(PHTVAccessibilityPermissionNaming.displayName) Permission:** \(appState.hasAccessibilityPermission ? "✅ Granted" : "❌ Denied")
             - **Event Tap:** \(checkEventTapStatus())
             - **Active App Profile:** \(appState.typingRuntimeHealth.activeAppProfile.displayName)
             - **Active Bundle ID:** \(appState.typingRuntimeHealth.activeBundleId ?? "Unknown")
@@ -928,10 +926,7 @@ struct BugReportView: View {
 
             // Thêm thông tin permission nếu không có quyền (quan trọng để debug)
             if !appState.hasAccessibilityPermission {
-                report += "- ⚠️ **Accessibility:** ❌ Denied\n"
-            }
-            if !appState.hasInputMonitoringPermission {
-                report += "- ⚠️ **Input Monitoring:** ❌ Denied\n"
+                report += "- ⚠️ **\(PHTVAccessibilityPermissionNaming.displayName):** ❌ Denied\n"
             }
 
             report += "\n"
@@ -966,13 +961,13 @@ struct BugReportView: View {
     private func sendEmailReportAsync() async {
         guard !isSending else { return }
         isSending = true
+        defer { isSending = false }
 
         async let crashLogs = BugReportCrashLogCollector.recentCrashLogsInBackground(
             includeCrashLogs: appState.includeCrashLogs,
             detail: .full
         )
 
-        // Lấy FULL logs cho email (không giới hạn như GitHub)
         let fullLogs: String
         if appState.includeLogs {
             fullLogs = await BugReportLogCollector.fetchLogsInBackground(maxEntries: 120)
@@ -980,31 +975,51 @@ struct BugReportView: View {
             fullLogs = ""
         }
 
-        // Tạo FULL report (đầy đủ nhất)
         let fullReport = generateBugReportWithLogs(fullLogs, crashLogs: await crashLogs)
 
-        // Copy full report vào clipboard
-        NSPasteboard.general.clearContents()
-        NSPasteboard.general.setString(fullReport, forType: .string)
+        do {
+            let attachmentURL = try writeEmailAttachment(fullReport)
+            guard let emailService = NSSharingService(named: .composeEmail) else {
+                throw CocoaError(.serviceApplicationNotFound)
+            }
 
-        // Tạo email với hướng dẫn paste
-        let subject = "Báo lỗi PHTV: \(bugTitle)".addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
-        let body = """
-        [Báo cáo chi tiết đã được sao chép vào clipboard]
+            emailService.recipients = ["contact@phamhungtien.com"]
+            emailService.subject = "Báo lỗi PHTV: \(bugTitle.isEmpty ? "Không có tiêu đề" : bugTitle)"
+            let body = """
+            Chào bạn,
 
-        Vui lòng dán (Cmd+V) báo cáo đầy đủ vào đây.
+            Báo cáo chi tiết và các log đã chọn được đính kèm trong file \(attachmentURL.lastPathComponent).
 
-        ---
-        Hoặc mô tả ngắn gọn:
-        \(bugDescription.isEmpty ? "(Chưa nhập)" : bugDescription)
-        """.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
-
-        if let url = URL(string: "mailto:phamhungtien.contact@gmail.com?subject=\(subject)&body=\(body)") {
-            openExternalURL(url)
+            Mô tả ngắn:
+            \(bugDescription.isEmpty ? "(Chưa nhập)" : bugDescription)
+            """
+            emailService.perform(withItems: [body, attachmentURL])
+        } catch {
+            // Preserve the report even when no compatible mail client exists.
+            NSPasteboard.general.clearContents()
+            NSPasteboard.general.setString(fullReport, forType: .string)
+            saveErrorMessage = "Không thể mở trình soạn email có file đính kèm: \(error.localizedDescription). Báo cáo đầy đủ đã được sao chép vào clipboard."
+            showSaveErrorAlert = true
         }
+    }
 
-        isSending = false
-        showCopiedAlert = true // Thông báo đã copy
+    private func writeEmailAttachment(_ report: String) throws -> URL {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "yyyyMMdd-HHmmss"
+
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("PHTV-BugReports", isDirectory: true)
+        try FileManager.default.createDirectory(
+            at: directory,
+            withIntermediateDirectories: true
+        )
+
+        let url = directory.appendingPathComponent(
+            "phtv-bug-report-\(formatter.string(from: Date())).md"
+        )
+        try report.write(to: url, atomically: true, encoding: .utf8)
+        return url
     }
 
     private func saveReportToFileAsync() async {

@@ -56,7 +56,7 @@ Tạo [issue mới](https://github.com/PhamHungTien/PHTV/issues/new) với thôn
 - Cách tái hiện (bước chi tiết)
 - Hành vi mong đợi vs thực tế
 - Phiên bản macOS, ứng dụng/trang web gặp lỗi và phiên bản PHTV
-- Trạng thái Accessibility/Input Monitoring nếu lỗi liên quan đến gõ phím
+- Trạng thái quyền **Device Control and Data Access** (macOS 27+) hoặc **Trợ năng** (macOS cũ hơn), cùng trạng thái event tap nếu lỗi liên quan đến gõ phím
 - Screenshot/video (nếu có)
 
 ## Đề Xuất Tính Năng
@@ -106,7 +106,7 @@ PHTV/
 
 ### Build và Test
 
-> **Yêu cầu**: macOS 14.0+ và Xcode phiên bản mới nhất. Bản chạy thật cần cấp đủ Accessibility và Input Monitoring cho bundle đang test.
+> **Yêu cầu**: macOS 14.0+ và Xcode phiên bản mới nhất. Bản chạy thật cần đúng một quyền cho bundle đang test: **Device Control and Data Access** trên macOS 27 trở lên, hoặc **Trợ năng** trên macOS cũ hơn. Readiness nội bộ còn yêu cầu Accessibility/AX được tin cậy, tap của default session đang hoạt động và production tap đang được bật.
 
 ```bash
 # Clone project

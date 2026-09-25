@@ -5,7 +5,7 @@
 Không mở public issue nếu vấn đề có thể làm lộ nội dung gõ, clipboard, dữ liệu cá
 nhân, khóa ký, hoặc cho phép thực thi mã trái phép.
 
-Gửi báo cáo đến [phamhungtien.contact@gmail.com](mailto:phamhungtien.contact@gmail.com)
+Gửi báo cáo đến [contact@phamhungtien.com](mailto:contact@phamhungtien.com)
 với tiêu đề `[SECURITY] <mô tả ngắn>`. Vui lòng kèm:
 
 - phiên bản PHTV, macOS và kiến trúc máy;
@@ -25,8 +25,8 @@ Chỉ bản phát hành ổn định mới nhất được hỗ trợ chủ đ�
 
 ## Phạm vi ưu tiên
 
-- lạm dụng Accessibility hoặc Input Monitoring để đọc/gửi dữ liệu ngoài mục đích
-  xử lý bộ gõ;
+- lạm dụng quyền **Device Control and Data Access**/**Trợ năng** hoặc API
+  Accessibility để đọc/gửi dữ liệu ngoài mục đích xử lý bộ gõ;
 - rò rỉ nội dung gõ, clipboard, macro, từ khóa tìm GIF/Sticker hoặc định danh;
 - thực thi mã, command injection, path traversal hoặc nhập cấu hình không an toàn;
 - giả mạo cập nhật, lỗi chữ ký Sparkle, ký ứng dụng hoặc notarization;
@@ -38,8 +38,13 @@ bảo mật rõ ràng.
 
 ## Mô hình quyền và dữ liệu
 
-PHTV cần **Accessibility** và **Input Monitoring** để nhận phím và đưa văn bản đã
-xử lý vào ứng dụng đang dùng. PHTV không cần chạy bằng `sudo`.
+PHTV cần đúng một quyền để nhận phím và đưa văn bản đã xử lý vào ứng dụng đang
+dùng: **Device Control and Data Access** trên macOS 27 trở lên, hoặc **Trợ năng**
+trên macOS cũ hơn. PHTV không cần chạy bằng `sudo`.
+
+Bên trong ứng dụng, trạng thái sẵn sàng chỉ được xác nhận khi Accessibility/AX đã
+được tin cậy, tap của default session đang hoạt động và production tap đang được
+bật. Đây là các kiểm tra runtime, không phải các quyền bổ sung người dùng phải cấp.
 
 Engine tiếng Việt chạy tại máy. Một số tính năng tùy chọn có thể kết nối mạng:
 

@@ -31,18 +31,6 @@ final class AccessibilityRelaunchPolicyTests: XCTestCase {
         )
     }
 
-    func testRelaunchAfterGrantWaitsForInputMonitoring() {
-        XCTAssertFalse(
-            phtvShouldRelaunchAfterAccessibilityGrant(
-                axTrusted: true,
-                inputMonitoringTrusted: false,
-                needsRelaunchAfterPermission: true,
-                isEventTapInitialized: false,
-                isRelaunchAlreadyScheduled: false
-            )
-        )
-    }
-
     func testRelaunchAfterGrantDoesNotFireWhenEventTapIsAlreadyInitialized() {
         XCTAssertFalse(
             phtvShouldRelaunchAfterAccessibilityGrant(
@@ -77,15 +65,6 @@ final class AccessibilityRelaunchPolicyTests: XCTestCase {
         XCTAssertFalse(
             phtvShouldFallbackRelaunchAfterEventTapFailures(
                 accessibilityTrusted: false,
-                needsRelaunchAfterPermission: true,
-                isRelaunchAlreadyScheduled: false
-            )
-        )
-
-        XCTAssertFalse(
-            phtvShouldFallbackRelaunchAfterEventTapFailures(
-                accessibilityTrusted: true,
-                inputMonitoringTrusted: false,
                 needsRelaunchAfterPermission: true,
                 isRelaunchAlreadyScheduled: false
             )

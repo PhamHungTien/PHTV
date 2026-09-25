@@ -41,7 +41,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     var accessibilityMonitorTask: Task<Void, Never>?
     var wasAccessibilityEnabled = false
-    var wasInputMonitoringEnabled = false
     var accessibilityStableCount: UInt = 0
     var isPresentingAccessibilityRevokedAlert = false
     var isAttemptingTCCRepair = false

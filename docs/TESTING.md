@@ -11,8 +11,8 @@ build/analyze và kiểm tra thủ công trên các ứng dụng đích.
 - macOS 14 trở lên.
 - Xcode đầy đủ. `scripts/dev.swift` tự tìm Xcode stable hoặc Xcode Beta; có thể
   đặt `DEVELOPER_DIR` để chọn rõ phiên bản.
-- Bản chạy tương tác cần Accessibility và Input Monitoring. XCTest thuần không
-  tự cấp hoặc sửa quyền TCC của máy.
+- Bản chạy tương tác cần quyền Trợ năng (macOS 26 trở xuống) hoặc Device Control
+  and Data Access (macOS 27+). XCTest thuần không tự cấp hoặc sửa quyền TCC của máy.
 
 Kiểm tra môi trường:
 
@@ -94,7 +94,7 @@ Dùng [COMPATIBILITY.md](COMPATIBILITY.md) và ghi lại:
 - Telex, VNI và Simple Telex;
 - chữ thường, Shift, Caps Lock, Backspace, Space và dấu câu;
 - Terminal/CLI, trình duyệt, IDE, ứng dụng chat và editor đặc biệt;
-- mất/khôi phục Accessibility hoặc Input Monitoring;
+- mất/khôi phục quyền Accessibility và event tap;
 - Control+V/PHTV Picker khi mở đóng nhanh;
 - cập nhật Sparkle từ bản public trước đó.
 

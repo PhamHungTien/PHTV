@@ -15,15 +15,12 @@ enum PHTVTypingPermissionState: Equatable {
     case ready
     case waitingForEventTap
     case secureInputActive
-    case inputMonitoringRequired
     case accessibilityRequired
 
     static func resolve(snapshot: PHTVTypingRuntimeHealthSnapshot) -> Self {
         switch snapshot.phase {
         case .accessibilityRequired:
             return .accessibilityRequired
-        case .inputMonitoringRequired:
-            return .inputMonitoringRequired
         case .waitingForEventTap, .relaunchPending:
             return .waitingForEventTap
         case .secureInputActive:
@@ -35,13 +32,11 @@ enum PHTVTypingPermissionState: Equatable {
 
     static func resolve(
         accessibilityTrusted: Bool,
-        inputMonitoringTrusted: Bool = true,
         eventTapReady: Bool
     ) -> Self {
         resolve(
             snapshot: PHTVTypingRuntimeHealthSnapshot.resolve(
                 axTrusted: accessibilityTrusted,
-                inputMonitoringTrusted: inputMonitoringTrusted,
                 eventTapReady: eventTapReady,
                 relaunchPending: false,
                 safeModeEnabled: false,
@@ -54,15 +49,6 @@ enum PHTVTypingPermissionState: Equatable {
         self != .accessibilityRequired
     }
 
-    var hasInputMonitoringPermission: Bool {
-        switch self {
-        case .ready, .waitingForEventTap, .secureInputActive:
-            return true
-        case .inputMonitoringRequired, .accessibilityRequired:
-            return false
-        }
-    }
-
     var isTypingPermissionReady: Bool {
         self == .ready
     }
@@ -71,7 +57,6 @@ enum PHTVTypingPermissionState: Equatable {
 enum PHTVPermissionGuidanceStep: Equatable {
     case ready
     case accessibility
-    case inputMonitoring
     case waitingForEventTap
     case secureInputActive
 
@@ -79,8 +64,6 @@ enum PHTVPermissionGuidanceStep: Equatable {
         switch snapshot.phase {
         case .accessibilityRequired:
             return .accessibility
-        case .inputMonitoringRequired:
-            return .inputMonitoring
         case .waitingForEventTap, .relaunchPending:
             return .waitingForEventTap
         case .secureInputActive:
@@ -92,13 +75,11 @@ enum PHTVPermissionGuidanceStep: Equatable {
 
     static func resolve(
         accessibilityTrusted: Bool,
-        inputMonitoringTrusted: Bool = true,
         eventTapReady: Bool
     ) -> Self {
         resolve(
             snapshot: PHTVTypingRuntimeHealthSnapshot.resolve(
                 axTrusted: accessibilityTrusted,
-                inputMonitoringTrusted: inputMonitoringTrusted,
                 eventTapReady: eventTapReady,
                 relaunchPending: false,
                 safeModeEnabled: false,
@@ -173,15 +154,11 @@ final class SystemState {
     var hasAccessibilityPermission: Bool = false {
         didSet { notifyChangeIfNeeded(oldValue: oldValue, newValue: hasAccessibilityPermission) }
     }
-    var hasInputMonitoringPermission: Bool = false {
-        didSet { notifyChangeIfNeeded(oldValue: oldValue, newValue: hasInputMonitoringPermission) }
-    }
     var isTypingPermissionReady: Bool = false {
         didSet { notifyChangeIfNeeded(oldValue: oldValue, newValue: isTypingPermissionReady) }
     }
     var typingRuntimeHealth = PHTVTypingRuntimeHealthSnapshot.resolve(
         axTrusted: false,
-        inputMonitoringTrusted: false,
         eventTapReady: false,
         relaunchPending: false,
         safeModeEnabled: false,
@@ -192,9 +169,6 @@ final class SystemState {
             let resolvedState = typingRuntimeHealth.permissionState
             if hasAccessibilityPermission != resolvedState.hasAccessibilityPermission {
                 hasAccessibilityPermission = resolvedState.hasAccessibilityPermission
-            }
-            if hasInputMonitoringPermission != typingRuntimeHealth.hasInputMonitoringPermission {
-                hasInputMonitoringPermission = typingRuntimeHealth.hasInputMonitoringPermission
             }
             if isTypingPermissionReady != resolvedState.isTypingPermissionReady {
                 isTypingPermissionReady = resolvedState.isTypingPermissionReady
@@ -498,9 +472,7 @@ final class SystemState {
         relaunchPending: Bool? = nil
     ) -> PHTVTypingRuntimeHealthSnapshot {
         let accessibilityTrusted = AXIsProcessTrusted()
-        let inputMonitoringTrusted = PHTVPermissionService.hasInputMonitoringPermission()
         let liveEventTapReady = accessibilityTrusted
-            && inputMonitoringTrusted
             && PHTVManager.isInited()
             && PHTVManager.isEventTapEnabled()
         let effectiveEventTapReady = eventTapReady.map { $0 || liveEventTapReady } ?? liveEventTapReady
@@ -510,7 +482,6 @@ final class SystemState {
 
         return PHTVTypingRuntimeStateMachine.snapshot(
             axTrusted: accessibilityTrusted,
-            inputMonitoringTrusted: inputMonitoringTrusted,
             eventTapReady: effectiveEventTapReady,
             relaunchPending: isRelaunchPending,
             safeModeEnabled: safeMode,
@@ -616,11 +587,9 @@ final class SystemState {
 
                 self.refreshPermissionState()
                 let axTrusted = AXIsProcessTrusted()
-                let inputTrusted = PHTVPermissionService.hasInputMonitoringPermission()
                 NSLog(
-                    "[SystemState] AX TCC notification → AX=%@, Input=%@, eventTapReady=%@",
+                    "[SystemState] AX TCC notification → AX=%@, eventTapReady=%@",
                     axTrusted ? "YES" : "NO",
-                    inputTrusted ? "YES" : "NO",
                     self.isTypingPermissionReady ? "YES" : "NO"
                 )
             },
@@ -635,11 +604,9 @@ final class SystemState {
 
                 self.refreshPermissionState()
                 let axTrusted = AXIsProcessTrusted()
-                let inputTrusted = PHTVPermissionService.hasInputMonitoringPermission()
                 NSLog(
-                    "[SystemState] Generic TCC notification → AX=%@, Input=%@, eventTapReady=%@",
+                    "[SystemState] Generic TCC notification → AX=%@, eventTapReady=%@",
                     axTrusted ? "YES" : "NO",
-                    inputTrusted ? "YES" : "NO",
                     self.isTypingPermissionReady ? "YES" : "NO"
                 )
             },

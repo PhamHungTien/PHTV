@@ -94,24 +94,16 @@ final class PHTVTCCNotificationService: NSObject {
         Task { @MainActor in
             try? await Task.sleep(for: .seconds(settledCheckDelay))
 
-            // AXIsProcessTrusted() and CGPreflightListenEventAccess() are the canonical
-            // checks for the two TCC permissions required before event tap recovery.
-            // Avoid calling canCreateEventTap() here: it may fail due to macOS propagation
-            // delay and pollute the shared backoff state, delaying recovery for the
-            // AppDelegate timer that actually performs initialization.
-            //
-            // SystemState has its own com.apple.accessibility.api observer that updates
-            // the UI independently — no need to post AccessibilityStatusChanged here.
-            // Instead, directly trigger initialization when AX is trusted.
+            // AX trust is the only TCC precondition. Avoid calling
+            // canCreateEventTap() here: the active session tap may still be
+            // settling after a TCC propagation delay.
             let axTrusted = AXIsProcessTrusted()
-            let inputTrusted = PHTVPermissionService.hasInputMonitoringPermission()
             NSLog(
-                "[TCC] Post-notification check: AXTrusted=%@ InputTrusted=%@",
-                axTrusted ? "YES" : "NO",
-                inputTrusted ? "YES" : "NO"
+                "[TCC] Post-notification check: AXTrusted=%@",
+                axTrusted ? "YES" : "NO"
             )
 
-            if axTrusted && inputTrusted {
+            if axTrusted {
                 // Trigger initialization immediately instead of waiting for the next timer tick.
                 AppDelegate.current()?.checkAccessibilityAndRestart()
             } else {

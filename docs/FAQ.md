@@ -8,28 +8,22 @@ Các câu hỏi thường gặp khi cài đặt, cấp quyền và sử dụng P
 
 ## Cài Đặt & Quyền macOS
 
-### 1. Vì sao PHTV cần Accessibility và Input Monitoring?
+### 1. Vì sao PHTV cần quyền nhập liệu?
 
-PHTV là bộ gõ chạy ở tầng hệ thống. Để xử lý Telex/VNI ổn định trong mọi ứng dụng, PHTV cần:
+PHTV là bộ gõ chạy ở tầng hệ thống. PHTV cần đúng một quyền: **Trợ năng** trên macOS 26 trở xuống hoặc **Device Control and Data Access** trên macOS 27+.
 
-| Quyền | Mục đích |
-| --- | --- |
-| **Accessibility** | Tương tác với ô nhập liệu, đọc ngữ cảnh cần thiết và commit chữ đã xử lý. |
-| **Input Monitoring** | Nhận phím gõ từ macOS để engine có thể xử lý trước khi gửi lại ứng dụng đích. |
+Quyền này cho phép PHTV dùng active event tap để nhận, xử lý và gửi lại phím. Engine xử lý dữ liệu gõ offline trên máy và không gửi nội dung bạn gõ trong ứng dụng khác ra máy chủ. Khu GIF/Sticker và cập nhật Sparkle có kết nối mạng riêng, được mô tả tại [Quyền riêng tư](PRIVACY.md).
 
-Engine xử lý dữ liệu gõ offline trên máy và không gửi nội dung bạn gõ trong ứng dụng khác ra máy chủ. Khu GIF/Sticker và cập nhật Sparkle có kết nối mạng riêng, được mô tả tại [Quyền riêng tư](PRIVACY.md).
+### 2. Tôi đã cấp quyền nhưng PHTV vẫn không gõ được?
 
-### 2. Tôi đã cấp Accessibility nhưng PHTV vẫn không gõ được?
-
-Từ các bản macOS mới, chỉ Accessibility thường chưa đủ. Hãy kiểm tra thêm **Input Monitoring**:
+Quyền AX là điều kiện cần; PHTV còn phải tạo và enable event tap production thành công trước khi báo sẵn sàng:
 
 1. Mở **PHTV > Settings** hoặc màn hình onboarding.
-2. Xem trạng thái từng quyền: **Trợ năng** và **Giám sát đầu vào**.
-3. Bấm nút mở quyền đang thiếu.
-4. Bật lại PHTV trong System Settings.
-5. Nếu macOS yêu cầu mở lại ứng dụng, hãy cho phép.
+2. Nếu đang thiếu quyền, bấm nút mở **Trợ năng** hoặc **Device Control and Data Access**.
+3. Nếu trạng thái là đang khởi tạo, bấm **Thử lại ngay** hoặc mở lại PHTV.
+4. Rời khỏi ô mật khẩu/ứng dụng đang bật Secure Input rồi thử lại.
 
-Nếu PHTV vẫn báo thiếu quyền dù đã bật, bấm lại nút mở quyền trong PHTV. Ứng dụng sẽ làm mới entry TCC của quyền đang thiếu rồi mở đúng mục System Settings để bạn bật lại.
+Nếu PHTV vẫn báo thiếu quyền dù đã bật, bấm lại nút mở quyền trong PHTV. Ứng dụng sẽ làm mới entry TCC Accessibility rồi mở đúng mục System Settings để bạn bật lại.
 
 ### 3. PHTV báo mất quyền Trợ năng sau khi cập nhật, phải làm gì?
 
@@ -38,7 +32,7 @@ Nếu PHTV vẫn báo thiếu quyền dù đã bật, bấm lại nút mở quy�
 Khuyên dùng:
 
 1. Mở PHTV.
-2. Bấm **Mở Trợ năng** trong onboarding/Settings.
+2. Bấm **Mở quyền nhập liệu** trong onboarding/Settings.
 3. PHTV sẽ reset entry `Accessibility` cho bundle hiện tại.
 4. Bật lại PHTV trong **System Settings > Privacy & Security > Accessibility**.
 5. Thoát hẳn PHTV và mở lại nếu macOS chưa áp dụng ngay.
@@ -149,7 +143,7 @@ killall cfprefsd
 Nếu câu hỏi của bạn chưa có ở đây:
 
 - [Tạo issue trên GitHub](https://github.com/PhamHungTien/PHTV/issues)
-- Email: phamhungtien.contact@gmail.com
+- Email: contact@phamhungtien.com
 - Facebook: [PHTVInput](https://www.facebook.com/PHTVInput)
 
 ---

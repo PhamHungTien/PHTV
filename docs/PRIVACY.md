@@ -58,8 +58,7 @@ inline trong JSON, không bị bỏ khỏi bản lưu.
 
 ## Quyền macOS
 
-- **Accessibility**: tương tác với ô nhập liệu và commit chuỗi đã xử lý.
-- **Input Monitoring**: nhận sự kiện bàn phím để engine Telex/VNI hoạt động.
+- **Trợ năng / Device Control and Data Access**: quyền Accessibility/AX duy nhất để active event tap nhận phím, tương tác với ô nhập liệu và commit chuỗi đã xử lý. Tên hiển thị thay đổi trên macOS 27+.
 - **Automation/Apple Events**: chỉ dùng trong luồng phục hồi TCC có xác nhận của
   người dùng; PHTV không tự động điều khiển ứng dụng khác trong quá trình gõ.
 
@@ -82,4 +81,4 @@ quảng cáo; nếu cách tích hợp hoặc chính sách của Klipy thay đổ
 và tài liệu này phải được rà soát trước bản phát hành tiếp theo.
 
 Mọi câu hỏi về quyền riêng tư có thể gửi tới
-[phamhungtien.contact@gmail.com](mailto:phamhungtien.contact@gmail.com).
+[contact@phamhungtien.com](mailto:contact@phamhungtien.com).

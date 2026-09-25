@@ -24,7 +24,7 @@ PHTV là bộ gõ tiếng Việt native cho macOS. Tài liệu này hướng d�
 | **macOS** | 14.0 Sonoma trở lên |
 | **CPU** | Có DMG riêng cho Intel và Apple Silicon |
 | **Dung lượng** | Khoảng 50 MB |
-| **Quyền macOS** | Accessibility và Input Monitoring |
+| **Quyền macOS** | Một quyền: Trợ năng (macOS 26 trở xuống) hoặc Device Control and Data Access (macOS 27+) |
 | **Build từ source** | Xcode mới nhất, Swift 6 |
 
 Engine gõ tiếng Việt chạy offline trên máy và không gửi nội dung bạn gõ trong ứng dụng khác ra máy chủ. Sparkle và khu GIF/Sticker có kết nối mạng; xem [Quyền riêng tư](PRIVACY.md).
@@ -134,12 +134,13 @@ Project hiện chỉ còn app target `PHTV` và test target `PHEngineTests`. Kh�
 
 ## Cấp Quyền macOS
 
-PHTV cần đủ 2 quyền để bắt phím và gửi chữ đã xử lý vào ứng dụng bạn đang dùng.
+PHTV chỉ cần một quyền để bắt phím và gửi chữ đã xử lý vào ứng dụng bạn đang dùng. Tên hiển thị là **Trợ năng** trên macOS 26 trở xuống và **Device Control and Data Access** trên macOS 27+.
 
 | Quyền | Vị trí | Mục đích |
 | --- | --- | --- |
-| **Accessibility** | `System Settings > Privacy & Security > Accessibility` | Cho phép PHTV tương tác với ô nhập liệu và commit chữ. |
-| **Input Monitoring** | `System Settings > Privacy & Security > Input Monitoring` | Cho phép PHTV nhận phím gõ từ macOS. |
+| **Trợ năng / Device Control and Data Access** | `System Settings > Privacy & Security > Accessibility` (tên mục thay đổi trên macOS 27+) | Cho phép PHTV dùng active event tap, tương tác với ô nhập liệu và commit chữ. |
+
+PHTV chỉ báo sẵn sàng sau khi quyền đã được cấp và event tap production đã tạo, enable thành công.
 
 ### Luồng cấp quyền khuyên dùng
 
@@ -154,10 +155,9 @@ PHTV cần đủ 2 quyền để bắt phím và gửi chữ đã xử lý vào 
 
 Một số phiên bản macOS có thể giữ lại entry TCC cũ sau khi app được cập nhật hoặc ký lại. Khi bạn bấm mở quyền đang thiếu, PHTV sẽ làm mới riêng entry TCC của quyền đó trước khi mở System Settings:
 
-- `Accessibility` cho quyền Trợ năng.
-- `ListenEvent` cho quyền Giám sát đầu vào.
+- `Accessibility` là tên service TCC nội bộ của quyền này, kể cả khi macOS 27+ hiển thị là Device Control and Data Access.
 
-Nếu vẫn chưa hoạt động sau khi bật lại cả hai quyền, hãy thoát hẳn PHTV và mở lại một lần để macOS áp dụng trạng thái TCC mới.
+Nếu vẫn chưa hoạt động sau khi bật quyền, hãy thoát hẳn PHTV và mở lại một lần để macOS áp dụng trạng thái TCC mới.
 
 ---
 
@@ -183,9 +183,8 @@ Sau khi cấp quyền, click icon **Vi/En** trên menu bar để mở menu nhanh
 Kiểm tra theo thứ tự:
 
 1. Menu bar đang ở trạng thái **Vi**, không phải **En**.
-2. `System Settings > Privacy & Security > Accessibility` đã bật PHTV.
-3. `System Settings > Privacy & Security > Input Monitoring` đã bật PHTV.
-4. Tắt các tính năng tự sửa chữ của macOS trong Keyboard settings.
+2. Quyền **Trợ năng** (hoặc **Device Control and Data Access** trên macOS 27+) đã bật PHTV.
+3. Tắt các tính năng tự sửa chữ của macOS trong Keyboard settings.
 5. Thử gõ trong Notes hoặc TextEdit để loại trừ lỗi riêng của ứng dụng đang dùng.
 6. Thoát hẳn PHTV và mở lại nếu bạn vừa cấp quyền.
 
@@ -206,7 +205,7 @@ Sau đó right-click `PHTV.app` và chọn **Open**.
 1. Kiểm tra app hiện tại có chiếm phím tắt đó không.
 2. Mở **System Settings > Keyboard > Keyboard Shortcuts** để tìm xung đột.
 3. Đổi phím trong **PHTV > Settings > Phím tắt**.
-4. Đảm bảo cả Accessibility và Input Monitoring đều đã bật.
+4. Đảm bảo quyền nhập liệu duy nhất của PHTV đã bật; nếu trạng thái vẫn là đang khởi tạo, bấm Thử lại hoặc mở lại PHTV.
 
 ### Gõ bị lặp hoặc xuất hiện ký tự lạ
 
@@ -230,7 +229,7 @@ Khi tạo issue, vui lòng gửi:
 
 - Phiên bản PHTV.
 - Phiên bản macOS và chip máy.
-- Trạng thái Accessibility/Input Monitoring trong màn hình Báo lỗi của PHTV.
+- Trạng thái quyền nhập liệu và event tap trong màn hình Báo lỗi của PHTV.
 - Ứng dụng đang gõ khi lỗi xảy ra.
 - Các bước tái hiện lỗi.
 

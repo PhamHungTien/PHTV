@@ -83,7 +83,7 @@ Engine xử lý tiếng Việt viết bằng Swift. Nhận keycode và trả v�
 - `PHTVSmartSwitchBridgeService.swift` — Bridge cho Smart Switch
 
 ### System/
-- `PHTVPermissionService.swift` — Kiểm tra readiness của Accessibility, Input Monitoring và event tap
+- `PHTVPermissionService.swift` — Kiểm tra AX trust và readiness của active event tap
 - `PHTVTCCMaintenanceService.swift` — Query/reset TCC entry, restart `tccd` khi cần
 - `PHTVTCCNotificationService.swift` — Lắng nghe thay đổi TCC và kích hoạt recovery
 - `PHTVSafeModeStartupService.swift` — Khởi động Safe Mode
@@ -115,25 +115,23 @@ SwiftUI views. Không chứa business logic. Nhận state từ `State/` và gọ
 
 ## Runtime Permission Flow
 
-PHTV cần đủ 2 quyền macOS trước khi tạo event tap ổn định:
+PHTV chỉ cần một quyền macOS: **Trợ năng** trên macOS 26 trở xuống hoặc **Device Control and Data Access** trên macOS 27+. Đây là cùng một Accessibility/AX TCC service; app vẫn kiểm tra bằng `AXIsProcessTrusted()` và prompt bằng `AXIsProcessTrustedWithOptions`.
 
-1. **Accessibility** — kiểm tra bằng `AXIsProcessTrusted()` và prompt bằng `AXIsProcessTrustedWithOptions`.
-2. **Input Monitoring** — kiểm tra bằng `CGPreflightListenEventAccess()` và prompt bằng `CGRequestListenEventAccess()`.
+PHTV dùng active `.defaultTap` tại `.cgSessionEventTap`. AX trust chỉ cho phép thử; probe và production tap đều phải tạo, gắn run loop và enable thành công thì mới sẵn sàng.
 
 `PHTVTypingRuntimeHealthSnapshot` gom trạng thái runtime thành các phase:
 
 - `accessibilityRequired`
-- `inputMonitoringRequired`
 - `waitingForEventTap`
 - `relaunchPending`
+- `secureInputActive`
 - `ready`
 
 Các phase này là nguồn sự thật cho onboarding, Settings status card, menu bar và bug report.
 
 Khi người dùng chủ động mở quyền còn thiếu, `AppDelegate+PermissionFlow` gọi guided repair:
 
-- `tccutil reset Accessibility <bundleID>` nếu thiếu Accessibility.
-- `tccutil reset ListenEvent <bundleID>` nếu thiếu Input Monitoring.
+- `tccutil reset Accessibility <bundleID>` nếu entry Accessibility bị kẹt.
 - Invalidate permission cache và restart `tccd` khi reset thành công.
 - Mở đúng pane trong System Settings.
 

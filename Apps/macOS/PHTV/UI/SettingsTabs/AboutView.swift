@@ -137,6 +137,7 @@ struct DonateQRPopoverView: View {
                     .resizable()
                     .scaledToFit()
                     .frame(width: 210, height: 210)
+                    .clipShape(PHTVRoundedRect(cornerRadius: 12))
             }
 
             Text("Quét mã để ủng hộ")
