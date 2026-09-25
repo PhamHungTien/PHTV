@@ -11,9 +11,14 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version to release (e.g., 1.0.0)'
+        description: 'Version to build (e.g., 1.0.0)'
         required: true
         type: string
+      publish:
+        description: 'Create the GitHub release and publish appcasts/Homebrew'
+        required: true
+        default: false
+        type: boolean
 
 # Prevent concurrent releases from racing on appcast commits.
 concurrency:
@@ -769,6 +774,7 @@ jobs:
 
   release:
     name: Create Release
+    if: github.event_name == 'push' || inputs.publish
     runs-on: ubuntu-latest
     needs: build
     permissions:
