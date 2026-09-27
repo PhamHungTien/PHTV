@@ -7,6 +7,41 @@
         <language>vi</language>
         <!-- Most recent version first -->
         <item>
+            <title>3.6.0</title>
+            <pubDate>Sun, 27 Sep 2026 23:11:17 +0700</pubDate>
+            <sparkle:version>327</sparkle:version>
+            <sparkle:shortVersionString>3.6.0</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[
+                <h2>PHTV 3.6.0</h2>
+                <h3>Tổng quan</h3>
+                <p>PHTV 3.6.0 đơn giản hóa thiết lập trên macOS xuống còn đúng một quyền nhập liệu, đồng thời cải thiện quy trình gửi báo lỗi để đính kèm báo cáo chẩn đoán tự động.</p>
+                <h3>Changed</h3>
+                <ul>
+                <li>Chỉ yêu cầu quyền <strong>Trợ năng</strong> trên macOS 26 trở xuống hoặc <strong>Device Control and Data Access</strong> trên macOS 27 trở lên; không còn yêu cầu <strong>Input Monitoring</strong>.</li>
+                <li>Đồng bộ onboarding, Settings, menu trạng thái, Keyboard Cleaning, diagnostics và tài liệu theo mô hình một quyền, với tên quyền tự đổi theo phiên bản macOS.</li>
+                <li>Dùng chung cấu hình active keyboard event tap giữa bước kiểm tra quyền và tap production; chỉ báo sẵn sàng sau khi tap production được tạo và enable thành công.</li>
+                <li>Cập nhật địa chỉ liên hệ và nơi nhận báo lỗi thành <code>contact@phamhungtien.com</code>.</li>
+                <li>Bo tròn bốn góc ảnh QR ủng hộ trong popover.</li>
+                </ul>
+                <h3>Added</h3>
+                <ul>
+                <li>Báo lỗi qua email giờ mở trình soạn thư của macOS và đính kèm file Markdown chứa báo cáo đầy đủ, log và crash log mà người dùng đã chọn; nếu không mở được ứng dụng email, báo cáo vẫn được sao chép vào clipboard.</li>
+                <li>Bổ sung kiểm thử cho tên quyền theo phiên bản macOS, readiness của active event tap, retry khi tạo/enable tap thất bại và các trạng thái runtime một quyền.</li>
+                </ul>
+                <h3>Fixed</h3>
+                <ul>
+                <li>Dọn sạch event tap đã tạo nhưng không enable được để các lần khôi phục sau bắt đầu từ trạng thái nhất quán.</li>
+                <li>Giữ luồng relaunch, watchdog và recovery hoạt động chỉ dựa trên Accessibility, trạng thái tap và Secure Input, tránh chuyển người dùng sang mục quyền không cần thiết.</li>
+                </ul>
+                <h3>Chất lượng</h3>
+                <ul>
+                <li>Toàn bộ <strong>556 kiểm thử</strong> hoàn tất với 2 kiểm thử tự bỏ qua và không có lỗi; Debug/Release build, static analyzer, metadata/privacy và kiểm tra định dạng diff đều thành công.</li>
+                </ul>
+            ]]></description>
+            <enclosure url="https://github.com/PhamHungTien/PHTV/releases/download/v3.6.0/PHTV-3.6.0-arm64.dmg" length="9937579" type="application/octet-stream" sparkle:edSignature="2U+HBi5XuKOiAosyuUDN6nl0C5OJo89v9+KQgUVExH3I/GjxZyKNs0rDOSUPskmCyVT3H/JYIhYLBPqq8CbkBg=="/>
+        </item>
+        <item>
             <title>3.5.9</title>
             <pubDate>Thu, 24 Sep 2026 20:37:42 +0700</pubDate>
             <sparkle:version>326</sparkle:version>
@@ -770,14 +805,6 @@
             <sparkle:shortVersionString>3.3.2</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
             <enclosure url="https://github.com/PhamHungTien/PHTV/releases/download/v3.3.2/PHTV-3.3.2-arm64.dmg" length="8892706" type="application/octet-stream" sparkle:edSignature="31HHbzcrt87zXMbr1kthS14ymR7ajhIHOLKJ0giVX8yuQwdhxPPVcLxnx/ChT9C5k50KE27dnzBqoUqgeixUDw=="/>
-        </item>
-        <item>
-            <title>3.3.1</title>
-            <pubDate>Thu, 09 Jul 2026 07:30:49 +0700</pubDate>
-            <sparkle:version>297</sparkle:version>
-            <sparkle:shortVersionString>3.3.1</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <enclosure url="https://github.com/PhamHungTien/PHTV/releases/download/v3.3.1/PHTV-3.3.1-arm64.dmg" length="8892403" type="application/octet-stream" sparkle:edSignature="kh8bfs91wfrIb6Dca7OroT7iIA1HHrS4HJRKAce4S2l8Zgbtz7nMdvZLq5xQkpsK9kI3BOxLNuPx5TWVWMziDA=="/>
         </item>
         <item>
             <title>2.8.9</title>
