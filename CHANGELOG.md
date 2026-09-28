@@ -7,6 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.6.2] - 2026-09-29
+
+### Tổng quan
+
+Đợt cập nhật này rà soát nhập/xuất dữ liệu và đồng bộ tài liệu với ứng dụng
+hiện tại; không thay đổi mã xử lý bộ gõ hoặc chức năng sao lưu.
+
+### Documentation
+
+- Thêm `docs/BACKUP.md`: liệt kê dữ liệu được xuất, dữ liệu còn thiếu, cách
+  ghi đè khi nhập và khác biệt giữa Xuất cấu hình với xuất riêng Gõ tắt.
+- Sửa mô tả “sao lưu toàn bộ cài đặt”; hướng dẫn giữ loại snippet động bằng
+  Xuất cấu hình và sao lưu riêng dữ liệu Clipboard khi chuyển máy.
+- Đồng bộ README, FAQ, hướng dẫn cài đặt, kiến trúc và quyền riêng tư với các
+  tab hiện tại, hai chế độ khôi phục từ và phạm vi dữ liệu lưu trên máy.
+- Sửa hướng dẫn chạy test sang cấu hình `Testing` cô lập; cập nhật tài liệu
+  release, notarization và công cụ theo workflow hiện tại.
+
+### Known Issues
+
+- Backup cấu hình chưa bao gồm cấu hình/dữ liệu Clipboard và một số phím tắt.
+- Xuất riêng Gõ tắt chưa giữ loại snippet động; nhập lại tạo macro văn bản tĩnh.
+- Nhập cấu hình chưa kiểm tra đầy đủ schema/giá trị hoặc hoàn tác toàn bộ khi
+  ghi thất bại. Các thiếu sót này đã được ghi nhận, chưa được sửa trong đợt này.
+
+### Chất lượng
+
+- **13/13 kiểm thử liên quan đạt** trong `SettingsBackupValueTests` và
+  `AutoRestoreSettingsPersistenceTests`; chưa phải kiểm thử sao lưu toàn bộ dữ liệu.
+- Kiểm tra metadata, link tài liệu và quy chuẩn repository đều thành công.
+
 ## [3.6.1] - 2026-09-29
 
 ### Added
