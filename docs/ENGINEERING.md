@@ -57,6 +57,14 @@ vi, giữ allocation/lock ngoài đường xử lý phím và benchmark lại la
 
 ## Rà soát định kỳ
 
+### Nhập/xuất dữ liệu cần hoàn thiện
+
+[Kiểm kê sao lưu](BACKUP.md) ghi nhận thiếu cài đặt/dữ liệu Clipboard, thiếu
+metadata snippet trong xuất riêng Gõ tắt, validation schema/giá trị chưa đầy đủ
+và chưa có rollback khi nhập lỗi. Trước khi mô tả “sao lưu toàn bộ”, cần schema
+chung có phiên bản, kiểm tra giá trị trước khi ghi và test round-trip từ dữ liệu
+nguồn sang kho trống. Tách codec/persistence khỏi view để kiểm thử lỗi I/O.
+
 Mỗi minor release nên kiểm tra dependency, tài liệu tương thích và privacy. Mỗi
 major release nên rà lại entitlement, deployment target, supported macOS matrix,
 toàn bộ `@unchecked Sendable` và khả năng phục hồi từ bản public trước qua Sparkle.

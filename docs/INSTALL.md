@@ -101,11 +101,14 @@ Chạy test:
 ```bash
 xcodebuild test -project Apps/macOS/PHTV.xcodeproj \
   -scheme PHTV \
-  -configuration Debug \
+  -configuration Testing \
   -destination 'platform=macOS'
 ```
 
 Project hiện chỉ còn app target `PHTV` và test target `PHEngineTests`. Không còn target InputMethodKit riêng.
+
+Ưu tiên `scripts/dev.swift test` để dùng cấu hình test cô lập. Không ép test sang
+`Debug`, vì bản chạy tương tác và test host phải dùng domain dữ liệu riêng.
 
 ---
 
@@ -172,7 +175,12 @@ Sau khi cấp quyền, click icon **Vi/En** trên menu bar để mở menu nhanh
 | **Phím chuyển Việt/Anh** | Mặc định là **Control + Shift**, có thể đổi trong Settings. |
 | **Bảng mã** | Dùng Unicode cho hầu hết ứng dụng hiện đại. |
 | **Gõ tắt** | Thêm macro cá nhân trong tab Gõ tắt. |
-| **PHTV Picker** | Dùng hotkey trong Settings để mở Emoji/GIF/Clipboard. |
+| **Tự động khôi phục từ** | Picker cạnh công tắc trong Bộ gõ; mặc định Chỉ tiếng Anh. |
+| **PHTV Picker** | Mở Emoji/GIF/Sticker bằng hotkey trong tab PHTV Picker. |
+| **Clipboard** | Bật lịch sử và đặt hotkey riêng trong tab Clipboard. |
+
+Khi chuyển máy, xem [Nhập/xuất và sao lưu](BACKUP.md): file cấu hình hiện chưa
+chứa toàn bộ dữ liệu, đặc biệt lịch sử/mục Clipboard đã lưu.
 
 ---
 

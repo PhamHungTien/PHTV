@@ -86,7 +86,7 @@ PHTV Picker là bảng chọn nhanh Emoji, GIF và Sticker theo giao diện nati
 
 Clipboard History lưu nội dung bạn sao chép trên máy để dán lại nhanh:
 
-- Mặc định tắt, bật trong **Settings > Phím tắt**.
+- Mặc định tắt, bật trong **Settings > Clipboard**.
 - Hỗ trợ văn bản, ảnh và đường dẫn file.
 - Có giới hạn số mục lưu và tìm kiếm nhanh.
 - Dữ liệu nằm local trên máy.
@@ -98,7 +98,7 @@ PHTV hỗ trợ macro văn bản và snippet động:
 - `{date}`, `{time}`, clipboard, counter và random.
 - Tự viết hoa macro theo ngữ cảnh.
 - Có thể bật macro cả khi đang ở chế độ tiếng Anh.
-- Import/export để sao lưu hoặc chuyển máy.
+- Xuất cấu hình trong Hệ thống để giữ loại snippet; xuất riêng trong Gõ tắt chỉ giữ văn bản và danh mục. Xem [phạm vi nhập/xuất](BACKUP.md).
 
 ### 11. Safe Mode là gì?
 
@@ -126,15 +126,24 @@ brew uninstall --zap --cask phtv
 
 Nếu cài thủ công:
 
-1. Thoát PHTV.
-2. Xoá `/Applications/PHTV.app`.
-3. Xoá các preferences nếu muốn reset hoàn toàn:
+1. [Sao lưu dữ liệu cần giữ](BACKUP.md), bao gồm dữ liệu Clipboard ngoài file cấu hình nếu cần.
+2. Dùng công cụ gỡ sạch trong **Cài đặt > Hệ thống**.
+3. Nếu chỉ xóa `/Applications/PHTV.app`, dữ liệu trong Preferences/Application Support có thể vẫn còn.
 
-```bash
-rm -f ~/Library/Preferences/com.phamhungtien.phtv.plist
-rm -f ~/Library/Preferences/com.phamhungtien.phtv.debug.plist
-killall cfprefsd
-```
+### 14. Xuất cấu hình có sao lưu mọi dữ liệu không?
+
+Chưa. File hiện gồm các cài đặt được liệt kê, macro/danh mục và quy tắc ứng dụng,
+nhưng không gồm lịch sử/mục Clipboard đã lưu, cài đặt Clipboard và một số phím
+tắt. Nhập chỉ thay thế phần có mặt trong file. Xem bảng chi tiết và các vấn đề
+còn tồn tại tại [Nhập/xuất và sao lưu](BACKUP.md).
+
+### 15. Chọn chế độ tự động khôi phục từ thế nào?
+
+Trong **Cài đặt > Bộ gõ**, chọn ngay cạnh công tắc **Tự động khôi phục từ**.
+**Chỉ tiếng Anh** là mặc định. **Không phải tiếng Việt** phù hợp khi cần giữ dạng
+gõ gốc của tên riêng/thuật ngữ không có trong từ điển tiếng Anh; chỉ xét khôi phục
+khi kết thúc từ. Từ Việt hiếm chưa được nhận diện vẫn có thể bị khôi phục: chuyển
+về chế độ mặc định hoặc tắt tính năng nếu không phù hợp với nội dung đang viết.
 
 ---
 

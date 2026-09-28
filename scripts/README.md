@@ -73,12 +73,12 @@ GitHub Release và HTML tương đương cho Sparkle:
 
 ```bash
 scripts/tools/release_notes.swift latest
-scripts/tools/release_notes.swift render --version 3.4.2 --format markdown
-scripts/tools/release_notes.swift check --version 3.4.2 \
+scripts/tools/release_notes.swift render --version 3.6.1 --format markdown
+scripts/tools/release_notes.swift check --version 3.6.1 \
   --appcast docs/appcast.xml --appcast docs/appcast-intel.xml
 scripts/tools/release_notes.swift sync-xcode-version \
   --project Apps/macOS/PHTV.xcodeproj/project.pbxproj \
-  --version 3.4.2 --build 308
+  --version 3.6.1 --build 328
 scripts/tools/release_notes.swift self-test
 scripts/tools/repository_policy.swift check
 ```
@@ -86,6 +86,10 @@ scripts/tools/repository_policy.swift check
 Thông thường không cần tự sửa `<description>` trong appcast; workflow release sẽ
 render và chèn nội dung trước khi publish. Lệnh đồng bộ Xcode cũng được workflow
 gọi tự động sau khi appcast mới được tạo.
+
+Ví dụ dùng version/build trong appcast tại lần rà soát 29/09/2026. Khi phát hành
+tiếp, dùng version/build thật trong feed; không đồng bộ Xcode sang bản chưa có
+appcast chỉ vì đã thêm mục changelog.
 
 ## Tự động hóa
 

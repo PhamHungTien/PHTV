@@ -29,6 +29,9 @@ Mỗi bản release cần lấy mẫu các tổ hợp sau:
 - chữ thường, Title Case, Shift và Caps Lock.
 - Space, dấu câu, Enter, Tab, Backspace và phím điều hướng.
 - US, Dvorak hoặc Colemak nếu thay đổi layout mapping.
+- Khôi phục từ: tắt, Chỉ tiếng Anh và Không phải tiếng Việt. Thử `dudowjc` →
+  `được`, `truowfng`/`truowngf` → `trường`, `Erling Haaland`, Space/dấu câu;
+  chế độ Không phải tiếng Việt phải giữ xử lý tiếng Việt trong lúc từ còn dở.
 
 ## TeXstudio — hồi quy #224
 

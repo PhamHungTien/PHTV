@@ -111,7 +111,22 @@ AppDelegate được chia thành nhiều extension:
 - v.v.
 
 ### UI/
-SwiftUI views. Không chứa business logic. Nhận state từ `State/` và gọi action qua `Services/`.
+SwiftUI views nhận state từ `State/` và gọi action qua `Services/`. Một số luồng
+persistence vẫn nằm trong view: xuất/nhập cấu hình ở `SystemSettingsView` và
+xuất/nhập macro ở `MacroSettingsView`. Đây là ranh giới cần tách khi hoàn thiện
+sao lưu, không phải kiến trúc đã tách hết business logic khỏi UI.
+
+## Khôi phục từ và persistence
+
+`InputMethodState` lưu công tắc và `AutoRestoreEnglishMode`; manager đồng bộ
+sang runtime. Mặc định là `englishOnly`. Chế độ `nonVietnamese` dùng từ điển
+Việt để quyết định ở Space/dấu ngắt từ và không dùng nhánh khôi phục sớm khi
+nhấn `w`, vì âm tiết chưa hoàn thành không đủ để kết luận là từ nước ngoài.
+
+Backup cấu hình phiên bản `2.0` dùng một danh sách khóa cố định và các trường
+typed cho macro/quy tắc ứng dụng. Lịch sử Clipboard và mục đã lưu nằm trong file
+riêng, không nằm trong backup. Xuất riêng Gõ tắt dùng schema hẹp hơn `MacroItem`.
+Phạm vi, cách ghi đè và thiếu sót được ghi tại [BACKUP.md](BACKUP.md).
 
 ## Runtime Permission Flow
 

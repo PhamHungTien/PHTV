@@ -1,6 +1,6 @@
 # Quyền riêng tư trong PHTV
 
-Cập nhật lần cuối: 11/09/2026
+Cập nhật lần cuối: 29/09/2026
 
 PHTV xử lý phím gõ và chuyển đổi tiếng Việt trực tiếp trên máy. Nội dung bạn gõ
 trong các ứng dụng khác không được gửi tới máy chủ của PHTV. Một số tính năng
@@ -32,6 +32,7 @@ trong `PrivacyInfo.xcprivacy`.
 | Cài đặt, macro, quy tắc ứng dụng | `UserDefaults` của PHTV | Đến khi reset hoặc gỡ sạch ứng dụng |
 | Lịch sử Clipboard | Application Support của PHTV | Theo giới hạn số lượng/thời gian người dùng chọn |
 | Mục Clipboard đã ghim | Application Support của PHTV | Đến khi người dùng bỏ ghim hoặc xóa |
+| Mục Clipboard đã lưu và nhóm | `clipboard_saved_items.json` trong Application Support của PHTV | Đến khi người dùng xóa |
 | Bản sao file Clipboard | `ClipboardHistoryFiles` trong Application Support | Đi cùng mục lịch sử; file trên 25 MB không được sao chép vào cache |
 | Bản khôi phục lịch sử Clipboard | `clipboard_history.recovery-<UUID>.json` trong Application Support | Giữ đến khi người dùng xử lý phục hồi/xóa bản sao; không áp dụng tự động thời hạn lịch sử |
 | Log chẩn đoán | `PHTV/Logs/phtv_debug.log` trong Application Support | Tối đa khoảng 2 MB và được dọn theo chu kỳ 24 giờ |
@@ -56,6 +57,14 @@ trước khi khởi động lại để cho phép dọn cache; thao tác xóa l�
 không xóa các bản khôi phục này. Ảnh cũ hoặc ảnh chưa ghi được cache được giữ
 inline trong JSON, không bị bỏ khỏi bản lưu.
 
+## File xuất do người dùng tạo
+
+Xuất cấu hình/Gõ tắt tạo JSON tại vị trí người dùng chọn, không mã hóa và không
+tự tải lên máy chủ. File có thể chứa nội dung macro, danh mục và đường dẫn ứng
+dụng. Không gửi nguyên file vào báo lỗi công khai nếu chưa loại dữ liệu riêng tư.
+File sao lưu này không bao gồm lịch sử/mục Clipboard đã lưu và không được xóa
+tự động khi reset hoặc gỡ ứng dụng. Xem [phạm vi sao lưu](BACKUP.md).
+
 ## Quyền macOS
 
 - **Trợ năng / Device Control and Data Access**: quyền Accessibility/AX duy nhất để active event tap nhận phím, tương tác với ô nhập liệu và commit chuỗi đã xử lý. Tên hiển thị thay đổi trên macOS 27+.
@@ -68,7 +77,7 @@ và notarization vẫn được bật cho bản phát hành.
 
 ## Xóa dữ liệu
 
-- Xóa lịch sử trong **Cài đặt > Lịch sử Clipboard**.
+- Xóa lịch sử trong **Cài đặt > Clipboard**; kiểm tra riêng các mục đã lưu và bản khôi phục nếu muốn xóa hết.
 - Reset cấu hình trong **Cài đặt > Hệ thống**.
 - Gỡ sạch bằng `brew uninstall --zap --cask phtv` hoặc công cụ gỡ trong ứng dụng.
 - File log được đính kèm báo lỗi chỉ khi người dùng chủ động chọn gửi.

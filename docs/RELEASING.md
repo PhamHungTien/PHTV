@@ -38,7 +38,11 @@
    ```
 
 Có thể chạy workflow thủ công với version hợp lệ, nhưng commit đang chọn vẫn
-phải chứa changelog tương ứng.
+phải chứa changelog tương ứng. `publish` mặc định **false** để tạo bản tester đã
+ký; chọn **true** để xuất bản GitHub Release/appcast/Homebrew. Chỉ push lên
+`main` chưa phải phát hành phiên bản mới. Version/build mặc định trong Xcode
+được workflow đồng bộ khi publish appcast; không cần sửa chúng chỉ để thêm
+changelog chuẩn bị release.
 
 ## Workflow tự động
 

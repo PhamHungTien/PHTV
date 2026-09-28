@@ -64,7 +64,7 @@ Engine xử lý dữ liệu gõ **offline trên máy** và không gửi nội du
 ### Cốt lõi
 - **Engine offline** - Telex/VNI, macro và từ điển chạy trực tiếp trên máy; tính năng mạng tùy chọn được công khai rõ
 - **Telex, VNI, Simple Telex** - Đầy đủ các phương pháp gõ phổ biến
-- **Nhiều bảng mã** - Unicode, TCVN3 (ABC), VNI Windows, Unicode Compound
+- **Nhiều bảng mã** - Unicode, TCVN3 (ABC), VNI Windows, Unicode tổ hợp, CP1258
 - **Native macOS** - Giao diện SwiftUI hiện đại, hỗ trợ Dark Mode
 
 ### Gõ thông minh
@@ -73,7 +73,7 @@ Engine xử lý dữ liệu gõ **offline trên máy** và không gửi nội du
 - **Gõ tắt nhanh (Quick Telex)** - cc→ch, gg→gi, kk→kh, nn→ng, qq→qu, pp→ph, tt→th
 - **Phụ âm đầu/cuối nhanh** - f→ph, j→gi, w→qu (đầu) và g→ng, h→nh, k→ch (cuối)
 - **Tự động viết hoa** - Viết hoa chữ cái đầu câu sau dấu chấm
-- **Tự động khôi phục** - Hỗ trợ 2 chế độ: khôi phục nếu không phải tiếng Việt hoặc chỉ khôi phục nếu là tiếng Anh (VD: "tẻminal" → "terminal")
+- **Tự động khôi phục từ** - Mặc định chỉ tiếng Anh; tùy chọn “Không phải tiếng Việt” khôi phục tên riêng/thuật ngữ tại ranh giới từ. Picker và công tắc ở cùng dòng trong Bộ gõ, không khôi phục từ Việt đang gõ dở.
 - **Vietnamese consonant detection** - Logic thông minh phân biệt từ tiếng Việt có dấu và từ tiếng Anh (VD: "đi" vs "did", "fix" vs "fi")
 
 ### Macro & Text Snippets
@@ -81,7 +81,7 @@ Engine xử lý dữ liệu gõ **offline trên máy** và không gửi nội du
 - **Text Snippets** - Gõ tắt động với ngày, giờ, clipboard, random, counter
 - **Tự động viết hoa macro** - "Btw" → "By the way", "BTW" → "BY THE WAY"
 - **Hoạt động ở cả 2 chế độ** - Macro hoạt động cả khi gõ tiếng Việt và tiếng Anh
-- **Import/Export** - Nhập xuất danh sách macro từ file
+- **Import/Export** - Nhập xuất macro văn bản và danh mục; dùng Xuất cấu hình để giữ loại snippet động. Xem [phạm vi sao lưu](docs/BACKUP.md).
 - **Danh mục** - Tổ chức macro theo nhóm với icon và màu sắc
 
 ### Lịch sử Clipboard
@@ -98,7 +98,7 @@ Engine xử lý dữ liệu gõ **offline trên máy** và không gửi nội du
 - **Tìm kiếm thông minh** - Tìm Emoji/GIF theo từ khóa tiếng Việt và tiếng Anh
 - **Auto-paste** - Click là gửi ngay, không cần Cmd+V
 - **Multi-format support** - Hoạt động với iMessage, Zalo, Messenger Web và các app khác
-- **Auto cleanup** - Tự động xóa file GIF đã tải sau 5 giây
+- **Auto cleanup** - Dọn file GIF/Sticker tạm sau khi dùng, kèm cơ chế dọn cache dự phòng
 - **Ad-supported** - Miễn phí hoàn toàn nhờ quảng cáo từ Klipy
 - **Minh bạch dữ liệu** - Từ khóa GIF/Sticker và sự kiện quảng cáo được gửi tới Klipy chỉ khi dùng khu nội dung trực tuyến
 - **Hotkey tiện lợi** - Cmd+E (tùy chỉnh được) để mở nhanh
@@ -126,12 +126,15 @@ Engine xử lý dữ liệu gõ **offline trên máy** và không gửi nội du
 - **Khởi động cùng macOS** - Tùy chọn chạy khi đăng nhập
 - **Hot Reload** - Thay đổi cài đặt không cần khởi động lại
 - **Tự động cập nhật (Sparkle)** - Kiểm tra và cập nhật phiên bản mới tự động từ GitHub với EdDSA signing bảo mật
-- **Import/Export cài đặt** - Sao lưu và khôi phục toàn bộ settings
+- **Import/Export cài đặt** - Sao lưu nhóm cấu hình được hỗ trợ, macro và quy tắc ứng dụng; chưa bao gồm toàn bộ dữ liệu, đặc biệt Clipboard. Xem [Nhập/xuất và sao lưu](docs/BACKUP.md).
 - **Menu bar icon** - Hiển thị trạng thái Vi/En trên thanh menu
 - **Trạng thái quyền rõ ràng** - Hiển thị đúng một quyền theo phiên bản macOS và chỉ báo readiness của bộ gõ riêng biệt
 - **Báo lỗi thông minh** - Tự động thu thập log debug, thống kê lỗi, gửi qua GitHub/Email
 
 ## Screenshots
+
+Ảnh minh họa được chụp ở các phiên bản trước; bố cục và tên mục có thể khác bản
+hiện tại. Bảng cài đặt và hướng dẫn bên dưới mô tả giao diện trong mã nguồn hiện tại.
 
 <div align="center">
 
@@ -257,10 +260,13 @@ Click biểu tượng **Vi** (Việt) / **En** (Anh) trên menu bar:
 | Tab | Nội dung |
 | --- | --- |
 | **Bộ gõ** | Phương pháp gõ, bảng mã, chính tả, Quick Telex, phụ âm nhanh |
-| **Phím tắt** | Phím chuyển ngôn ngữ, tạm tắt tiếng Việt, PHTV Picker hotkey, Lịch sử Clipboard |
+| **Phím tắt** | Phím chuyển ngôn ngữ, khôi phục ký tự gốc và tạm tắt tiếng Việt |
 | **Gõ tắt** | Quản lý macro, text snippets, import/export, tự động viết hoa |
 | **Ứng dụng** | Ghi nhớ chế độ theo ứng dụng, Luôn dùng tiếng Anh, Send Key Step-by-Step, Keyboard Layout, Safe Mode |
-| **Hệ thống** | Khởi động cùng macOS, cập nhật, menu bar, phát hiện bàn phím non-Latin |
+| **PHTV Picker** | Emoji/GIF/Sticker và phím tắt mở bảng chọn |
+| **Clipboard** | Lịch sử, mục đã lưu, giới hạn lưu trữ và phím tắt Clipboard |
+| **Lau bàn phím** | Khóa nhập liệu tạm thời để vệ sinh bàn phím |
+| **Hệ thống** | Khởi động cùng macOS, cập nhật, giao diện, nhập/xuất cấu hình và gỡ ứng dụng |
 | **Báo lỗi** | Gửi báo cáo lỗi qua GitHub hoặc Email với crash logs và debug info |
 | **Thông tin** | Phiên bản, giấy phép, ủng hộ phát triển |
 
@@ -295,12 +301,13 @@ Click biểu tượng **Vi** (Việt) / **En** (Anh) trên menu bar:
 ### Người dùng
 - **[Cài đặt](docs/INSTALL.md)** - Hướng dẫn cài đặt chi tiết
 - **[FAQ](docs/FAQ.md)** - Các câu hỏi thường gặp
+- **[Nhập/xuất và sao lưu](docs/BACKUP.md)** - Dữ liệu được hỗ trợ, khác biệt giữa hai luồng và giới hạn hiện tại
 - **[Quyền riêng tư](docs/PRIVACY.md)** - Dữ liệu local, kết nối mạng và cách xóa dữ liệu
 
 ### Nhà phát triển
 - **[GitHub Actions Workflows](.github/workflows/README.md)** - CI/CD, auto-update, và release automation
 - **[Scripts](scripts/README.md)** - Local build/test, dictionary và release metadata tools
-- **Engine Regression Tests** - Chạy `xcodebuild -project Apps/macOS/PHTV.xcodeproj -scheme PHTV -configuration Debug -destination 'platform=macOS' test -only-testing:PHEngineTests/EngineRegressionTests` để kiểm tra các lỗi hồi quy quan trọng của bộ gõ
+- **Engine Regression Tests** - Chạy `scripts/dev.swift engine-test`; cấu hình `Testing` cô lập dữ liệu kiểm thử khỏi ứng dụng thật
 - **[Kiến trúc](docs/ARCHITECTURE.md)** - Thiết kế hệ thống và cấu trúc mã nguồn
 - **[Kiểm thử](docs/TESTING.md)** - Full suite, sanitizer và Definition of Done
 - **[Phát hành](docs/RELEASING.md)** - Changelog, signing, Sparkle và rollback

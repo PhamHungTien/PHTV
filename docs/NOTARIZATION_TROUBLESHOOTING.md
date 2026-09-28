@@ -14,9 +14,9 @@ Apple DTS notes that most uploads are notarized quickly, but some uploads can be
 - Enables hardened runtime and secure timestamp.
 - Re-signs nested Sparkle code, including `Autoupdate`.
 - Signs the DMG before submitting it to Apple.
-- Submits with `notarytool`, then polls status with retries instead of relying on one long `--wait`.
+- Submits with `notarytool submit --wait --timeout 5h`; the job has a 360-minute limit.
 - Prints `notarytool history` and `notarytool log` on failure.
-- Runs architecture jobs one at a time to avoid simultaneous notary submissions.
+- Allows up to two architecture jobs (`max-parallel: 2`). Release runs are serialized by the workflow concurrency group, but the two architectures within a run may submit concurrently.
 
 ## First diagnosis: run the smoke test
 
@@ -95,4 +95,3 @@ We verified:
 
 Could the Developer ID Notary Service team check whether our team/account is blocked, waiting for deeper analysis, or not yet configured for notarization?
 ```
-

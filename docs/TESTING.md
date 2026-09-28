@@ -42,7 +42,7 @@ scripts/build_and_run.swift verify
 ```
 
 Không dùng kết quả của test hẹp để khẳng định toàn bộ ứng dụng đã ổn. Test
-target có hơn 400 test bao phủ engine, hotkey, runtime policy, settings migration,
+target có hơn 500 test bao phủ engine, hotkey, runtime policy, settings migration,
 permission flow, Clipboard History, Sparkle và các profile tương thích.
 
 TestAction dùng cấu hình `Testing` (cùng tùy chọn compiler Debug), bundle ID
@@ -79,6 +79,7 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer \
 xcodebuild test \
   -project Apps/macOS/PHTV.xcodeproj \
   -scheme PHTV \
+  -configuration Testing \
   -destination 'platform=macOS' \
   -enableThreadSanitizer YES \
   -parallel-testing-enabled NO
@@ -97,6 +98,23 @@ Dùng [COMPATIBILITY.md](COMPATIBILITY.md) và ghi lại:
 - mất/khôi phục quyền Accessibility và event tap;
 - Control+V/PHTV Picker khi mở đóng nhanh;
 - cập nhật Sparkle từ bản public trước đó.
+
+## Khôi phục từ và nhập/xuất dữ liệu
+
+`EngineRegressionTests` kiểm tra từng tiền tố khi gõ `dudowjc`, `truowfng` và
+các thứ tự đặt dấu trên Telex/Simple Telex, ranh giới từ, tên riêng viết hoa và
+chuỗi nhiều từ. `AutoRestoreSettingsPersistenceTests` kiểm tra lưu/nạp lựa chọn,
+đóng cửa sổ, migration và tắt/bật tính năng.
+
+`SettingsBackupValueTests` hiện kiểm tra kiểu scalar cùng round-trip danh sách
+loại trừ macro. Các test này **không phải** bằng chứng sao lưu toàn bộ dữ liệu.
+Các lỗi/thiếu sót đã biết nằm trong [BACKUP.md](BACKUP.md).
+
+Khi sửa nhập/xuất, cần kiểm tra file mới/cũ, trường thiếu và mảng rỗng, loại
+snippet động, shortcut trùng, cấu hình không hợp lệ và lỗi ghi giữa chừng. Dùng
+defaults suite/thư mục tạm độc lập, so sánh dữ liệu trước xuất và sau nhập;
+không chạy thử nhập lên preferences của người dùng. UI cần kiểm tra hủy hộp
+thoại, lỗi đọc/ghi và nội dung thông báo thành công.
 
 ## Definition of Done
 

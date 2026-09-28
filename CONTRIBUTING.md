@@ -111,6 +111,7 @@ PHTV/
 ```bash
 # Clone project
 git clone https://github.com/PhamHungTien/PHTV.git
+cd PHTV
 
 # Kiểm tra môi trường local
 scripts/dev.swift env-check
@@ -165,6 +166,8 @@ scripts/dev.swift clean
 - Viết comment cho các hàm public
 - Mọi `@unchecked Sendable` phải giải thích lock/executor bảo vệ mutable state
 - Cập nhật `THIRD_PARTY_NOTICES.md` và privacy docs khi thêm dependency/dịch vụ mạng
+- Khi thêm cài đặt hoặc dữ liệu lưu trữ, rà soát phạm vi backup và cập nhật
+  [BACKUP.md](docs/BACKUP.md); không mặc định rằng mọi khóa mới tự được xuất
 
 **Ví dụ:**
 

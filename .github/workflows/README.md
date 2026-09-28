@@ -25,6 +25,10 @@ thay thế CI bắt buộc trên pull request.
 
 Trigger bằng tag `v*.*.*` hoặc `workflow_dispatch` với một version hợp lệ.
 
+Chạy thủ công mặc định `publish: false`: build/ký/đóng gói để thử nghiệm, không
+tạo GitHub Release hoặc cập nhật appcast/Homebrew. Chọn `publish: true` mới xuất
+bản các bước đó; trigger bằng tag luôn đi theo luồng publish.
+
 Luồng công việc:
 
 1. **verify** trên GitHub-hosted macOS: kiểm tra version, CHANGELOG, metadata,
@@ -37,6 +41,12 @@ Luồng công việc:
 5. **update-homebrew**: cập nhật `Casks/phtv.rb` trong Homebrew tap.
 
 Hai kiến trúc dùng DMG và appcast riêng; đây không phải một Universal DMG.
+Nhánh build cho phép tối đa hai kiến trúc chạy đồng thời. Notarization dùng
+`notarytool submit --wait --timeout 5h` trong giới hạn job 360 phút.
+
+Thay đổi chỉ trong README hoặc tài liệu Markdown thông thường không tự kích
+hoạt CI theo `paths` hiện tại; vẫn chạy `scripts/dev.swift metadata-check` tại
+local để kiểm tra link và quy chuẩn repository.
 
 ## Secrets bắt buộc
 
