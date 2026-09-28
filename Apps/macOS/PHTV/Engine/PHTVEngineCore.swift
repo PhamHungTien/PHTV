@@ -2419,6 +2419,9 @@ final class PHTVVietnameseEngine {
     /// replacement signal containing the complete raw word.
     func prepareImmediateAutoEnglishRestore(for data: UInt16) -> Int? {
         guard phtvRuntimeAutoRestoreEnglishWordEnabled() != 0,
+              // An unfinished Vietnamese syllable may not be in the dictionary yet.
+              // The broader policy must wait for a word boundary before restoring.
+              autoRestoreEnglishModeValue() == Int32(AutoRestoreEnglishMode.englishOnly.rawValue),
               (runtimeInputTypeSnapshot == 0 || runtimeInputTypeSnapshot == 2 || runtimeInputTypeSnapshot == 3),
               data == KEY_W,
               stateIdx >= 4,

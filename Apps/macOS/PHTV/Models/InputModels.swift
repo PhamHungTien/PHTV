@@ -97,14 +97,14 @@ enum AutoRestoreEnglishMode: Int, CaseIterable, Identifiable, Sendable {
         case .nonVietnamese:
             return "Không phải tiếng Việt"
         case .englishOnly:
-            return "Tiếng Anh"
+            return "Chỉ tiếng Anh (khuyến nghị)"
         }
     }
 
     nonisolated var descriptionText: String {
         switch self {
         case .nonVietnamese:
-            return "Chỉ giữ nguyên dạng gõ thô khi từ sau biến đổi không phải tiếng Việt; từ Việt có trong từ điển sẽ không bị khôi phục."
+            return "Phù hợp cho tên riêng và thuật ngữ. Từ Việt có trong từ điển sẽ không bị khôi phục."
         case .englishOnly:
             return "Khôi phục từ được nhận diện là tiếng Anh (hoặc có trong từ điển)."
         }

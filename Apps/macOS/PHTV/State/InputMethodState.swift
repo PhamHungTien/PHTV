@@ -92,7 +92,7 @@ final class InputMethodState {
             }
         }
     }
-    var autoRestoreEnglishWordMode: AutoRestoreEnglishMode = .englishOnly {
+    var autoRestoreEnglishWordMode: AutoRestoreEnglishMode = Defaults.autoRestoreEnglishWordMode {
         didSet {
             handleObservedChange(oldValue: oldValue, newValue: autoRestoreEnglishWordMode) {
                 self.handleAutoRestoreEnglishSettingsDidChange()
@@ -148,13 +148,13 @@ final class InputMethodState {
     }
 
     private var restoreIfWrongSpellingForRuntime: Bool {
-        false
+        autoRestoreEnglishWord && autoRestoreEnglishWordMode.enablesWrongSpellingFallback
     }
 
     private func persistAutoRestoreEnglishSettings() {
         let defaults = UserDefaults.standard
         defaults.set(autoRestoreEnglishWord, forKey: UserDefaultsKey.autoRestoreEnglishWord)
-        defaults.set(Defaults.autoRestoreEnglishWordMode.rawValue, forKey: UserDefaultsKey.autoRestoreEnglishWordMode)
+        defaults.set(autoRestoreEnglishWordMode.rawValue, forKey: UserDefaultsKey.autoRestoreEnglishWordMode)
         defaults.set(restoreIfWrongSpellingForRuntime, forKey: UserDefaultsKey.restoreIfWrongSpelling)
     }
 
@@ -266,12 +266,12 @@ final class InputMethodState {
             forKey: UserDefaultsKey.autoRestoreEnglishWord,
             default: Defaults.autoRestoreEnglishWord
         )
-        autoRestoreEnglishWordMode = .englishOnly
+        autoRestoreEnglishWordMode = defaults.autoRestoreEnglishMode()
         
         // Only write to defaults if values differ (avoid unnecessary I/O during frequent refreshes)
         let storedMode = defaults.integer(forKey: UserDefaultsKey.autoRestoreEnglishWordMode, default: -1)
-        if storedMode != Defaults.autoRestoreEnglishWordMode.rawValue {
-            defaults.set(Defaults.autoRestoreEnglishWordMode.rawValue, forKey: UserDefaultsKey.autoRestoreEnglishWordMode)
+        if storedMode != autoRestoreEnglishWordMode.rawValue {
+            defaults.set(autoRestoreEnglishWordMode.rawValue, forKey: UserDefaultsKey.autoRestoreEnglishWordMode)
         }
         let storedWrongSpelling = defaults.integer(forKey: UserDefaultsKey.restoreIfWrongSpelling, default: -1)
         let wrongSpellingFlag = restoreIfWrongSpellingForRuntime ? 1 : 0

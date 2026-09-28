@@ -864,8 +864,8 @@ struct BasicFeaturesStepView: View {
 
                     FeatureToggleRow(
                         icon: "character.bubble.fill",
-                        title: "Tự động khôi phục tiếng Anh",
-                        description: "Khôi phục lại từ tiếng Anh bị biến đổi ngoài ý muốn.",
+                        title: "Tự động khôi phục từ",
+                        description: "Khôi phục lại từ bị biến đổi ngoài ý muốn; có thể chọn phạm vi trong Cài đặt.",
                         isOn: bindable.autoRestoreEnglishWord
                     )
                 }

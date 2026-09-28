@@ -147,9 +147,7 @@ private let phtvCoreSettingsLogState = PHTVCoreSettingsLogState()
         autoRestoreEnglishWord: Int32,
         mode: AutoRestoreEnglishMode
     ) -> Int32 {
-        _ = autoRestoreEnglishWord
-        _ = mode
-        return 0
+        autoRestoreEnglishWord != 0 && mode.enablesWrongSpellingFallback ? 1 : 0
     }
 
     private class func phtv_computeSettingsToken(defaults: UserDefaults) -> UInt {

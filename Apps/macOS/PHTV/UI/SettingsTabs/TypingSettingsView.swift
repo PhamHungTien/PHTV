@@ -110,13 +110,30 @@ struct TypingSettingsView: View {
 
                         SettingsDivider()
 
-                        SettingsToggleRow(
-                            icon: "text.magnifyingglass",
-                            iconColor: .accentColor,
-                            title: "Tự động khôi phục tiếng Anh",
-                            subtitle: "Khôi phục từ được nhận diện là tiếng Anh (hoặc có trong từ điển)",
-                            isOn: bindable.autoRestoreEnglishWord
-                        )
+                        HStack(spacing: 12) {
+                            Text("Tự động khôi phục từ")
+                                .font(.body)
+                                .layoutPriority(1)
+
+                            Spacer(minLength: 12)
+
+                            Picker("Chế độ khôi phục", selection: bindable.autoRestoreEnglishWordMode) {
+                                ForEach(AutoRestoreEnglishMode.allCases) { mode in
+                                    Text(mode.controlTitle).tag(mode)
+                                }
+                            }
+                            .labelsHidden()
+                            .controlSize(.small)
+                            .disabled(!appState.autoRestoreEnglishWord)
+
+                            Toggle("Tự động khôi phục từ", isOn: bindable.autoRestoreEnglishWord)
+                                .labelsHidden()
+                                .toggleStyle(.switch)
+                                .controlSize(.small)
+                                .fixedSize()
+                                .frame(width: SettingsLayout.toggleControlWidth, alignment: .trailing)
+                        }
+                        .padding(.vertical, SettingsLayout.rowVerticalPadding)
 
                         SettingsDivider()
 

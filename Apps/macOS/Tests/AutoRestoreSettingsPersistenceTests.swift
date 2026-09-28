@@ -56,7 +56,7 @@ final class AutoRestoreSettingsPersistenceTests: XCTestCase {
         try await super.tearDown()
     }
 
-    func testRetiredNonVietnameseModeNormalizesToEnglishOnlyOnLoad() async {
+    func testNonVietnameseModePersistsOnLoad() async {
         let defaults = UserDefaults.standard
         defaults.set(true, forKey: UserDefaultsKey.autoRestoreEnglishWord)
         defaults.set(AutoRestoreEnglishMode.nonVietnamese.rawValue, forKey: UserDefaultsKey.autoRestoreEnglishWordMode)
@@ -71,15 +71,15 @@ final class AutoRestoreSettingsPersistenceTests: XCTestCase {
             return state.autoRestoreEnglishWordMode
         }
 
-        XCTAssertEqual(persistedMode, .englishOnly)
+        XCTAssertEqual(persistedMode, .nonVietnamese)
         XCTAssertEqual(
             defaults.integer(forKey: UserDefaultsKey.autoRestoreEnglishWordMode),
-            AutoRestoreEnglishMode.englishOnly.rawValue
+            AutoRestoreEnglishMode.nonVietnamese.rawValue
         )
-        XCTAssertFalse(defaults.bool(forKey: UserDefaultsKey.restoreIfWrongSpelling))
+        XCTAssertTrue(defaults.bool(forKey: UserDefaultsKey.restoreIfWrongSpelling))
     }
 
-    func testSaveSettingsNormalizesRetiredAutoRestoreModeWithoutWaitingForDebounce() async {
+    func testSaveSettingsPreservesNonVietnameseModeWithoutWaitingForDebounce() async {
         let defaults = UserDefaults.standard
         defaults.set(false, forKey: UserDefaultsKey.quickTelex)
         defaults.set(18.0, forKey: UserDefaultsKey.menuBarIconSize)
@@ -108,9 +108,9 @@ final class AutoRestoreSettingsPersistenceTests: XCTestCase {
         XCTAssertEqual(defaults.double(forKey: UserDefaultsKey.menuBarIconSize), 18.0)
         XCTAssertEqual(
             defaults.integer(forKey: UserDefaultsKey.autoRestoreEnglishWordMode),
-            AutoRestoreEnglishMode.englishOnly.rawValue
+            AutoRestoreEnglishMode.nonVietnamese.rawValue
         )
-        XCTAssertFalse(defaults.bool(forKey: UserDefaultsKey.restoreIfWrongSpelling))
+        XCTAssertTrue(defaults.bool(forKey: UserDefaultsKey.restoreIfWrongSpelling))
 
         await MainActor.run {
             states.0.saveSettings()
@@ -121,12 +121,12 @@ final class AutoRestoreSettingsPersistenceTests: XCTestCase {
         XCTAssertEqual(defaults.double(forKey: UserDefaultsKey.menuBarIconSize), 16.0)
         XCTAssertEqual(
             defaults.integer(forKey: UserDefaultsKey.autoRestoreEnglishWordMode),
-            AutoRestoreEnglishMode.englishOnly.rawValue
+            AutoRestoreEnglishMode.nonVietnamese.rawValue
         )
-        XCTAssertFalse(defaults.bool(forKey: UserDefaultsKey.restoreIfWrongSpelling))
+        XCTAssertTrue(defaults.bool(forKey: UserDefaultsKey.restoreIfWrongSpelling))
     }
 
-    func testWindowCloseFlushNormalizesRetiredAutoRestoreMode() async {
+    func testWindowCloseFlushPreservesNonVietnameseMode() async {
         let defaults = UserDefaults.standard
         defaults.set(false, forKey: UserDefaultsKey.quickTelex)
         defaults.set(18.0, forKey: UserDefaultsKey.menuBarIconSize)
@@ -148,9 +148,40 @@ final class AutoRestoreSettingsPersistenceTests: XCTestCase {
         XCTAssertEqual(defaults.double(forKey: UserDefaultsKey.menuBarIconSize), 16.0)
         XCTAssertEqual(
             defaults.integer(forKey: UserDefaultsKey.autoRestoreEnglishWordMode),
-            AutoRestoreEnglishMode.englishOnly.rawValue
+            AutoRestoreEnglishMode.nonVietnamese.rawValue
         )
-        XCTAssertFalse(defaults.bool(forKey: UserDefaultsKey.restoreIfWrongSpelling))
+        XCTAssertTrue(defaults.bool(forKey: UserDefaultsKey.restoreIfWrongSpelling))
+    }
+
+    func testLegacyWrongSpellingPreferenceMigratesToNonVietnameseMode() {
+        let defaults = UserDefaults.standard
+        defaults.removeObject(forKey: UserDefaultsKey.autoRestoreEnglishWordMode)
+        defaults.set(true, forKey: UserDefaultsKey.restoreIfWrongSpelling)
+
+        XCTAssertEqual(defaults.autoRestoreEnglishMode(), .nonVietnamese)
+    }
+
+    func testDisablingAutoRestorePreservesModeAndDisablesFallbackAcrossReload() async {
+        await MainActor.run {
+            let state = InputMethodState()
+            state.autoRestoreEnglishWordMode = .nonVietnamese
+            state.autoRestoreEnglishWord = false
+            let defaults = UserDefaults.standard
+            XCTAssertFalse(defaults.bool(forKey: UserDefaultsKey.restoreIfWrongSpelling))
+
+            let reloaded = InputMethodState()
+            reloaded.isLoadingSettings = true
+            reloaded.loadSettings()
+            reloaded.isLoadingSettings = false
+            XCTAssertFalse(reloaded.autoRestoreEnglishWord)
+            XCTAssertEqual(reloaded.autoRestoreEnglishWordMode, .nonVietnamese)
+
+            reloaded.autoRestoreEnglishWord = true
+            XCTAssertTrue(defaults.bool(forKey: UserDefaultsKey.restoreIfWrongSpelling))
+            reloaded.autoRestoreEnglishWordMode = .englishOnly
+            XCTAssertFalse(defaults.bool(forKey: UserDefaultsKey.restoreIfWrongSpelling))
+            XCTAssertEqual(defaults.autoRestoreEnglishMode(), .englishOnly)
+        }
     }
 
     func testFirstConsonantToggleAfterObserverSetupPersists() async throws {

@@ -1023,7 +1023,7 @@ final class EngineRegressionTests: XCTestCase {
         )
     }
 
-    // MARK: - Wrong-spelling fallback removed
+    // MARK: - Broader non-Vietnamese restoration
 
     func testKosovoDoesNotRestoreOnComma() {
         runWordBreakCase("koosvo", expectRestore: false, breakKey: KEY_COMMA)
@@ -1043,6 +1043,58 @@ final class EngineRegressionTests: XCTestCase {
 
     func testRoothideRestoresOnCommaInNonVietnameseMode() {
         runWordBreakCase("roothide", expectRestore: true, autoRestoreMode: .nonVietnamese, breakKey: KEY_COMMA)
+    }
+
+    func testProperNameRestoresOnlyInNonVietnameseMode() {
+        // "haaland" becomes "hâland" in Telex. The broader policy keeps the raw name.
+        runSpaceCase("haaland", expectRestore: true, autoRestoreMode: .nonVietnamese)
+        runSpaceCase("haaland", expectRestore: false, autoRestoreMode: .englishOnly)
+    }
+
+    func testNonVietnameseModePreservesVietnameseCompositionAtEveryKeystroke() {
+        let words = ["dudowjc", "dduowjc", "dduowcj", "duowcjd", "truowfng", "truowngf",
+                     "thuwowngr", "nguowif", "nghieeng", "tieesng", "quyeefn"]
+        for inputType: Int32 in [0, 2, 3] {
+            withInputType(inputType) {
+                for word in words {
+                    PHTVEngineRuntimeFacade.setAutoRestoreEnglishWord(0)
+                    PHTVEngineRuntimeFacade.setRestoreIfWrongSpelling(0)
+                    let expectedPrefixes = (1...word.count).map { runtimeRenderedToken(String(word.prefix($0))) }
+                    PHTVEngineRuntimeFacade.setAutoRestoreEnglishWord(1)
+                    PHTVEngineRuntimeFacade.setAutoRestoreEnglishWordMode(Int32(AutoRestoreEnglishMode.nonVietnamese.rawValue))
+                    PHTVEngineRuntimeFacade.setRestoreIfWrongSpelling(1)
+                    for length in 1...word.count {
+                        XCTAssertEqual(runtimeRenderedToken(String(word.prefix(length))), expectedPrefixes[length - 1],
+                                       "Composition changed for \(word), prefix \(length), input type \(inputType)")
+                    }
+                }
+            }
+        }
+    }
+
+    func testNonVietnameseModeKeepsCompletedVietnameseAtWordBoundaries() {
+        PHTVEngineRuntimeFacade.setAutoRestoreEnglishWordMode(Int32(AutoRestoreEnglishMode.nonVietnamese.rawValue))
+        PHTVEngineRuntimeFacade.setRestoreIfWrongSpelling(1)
+        for (raw, expected) in [("dudowjc", "được"), ("dduowjc", "được"), ("dduowcj", "được"),
+                                ("truowfng", "trường"), ("truowngf", "trường"), ("tieesng", "tiếng")] {
+            XCTAssertEqual(runtimeRenderedToken(raw), expected, raw)
+            XCTAssertEqual(runtimeRenderedToken(raw + " "), expected + " ", raw)
+            let events = raw.map { (keyCode(for: $0), UInt8(0)) } + [(KEY_COMMA, UInt8(0))]
+            XCTAssertEqual(runtimeRenderedKeySequence(events), expected + ",", raw)
+        }
+    }
+
+    func testNonVietnameseModeRestoresNamesOnlyAfterCompositionEnds() {
+        PHTVEngineRuntimeFacade.setAutoRestoreEnglishWordMode(Int32(AutoRestoreEnglishMode.nonVietnamese.rawValue))
+        PHTVEngineRuntimeFacade.setRestoreIfWrongSpelling(1)
+        for raw in ["Erling", "Haaland", "qwrty"] {
+            let events = raw.map { runtimeKeyEvent(for: $0) }
+            for separator in [KEY_SPACE, KEY_COMMA, KEY_DOT] {
+                let suffix = separator == KEY_SPACE ? " " : separator == KEY_COMMA ? "," : "."
+                XCTAssertEqual(runtimeRenderedKeySequence(events + [(separator, UInt8(0))]), raw + suffix)
+            }
+        }
+        XCTAssertEqual(runtimeRenderedToken("dudowjc truowfng tieesng "), "được trường tiếng ")
     }
 
     func testNoobRestoresOnSpace() {

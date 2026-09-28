@@ -7,6 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.6.1] - 2026-09-29
+
+### Added
+
+- Thêm lựa chọn **Không phải tiếng Việt** trong tính năng **Tự động khôi phục từ**,
+  giúp khôi phục tên riêng và thuật ngữ như `Erling Haaland` về dạng gõ gốc khi
+  kết thúc từ, kể cả khi không có trong từ điển tiếng Anh (#231).
+- Giữ **Chỉ tiếng Anh** làm chế độ mặc định; lưu lựa chọn khi tắt/bật tính năng,
+  đóng cửa sổ cài đặt và khởi động lại ứng dụng.
+
+### Changed
+
+- Đặt picker chọn chế độ và công tắc trên cùng dòng **Tự động khôi phục từ**;
+  bỏ dòng phạm vi và mô tả riêng để giao diện gọn hơn.
+- Đồng bộ tên tính năng trong onboarding, menu trạng thái và tìm kiếm cài đặt;
+  bổ sung chế độ đang chọn vào báo cáo lỗi.
+
+### Fixed
+
+- Ngăn chế độ **Không phải tiếng Việt** khôi phục âm tiết còn đang gõ khi nhấn
+  `w`, khiến `được` hoặc `trường` biến thành chuỗi phím thô. Chế độ này chỉ xét
+  khôi phục tại ranh giới từ, tiếp tục cho phép đặt dấu trước hoặc sau phụ âm cuối.
+- Sửa việc lựa chọn chế độ bị ghi đè về **Chỉ tiếng Anh** khi nạp/lưu cấu hình;
+  đồng bộ cờ khôi phục với trạng thái bật/tắt và chuyển đổi cấu hình cũ.
+
+### Chất lượng
+
+- Bổ sung kiểm thử từng phím trên Telex và Simple Telex, nhiều thứ tự đặt dấu,
+  dấu cách/dấu câu, chuỗi nhiều từ, tên riêng viết hoa và lưu/nạp cấu hình.
+- **560 kiểm thử đạt**, 2 kiểm thử bỏ qua, không có lỗi; Debug/Release build,
+  phân tích tĩnh, metadata và kiểm tra nguồn từ điển đều thành công.
+
 ## [3.6.0] - 2026-09-25
 
 ### Tổng quan

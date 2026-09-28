@@ -361,7 +361,7 @@ final class StatusBarMenuManager: NSObject, NSMenuDelegate {
         let m = NSMenu()
 
         sectionHeader("Khôi phục", in: m)
-        m.addItem(closureToggle("Tự động khôi phục tiếng Anh", image: "character.bubble", on: appState.autoRestoreEnglishWord) {
+        m.addItem(closureToggle("Tự động khôi phục từ", image: "character.bubble", on: appState.autoRestoreEnglishWord) {
             AppState.shared.autoRestoreEnglishWord.toggle()
         })
 

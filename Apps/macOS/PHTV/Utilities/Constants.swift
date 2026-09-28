@@ -685,12 +685,21 @@ extension UserDefaults {
         return defaultValue
     }
 
-    /// Auto-restore now only supports English-word restoration.
+    /// Reads the selected auto-restore policy and migrates the former
+    /// wrong-spelling preference to the equivalent broader policy once.
     func autoRestoreEnglishMode() -> AutoRestoreEnglishMode {
-        _ = persistedObject(forKey: UserDefaultsKey.autoRestoreEnglishWordMode)
-        _ = decodePersistedBool(persistedObject(forKey: UserDefaultsKey.restoreIfWrongSpelling))
-        _ = decodePersistedBool(persistedObject(forKey: "RestoreIfInvalidWord"))
-        return .englishOnly
+        if let mode = AutoRestoreEnglishMode.from(
+            persistedValue: persistedObject(forKey: UserDefaultsKey.autoRestoreEnglishWordMode)
+        ) {
+            return mode
+        }
+
+        if decodePersistedBool(persistedObject(forKey: UserDefaultsKey.restoreIfWrongSpelling)) == true
+            || decodePersistedBool(persistedObject(forKey: "RestoreIfInvalidWord")) == true {
+            return .nonVietnamese
+        }
+
+        return Defaults.autoRestoreEnglishWordMode
     }
 
     /// Reads a Double with explicit fallback when the key is missing.
