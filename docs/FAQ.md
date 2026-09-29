@@ -98,7 +98,7 @@ PHTV hỗ trợ macro văn bản và snippet động:
 - `{date}`, `{time}`, clipboard, counter và random.
 - Tự viết hoa macro theo ngữ cảnh.
 - Có thể bật macro cả khi đang ở chế độ tiếng Anh.
-- Xuất cấu hình trong Hệ thống để giữ loại snippet; xuất riêng trong Gõ tắt chỉ giữ văn bản và danh mục. Xem [phạm vi nhập/xuất](BACKUP.md).
+- Cả Xuất cấu hình và xuất riêng Gõ tắt đều giữ loại snippet, ID và metadata từ 3.6.2. Xem [phạm vi nhập/xuất](BACKUP.md).
 
 ### 11. Safe Mode là gì?
 
@@ -126,16 +126,17 @@ brew uninstall --zap --cask phtv
 
 Nếu cài thủ công:
 
-1. [Sao lưu dữ liệu cần giữ](BACKUP.md), bao gồm dữ liệu Clipboard ngoài file cấu hình nếu cần.
+1. [Sao lưu dữ liệu cần giữ](BACKUP.md), chuyển riêng file gốc ngoài PHTV nếu bản sao lưu cảnh báo.
 2. Dùng công cụ gỡ sạch trong **Cài đặt > Hệ thống**.
 3. Nếu chỉ xóa `/Applications/PHTV.app`, dữ liệu trong Preferences/Application Support có thể vẫn còn.
 
 ### 14. Xuất cấu hình có sao lưu mọi dữ liệu không?
 
-Chưa. File hiện gồm các cài đặt được liệt kê, macro/danh mục và quy tắc ứng dụng,
-nhưng không gồm lịch sử/mục Clipboard đã lưu, cài đặt Clipboard và một số phím
-tắt. Nhập chỉ thay thế phần có mặt trong file. Xem bảng chi tiết và các vấn đề
-còn tồn tại tại [Nhập/xuất và sao lưu](BACKUP.md).
+Từ 3.6.2, file gồm cài đặt di động, macro/danh mục, quy tắc ứng dụng, Smart
+Switch và Clipboard (lịch sử, ghim, nhóm/mục đã lưu, hotkey, ảnh/file đã cache).
+Không sao chép quyền macOS, dữ liệu hệ thống hoặc file ngoài PHTV chưa cache;
+ứng dụng cảnh báo các tham chiếu cần chuyển riêng. Nhập chỉ thay thế phần có
+mặt trong file. Xem [Nhập/xuất và sao lưu](BACKUP.md).
 
 ### 15. Chọn chế độ tự động khôi phục từ thế nào?
 

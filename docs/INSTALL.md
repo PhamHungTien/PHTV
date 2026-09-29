@@ -179,8 +179,9 @@ Sau khi cấp quyền, click icon **Vi/En** trên menu bar để mở menu nhanh
 | **PHTV Picker** | Mở Emoji/GIF/Sticker bằng hotkey trong tab PHTV Picker. |
 | **Clipboard** | Bật lịch sử và đặt hotkey riêng trong tab Clipboard. |
 
-Khi chuyển máy, xem [Nhập/xuất và sao lưu](BACKUP.md): file cấu hình hiện chưa
-chứa toàn bộ dữ liệu, đặc biệt lịch sử/mục Clipboard đã lưu.
+Khi chuyển máy, xem [Nhập/xuất và sao lưu](BACKUP.md): bản 3.6.2 đã
+bao gồm Clipboard và file đã cache. Chuyển riêng file ngoài PHTV chưa cache,
+cấp quyền macOS trên máy đích và kiểm tra cảnh báo Login Items/phím tắt.
 
 ---
 

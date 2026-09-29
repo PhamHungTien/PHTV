@@ -60,10 +60,11 @@ inline trong JSON, không bị bỏ khỏi bản lưu.
 ## File xuất do người dùng tạo
 
 Xuất cấu hình/Gõ tắt tạo JSON tại vị trí người dùng chọn, không mã hóa và không
-tự tải lên máy chủ. File có thể chứa nội dung macro, danh mục và đường dẫn ứng
-dụng. Không gửi nguyên file vào báo lỗi công khai nếu chưa loại dữ liệu riêng tư.
-File sao lưu này không bao gồm lịch sử/mục Clipboard đã lưu và không được xóa
-tự động khi reset hoặc gỡ ứng dụng. Xem [phạm vi sao lưu](BACKUP.md).
+tự tải lên máy chủ. Từ 3.6.2, bản sao lưu cấu hình còn chứa lịch sử/mục
+Clipboard đã lưu, văn bản, ảnh/file cache, đường dẫn và cài đặt người dùng.
+Không gửi nguyên file vào báo lỗi công khai. File xuất không được xóa tự động
+khi reset hoặc gỡ ứng dụng. Journal phục hồi khi nhập lưu cục bộ với quyền 0600
+và bị xóa sau khi giao dịch hoàn tất hoặc hoàn tác thành công. Xem [phạm vi sao lưu](BACKUP.md).
 
 ## Quyền macOS
 

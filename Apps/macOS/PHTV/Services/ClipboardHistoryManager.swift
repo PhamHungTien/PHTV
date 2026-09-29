@@ -113,8 +113,9 @@ final class ClipboardHistoryManager {
     private(set) var items: [ClipboardHistoryItem] = []
     private(set) var savedLibrary = ClipboardSavedLibrary()
     private(set) var storageWarning: String?
+    private var savedLibraryReadWarning: String?
     private(set) var pasteError: String?
-    private let historyStore = ClipboardHistoryStore(fileURL: ClipboardHistoryManager.historyFileURL)
+    private var historyStore = ClipboardHistoryStore(fileURL: ClipboardHistoryManager.historyFileURL)
     var selectedSection: ClipboardPanelSection = .history
 
     private let panelSession = FloatingPanelSession<ClipboardHistoryView>()
@@ -325,6 +326,23 @@ final class ClipboardHistoryManager {
 
     // MARK: - Persistence
 
+    func validateBackupReadiness() throws {
+        if let warning = storageWarning ?? savedLibraryReadWarning {
+            throw BackupError.invalid("Clipboard chưa lưu/đọc đầy đủ: \(warning)")
+        }
+    }
+
+    func reloadAfterBackupImport() {
+        pendingPasteTask?.cancel()
+        historyStore = ClipboardHistoryStore(fileURL: Self.historyFileURL)
+        let result = historyStore.load()
+        items = result.items
+        storageWarning = result.warning
+        savedLibrary = ClipboardSavedLibrary()
+        loadSavedLibrary()
+        postClipboardItemHotkeysChanged()
+    }
+
     private static let historyFileURL: URL = {
         let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
         let dir = appSupport.appendingPathComponent("PHTV", isDirectory: true)
@@ -368,11 +386,13 @@ final class ClipboardHistoryManager {
 
     private func loadSavedLibrary() {
         let url = Self.savedLibraryFileURL
-        guard FileManager.default.fileExists(atPath: url.path),
-              let data = try? Data(contentsOf: url) else { return }
+        savedLibraryReadWarning = nil
+        guard FileManager.default.fileExists(atPath: url.path) else { return }
         do {
+            let data = try Data(contentsOf: url)
             savedLibrary = try JSONDecoder().decode(ClipboardSavedLibrary.self, from: data)
         } catch {
+            savedLibraryReadWarning = error.localizedDescription
             let backupURL = url
                 .deletingPathExtension()
                 .appendingPathExtension("corrupted-\(Int(Date().timeIntervalSince1970)).json")

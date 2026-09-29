@@ -8,15 +8,24 @@
 //
 
 import Foundation
+import os
 
 @objcMembers
 final class PHTVSmartSwitchPersistenceService: NSObject {
+    private static let generation = OSAllocatedUnfairLock(initialState: UInt64(0))
+
+    /// Queued snapshots from before an import must not overwrite restored data.
+    @MainActor class func invalidatePendingWrites() {
+        generation.withLock { $0 &+= 1 }
+    }
     private static let keySmartSwitchData = "smartSwitchKey"
     private static let keyInputMethod = "InputMethod"
     private static let keyCodeTable = "CodeTable"
 
     private class func persistOnMain(_ action: @escaping @MainActor @Sendable () -> Void) {
+        let token = generation.withLock { $0 }
         Task { @MainActor in
+            guard generation.withLock({ $0 == token }) else { return }
             action()
         }
     }

@@ -548,15 +548,13 @@ struct MacroSettingsView: View {
         case .success(let urls):
             guard let url = urls.first else { return }
 
-            guard url.startAccessingSecurityScopedResource() else {
-                presentFileTransferError("Không thể truy cập file đã chọn")
-                return
-            }
-            defer { url.stopAccessingSecurityScopedResource() }
+            let scoped = url.startAccessingSecurityScopedResource()
+            defer { if scoped { url.stopAccessingSecurityScopedResource() } }
 
             do {
                 try importMacros(from: url)
             } catch {
+                if error as? BackupError == .rollbackFailed { SettingsBackupService.stopToProtectData(after: error) }
                 PHTVLogger.shared.error("[MacroSettings] Import failed: \(error.localizedDescription)")
                 presentFileTransferError("Không thể nhập file: \(error.localizedDescription)")
             }
@@ -570,106 +568,24 @@ struct MacroSettingsView: View {
     }
 
     private func makeExportDocument() throws -> MacroExportDocument {
-        struct ExportMacro: Encodable {
-            let shortcut: String
-            let expansion: String
-            let categoryId: String?
-        }
-
-        struct ExportData: Encodable {
-            let categories: [MacroCategory]
-            let macros: [ExportMacro]
-        }
-
-        let exportMacros = macros.map {
-            ExportMacro(
-                shortcut: $0.shortcut,
-                expansion: $0.expansion,
-                categoryId: $0.categoryId?.uuidString
-            )
-        }
-
-        let exportData = ExportData(
-            categories: appState.macroCategories,
-            macros: exportMacros
-        )
-
-        let encoder = JSONEncoder()
-        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-        return MacroExportDocument(data: try encoder.encode(exportData))
+        MacroExportDocument(data: try MacroTransferCodec.encode(macros: macros, categories: appState.macroCategories))
     }
 
     private func importMacros(from url: URL) throws {
-        let data = try Data(contentsOf: url)
-        var imported: [MacroItem] = []
-        var importedCategories: [MacroCategory] = []
-
-        if url.pathExtension.lowercased() == "json" {
-            struct ImportData: Decodable {
-                let categories: [MacroCategory]?
-                let macros: [ImportMacro]?
-
-                struct ImportMacro: Decodable {
-                    let shortcut: String
-                    let expansion: String
-                    let categoryId: String?
-                }
-            }
-
-            if let importData = try? JSONDecoder().decode(ImportData.self, from: data),
-               let macroList = importData.macros {
-                importedCategories = importData.categories ?? []
-                imported = macroList.map {
-                    MacroItem(
-                        shortcut: normalize($0.shortcut),
-                        expansion: normalize($0.expansion),
-                        categoryId: $0.categoryId.flatMap { UUID(uuidString: $0) }
-                    )
-                }
-            } else {
-                struct RawMacro: Decodable {
-                    let shortcut: String
-                    let expansion: String
-                }
-
-                let raw = try JSONDecoder().decode([RawMacro].self, from: data)
-                imported = raw.map {
-                    MacroItem(shortcut: normalize($0.shortcut), expansion: normalize($0.expansion))
-                }
-            }
-        } else if let text = String(data: data, encoding: .utf8) {
-            imported = text
-                .split(whereSeparator: { $0.isNewline })
-                .compactMap { line -> MacroItem? in
-                    let s = String(line).trimmingCharacters(in: .whitespaces)
-                    if s.isEmpty || s.hasPrefix("#") { return nil }
-                    let parts = s.split(separator: ",", maxSplits: 1).map(String.init)
-                    guard parts.count == 2 else { return nil }
-                    let shortcut = normalize(parts[0])
-                    let expansion = normalize(parts[1])
-                    guard !shortcut.isEmpty, !expansion.isEmpty else { return nil }
-                    return MacroItem(shortcut: shortcut, expansion: expansion)
-                }
-        }
-
-        for cat in importedCategories where !appState.macroCategories.contains(where: { $0.id == cat.id }) {
-            appState.macroCategories.append(cat)
-        }
-        appState.saveSettings()
-
-        var map: [String: MacroItem] = [:]
-        for macro in macros {
-            let key = normalize(macro.shortcut).lowercased()
-            map[key] = macro
-        }
-        for macro in imported {
-            let key = normalize(macro.shortcut).lowercased()
-            map[key] = macro
-        }
-
-        macros = Array(map.values)
-            .sorted { $0.shortcut.localizedCompare($1.shortcut) == .orderedAscending }
-        saveMacros()
+        let size = try url.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0
+        guard size <= 64 * 1024 * 1024 else { throw BackupError.invalid("file gõ tắt vượt 64 MB") }
+        let archive = try MacroTransferCodec.decode(Data(contentsOf: url), json: url.pathExtension.lowercased() == "json")
+        let merged = try MacroTransferCodec.merged(archive, macros: macros, categories: appState.macroCategories)
+        appState.flushPendingSettingsForWindowClose()
+        let backup = SettingsBackup(version: SettingsBackup.currentVersion, exportDate: "",
+                                    macros: merged.macros, macroCategories: merged.categories)
+        try SettingsBackupService().apply(backup)
+        // Change live state only after both lists have committed successfully.
+        appState.loadSettings()
+        macros = merged.macros
+        Self.cachedMacros = macros
+        Self.cachedMacrosData = UserDefaults.standard.data(forKey: UserDefaultsKey.macroList)
+        MacroStorage.postUpdated()
     }
 
     private func presentFileTransferError(_ message: String) {

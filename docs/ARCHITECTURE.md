@@ -111,10 +111,10 @@ AppDelegate được chia thành nhiều extension:
 - v.v.
 
 ### UI/
-SwiftUI views nhận state từ `State/` và gọi action qua `Services/`. Một số luồng
-persistence vẫn nằm trong view: xuất/nhập cấu hình ở `SystemSettingsView` và
-xuất/nhập macro ở `MacroSettingsView`. Đây là ranh giới cần tách khi hoàn thiện
-sao lưu, không phải kiến trúc đã tách hết business logic khỏi UI.
+SwiftUI views nhận state từ `State/` và gọi action qua `Services/`.
+`SystemSettingsView`/`MacroSettingsView` phụ trách hộp thoại và refresh runtime;
+`SettingsBackupSchema`, `SettingsBackupService` và `MacroTransferCodec` sở hữu
+validation, codec, sao lưu và giao dịch persistence có journal/rollback.
 
 ## Khôi phục từ và persistence
 
@@ -123,10 +123,12 @@ sang runtime. Mặc định là `englishOnly`. Chế độ `nonVietnamese` dùng
 Việt để quyết định ở Space/dấu ngắt từ và không dùng nhánh khôi phục sớm khi
 nhấn `w`, vì âm tiết chưa hoàn thành không đủ để kết luận là từ nước ngoài.
 
-Backup cấu hình phiên bản `2.0` dùng một danh sách khóa cố định và các trường
-typed cho macro/quy tắc ứng dụng. Lịch sử Clipboard và mục đã lưu nằm trong file
-riêng, không nằm trong backup. Xuất riêng Gõ tắt dùng schema hẹp hơn `MacroItem`.
-Phạm vi, cách ghi đè và thiếu sót được ghi tại [BACKUP.md](BACKUP.md).
+Backup `3.0` lấy registry từ defaults khởi tạo và bổ sung các cài đặt di động;
+macro, quy tắc ứng dụng, Clipboard và dữ liệu ghi nhớ dùng các phần typed.
+Ảnh/file cache được đóng gói, nhập tạo đường dẫn cache mới. Journal phục hồi
+trước `AppState.shared` khi khởi động; ghi lỗi hoàn tác cả file và preferences.
+Xuất riêng Gõ tắt giữ nguyên `MacroItem`. Vẫn đọc backup `1.0`/`2.0`.
+Xem phạm vi và ranh giới tại [BACKUP.md](BACKUP.md).
 
 ## Runtime Permission Flow
 

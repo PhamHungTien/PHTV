@@ -762,7 +762,7 @@ final class SettingsBootstrap: NSObject {
         UserDefaults.standard.register(defaults: registrationDefaults())
     }
 
-    private static func registrationDefaults() -> [String: Any] {
+    static func registrationDefaults() -> [String: Any] {
         [
             UserDefaultsKey.inputMethod: 1,
             UserDefaultsKey.inputType: Defaults.inputMethod.toIndex(),

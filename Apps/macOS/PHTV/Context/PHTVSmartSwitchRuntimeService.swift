@@ -90,11 +90,14 @@ final class PHTVSmartSwitchRuntimeService: NSObject {
     }
 
     @objc class func persistSnapshot() {
-        let data = queue.sync {
+        PHTVSmartSwitchPersistenceService.saveSmartSwitchData(snapshotData())
+    }
+
+    @objc class func snapshotData() -> Data {
+        queue.sync {
             ensureLoadedLocked()
             return serializedDataLocked()
         }
-        PHTVSmartSwitchPersistenceService.saveSmartSwitchData(data)
     }
 
     @objc class func loadFromPersistedData() {

@@ -106,9 +106,12 @@ các thứ tự đặt dấu trên Telex/Simple Telex, ranh giới từ, tên ri
 chuỗi nhiều từ. `AutoRestoreSettingsPersistenceTests` kiểm tra lưu/nạp lựa chọn,
 đóng cửa sổ, migration và tắt/bật tính năng.
 
-`SettingsBackupValueTests` hiện kiểm tra kiểu scalar cùng round-trip danh sách
-loại trừ macro. Các test này **không phải** bằng chứng sao lưu toàn bộ dữ liệu.
-Các lỗi/thiếu sót đã biết nằm trong [BACKUP.md](BACKUP.md).
+`SettingsBackupValueTests` kiểm tra codec giá trị và danh sách loại trừ macro.
+`SettingsBackupServiceTests` kiểm tra round-trip sang kho trống cho registry
+cài đặt, macro động/metadata, Clipboard/ảnh/file cache/nhóm/hotkey; file cũ,
+thiếu/rỗng, đầu vào lỗi, lỗi ghi từng giai đoạn, journal phục hồi, symlink và
+CSV nhiều dòng. Các test dùng UserDefaults suite và thư mục tạm riêng.
+Phạm vi và giới hạn bảo vệ nằm trong [BACKUP.md](BACKUP.md).
 
 Khi sửa nhập/xuất, cần kiểm tra file mới/cũ, trường thiếu và mảng rỗng, loại
 snippet động, shortcut trùng, cấu hình không hợp lệ và lỗi ghi giữa chừng. Dùng

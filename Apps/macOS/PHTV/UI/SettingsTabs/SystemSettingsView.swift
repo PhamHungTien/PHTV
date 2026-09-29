@@ -9,6 +9,7 @@
 import SwiftUI
 import UniformTypeIdentifiers
 import AppKit
+import ServiceManagement
 import Observation
 
 struct SystemSettingsView: View {
@@ -26,10 +27,8 @@ struct SystemSettingsView: View {
     @State private var showSuccess = false
     @State private var successMessage = ""
     @State private var showOnboarding = false
-    @State private var exportBackup = SettingsBackup(version: "2.0", exportDate: "")
+    @State private var exportBackup = SettingsBackup(version: SettingsBackup.currentVersion, exportDate: "")
     private var bindable: Bindable<AppState> { Bindable(appState) }
-
-    private static let isoFormatter = ISO8601DateFormatter()
 
     private var menuBarIconSizeBounds: ClosedRange<Double> {
         let minSize = 12.0
@@ -86,10 +85,11 @@ struct SystemSettingsView: View {
             defaultFilename: "phtv-backup-\(formatDate(Date())).json"
         ) { result in
             if case .failure(let error) = result {
+                if (error as? CocoaError)?.code == .userCancelled { return }
                 errorMessage = "Không thể xuất file: \(error.localizedDescription)"
                 showError = true
             } else {
-                successMessage = "Đã xuất cài đặt thành công!"
+                successMessage = "Đã xuất dữ liệu thành công!" + externalFilesWarning(exportBackup)
                 showSuccess = true
             }
         }
@@ -111,7 +111,7 @@ struct SystemSettingsView: View {
             }
         } message: {
             if let backup = importData {
-                Text("Bản sao lưu từ \(backup.exportDate)\n• \(backup.macros?.count ?? 0) gõ tắt\n\nCài đặt hiện tại sẽ được thay thế.")
+                Text("Bản sao lưu từ \(backup.exportDate)\n• \(backup.macros?.count ?? 0) gõ tắt\n• \(backup.clipboardHistory?.count ?? 0) mục lịch sử Clipboard\n• \(backup.clipboardLibrary?.items.count ?? 0) mục đã lưu\n\nCác phần có trong file sẽ thay thế dữ liệu tương ứng. File cũ không xóa phần bị thiếu.")
             }
         }
         .alert("Lỗi", isPresented: $showError) {
@@ -320,10 +320,18 @@ struct SystemSettingsView: View {
                     icon: "square.and.arrow.up.fill",
                     iconColor: .accentColor,
                     title: "Xuất cấu hình",
-                    subtitle: "Sao lưu toàn bộ cài đặt ra file",
+                    subtitle: "Sao lưu cài đặt, gõ tắt và dữ liệu Clipboard",
                     action: {
-                        exportBackup = createBackup()
-                        showingExportSheet = true
+                        do {
+                            appState.flushPendingSettingsForWindowClose()
+                            try ClipboardHistoryManager.shared.validateBackupReadiness()
+                            exportBackup = try SettingsBackupService().create()
+                            exportBackup.smartSwitchData = PHTVSmartSwitchRuntimeService.snapshotData()
+                            showingExportSheet = true
+                        } catch {
+                            errorMessage = error.localizedDescription
+                            showError = true
+                        }
                     }
                 )
 
@@ -379,130 +387,16 @@ struct SystemSettingsView: View {
         Self.dateFormatter.string(from: date)
     }
 
-    private func decodeStoredValue<T: Decodable>(_ type: T.Type, key: String, defaults: UserDefaults) -> T? {
-        guard let data = defaults.data(forKey: key) else { return nil }
-        return try? JSONDecoder().decode(T.self, from: data)
-    }
-
-    private func saveStoredValue<T: Encodable>(_ value: T, key: String, defaults: UserDefaults) {
-        guard let encoded = try? JSONEncoder().encode(value) else { return }
-        defaults.set(encoded, forKey: key)
-    }
-
-    private func createBackup() -> SettingsBackup {
-        let defaults = UserDefaults.standard
-
-        // Collect all settings with correct UserDefaults keys
-        var settings: [String: AnyCodableValue] = [:]
-        let settingsKeys = [
-            // Input method & code table
-            UserDefaultsKey.inputType, UserDefaultsKey.codeTable,
-
-            // System settings
-            UserDefaultsKey.runOnStartup, UserDefaultsKey.performLayoutCompat, UserDefaultsKey.showIconOnDock,
-            UserDefaultsKey.settingsWindowAlwaysOnTop, UserDefaultsKey.safeMode, UserDefaultsKey.autoRestartOnSettingsClose,
-
-            // Switch key (hotkey)
-            UserDefaultsKey.switchKeyStatus,
-
-            // Input behavior
-            UserDefaultsKey.spelling, UserDefaultsKey.modernOrthography, UserDefaultsKey.quickTelex,
-            UserDefaultsKey.sendKeyStepByStep, UserDefaultsKey.useMacro, UserDefaultsKey.useMacroInEnglishMode, UserDefaultsKey.autoCapsMacro,
-            UserDefaultsKey.useSmartSwitchKey, UserDefaultsKey.upperCaseFirstChar, UserDefaultsKey.allowConsonantZFWJ,
-            UserDefaultsKey.quickStartConsonant, UserDefaultsKey.quickEndConsonant, UserDefaultsKey.rememberCode,
-            UserDefaultsKey.doubleSpacePeriodEnabled,
-
-            // Auto restore English
-            UserDefaultsKey.autoRestoreEnglishWord, UserDefaultsKey.autoRestoreEnglishWordMode, UserDefaultsKey.restoreIfWrongSpelling,
-
-            // Restore key
-            UserDefaultsKey.restoreOnEscape, UserDefaultsKey.customEscapeKey,
-
-            // Pause key
-            UserDefaultsKey.pauseKeyEnabled, UserDefaultsKey.pauseKey, UserDefaultsKey.pauseKeyName,
-
-            // Emoji hotkey
-            UserDefaultsKey.enableEmojiHotkey, UserDefaultsKey.emojiHotkeyModifiers, UserDefaultsKey.emojiHotkeyKeyCode,
-
-            // Audio & display
-            UserDefaultsKey.beepOnModeSwitch, UserDefaultsKey.beepVolume, UserDefaultsKey.menuBarIconSize, UserDefaultsKey.useVietnameseMenubarIcon,
-
-            // Update settings
-            UserDefaultsKey.updateCheckInterval,
-
-            // Bug report settings
-            UserDefaultsKey.includeSystemInfo, UserDefaultsKey.includeLogs, UserDefaultsKey.includeCrashLogs
-        ]
-
-        for key in settingsKeys {
-            if let value = defaults.object(forKey: key) {
-                settings[key] = AnyCodableValue(value)
-            }
-        }
-
-        // Load macros
-        var macros: [MacroItem]?
-        if defaults.data(forKey: UserDefaultsKey.macroList) != nil {
-            macros = MacroStorage.load(defaults: defaults)
-        }
-
-        // Load categories
-        let categories: [MacroCategory]? = decodeStoredValue(
-            [MacroCategory].self,
-            key: UserDefaultsKey.macroCategories,
-            defaults: defaults
-        )
-
-        // Load excluded apps (new format)
-        let excludedAppsV2: [ExcludedApp]? = decodeStoredValue(
-            [ExcludedApp].self,
-            key: UserDefaultsKey.excludedApps,
-            defaults: defaults
-        )
-
-        // Load send key step by step apps
-        let stepByStepApps: [ExcludedApp]? = decodeStoredValue(
-            [ExcludedApp].self,
-            key: UserDefaultsKey.sendKeyStepByStepApps,
-            defaults: defaults
-        )
-
-        // Load uppercase excluded apps
-        let upperCaseExcludedApps: [ExcludedApp]? = decodeStoredValue(
-            [ExcludedApp].self,
-            key: UserDefaultsKey.upperCaseExcludedApps,
-            defaults: defaults
-        )
-
-        return SettingsBackup(
-            version: "2.0",
-            exportDate: Self.isoFormatter.string(from: Date()),
-            settings: settings,
-            macros: macros,
-            macroCategories: categories,
-            excludedApps: nil,  // Legacy format no longer used
-            excludedAppsV2: excludedAppsV2,
-            sendKeyStepByStepApps: stepByStepApps,
-            upperCaseExcludedApps: upperCaseExcludedApps,
-            macroExcludedApps: MacroState.loadExcludedApps(defaults: defaults)
-        )
-    }
-
     private func handleImport(_ result: Result<[URL], Error>) {
         switch result {
         case .success(let urls):
             guard let url = urls.first else { return }
 
-            guard url.startAccessingSecurityScopedResource() else {
-                errorMessage = "Không thể truy cập file"
-                showError = true
-                return
-            }
-            defer { url.stopAccessingSecurityScopedResource() }
+            let scoped = url.startAccessingSecurityScopedResource()
+            defer { if scoped { url.stopAccessingSecurityScopedResource() } }
 
             do {
-                let data = try Data(contentsOf: url)
-                let backup = try JSONDecoder().decode(SettingsBackup.self, from: data)
+                let backup = try SettingsBackupService.read(url)
                 importData = backup
                 showingImportConfirm = true
             } catch {
@@ -511,73 +405,71 @@ struct SystemSettingsView: View {
             }
 
         case .failure(let error):
+            if (error as? CocoaError)?.code == .userCancelled { return }
             errorMessage = "Không thể mở file: \(error.localizedDescription)"
             showError = true
         }
+    }
+
+    private func externalFilesWarning(_ backup: SettingsBackup) -> String {
+        guard backup.externalFileReferenceCount > 0 else { return "" }
+        return "\nCó \(backup.externalFileReferenceCount) tham chiếu tới file bên ngoài chưa được PHTV lưu bản sao; cần giữ hoặc chuyển các file gốc riêng."
     }
 
     private func applyBackup(_ backup: SettingsBackup) {
         SettingsObserver.shared.suspendNotifications(for: 1.0)
         let defaults = UserDefaults.standard
 
-        // Apply settings
-        if let settings = backup.settings {
-            for (key, value) in settings {
-                defaults.set(value.value, forKey: key)
-            }
+        appState.flushPendingSettingsForWindowClose()
+        ClipboardMonitor.shared.stopMonitoring()
+        defer {
+            if appState.enableClipboardHistory { ClipboardMonitor.shared.startMonitoring() }
         }
-
-        // Auto-install updates is always ON and beta channel is not supported.
+        do {
+            try SettingsBackupService().apply(backup)
+        } catch {
+            if error as? BackupError == .rollbackFailed { SettingsBackupService.stopToProtectData(after: error) }
+            errorMessage = error.localizedDescription
+            showError = true
+            return
+        }
         defaults.enforceStableUpdateChannel()
-
-        // Apply macros
-        if let macros = backup.macros {
-            _ = MacroStorage.save(macros, defaults: defaults)
-        }
-
-        if let apps = backup.macroExcludedApps {
-            saveStoredValue(apps, key: UserDefaultsKey.macroExcludedApps, defaults: defaults)
-        }
-
-        // Apply categories
-        if let categories = backup.macroCategories {
-            saveStoredValue(categories, key: UserDefaultsKey.macroCategories, defaults: defaults)
-        }
-
-        // Apply excluded apps (prefer new format, fallback to legacy)
-        if let excludedAppsV2 = backup.excludedAppsV2 {
-            // New format with full app info
-            saveStoredValue(excludedAppsV2, key: UserDefaultsKey.excludedApps, defaults: defaults)
-        } else if let excludedApps = backup.excludedApps {
-            // Legacy format: convert bundle IDs to ExcludedApp objects
-            let apps = excludedApps.map { bundleId in
-                ExcludedApp(
-                    bundleIdentifier: bundleId,
-                    name: bundleId.components(separatedBy: ".").last ?? bundleId,
-                    path: ""
-                )
+        PHTVSmartSwitchPersistenceService.invalidatePendingWrites()
+        var systemWarning = ""
+        if let requested = backup.settings?[UserDefaultsKey.runOnStartup] {
+            do {
+                let enabled = (requested.value as? NSNumber)?.boolValue ?? false
+                if enabled {
+                    if SMAppService.mainApp.status != .enabled && SMAppService.mainApp.status != .requiresApproval {
+                        try SMAppService.mainApp.register()
+                    }
+                }
+                else if SMAppService.mainApp.status != .notRegistered { try SMAppService.mainApp.unregister() }
+                if SMAppService.mainApp.status == .requiresApproval {
+                    systemWarning = "\nHãy cho phép khởi động cùng macOS trong Login Items."
+                }
+            } catch {
+                systemWarning = "\nDữ liệu đã nhập, nhưng chưa áp dụng được Login Items: \(error.localizedDescription)"
             }
-            saveStoredValue(apps, key: UserDefaultsKey.excludedApps, defaults: defaults)
         }
-
-        // Apply send key step by step apps
-        if let stepByStepApps = backup.sendKeyStepByStepApps {
-            saveStoredValue(stepByStepApps, key: UserDefaultsKey.sendKeyStepByStepApps, defaults: defaults)
-        }
-
-        // Apply uppercase excluded apps
-        if let upperCaseExcludedApps = backup.upperCaseExcludedApps {
-            saveStoredValue(upperCaseExcludedApps, key: UserDefaultsKey.upperCaseExcludedApps, defaults: defaults)
-        }
-
+        PHTVSmartSwitchRuntimeService.loadFromPersistedData()
 
         // Reload all settings
         appState.loadSettings()
+        if backup.clipboardHistory != nil || backup.clipboardLibrary != nil {
+            ClipboardHistoryManager.shared.reloadAfterBackupImport()
+        }
+        ClipboardItemHotkeyManager.shared.refreshRegistrations()
+        if !ClipboardItemHotkeyManager.shared.unavailableHotkeys.isEmpty {
+            systemWarning += "\nMột số phím tắt Clipboard đang trùng hoặc không khả dụng trên máy này; hãy kiểm tra lại trong Clipboard."
+        }
 
         // Notify all components
         NotificationCenter.default.post(name: NotificationName.macrosUpdated, object: nil)
         NotificationCenter.default.post(name: NotificationName.customDictionaryUpdated, object: nil)
         NotificationCenter.default.post(name: NotificationName.excludedAppsChanged, object: nil)
+        NotificationCenter.default.post(name: NotificationName.sendKeyStepByStepAppsChanged, object: nil)
+        NotificationCenter.default.post(name: NotificationName.clipboardHotkeySettingsChanged, object: nil)
         NotificationCenter.default.post(name: NotificationName.upperCaseExcludedAppsChanged, object: nil)
         NotificationCenter.default.post(name: NotificationName.phtvSettingsChanged, object: nil)
         NotificationCenter.default.post(
@@ -587,7 +479,7 @@ struct SystemSettingsView: View {
         NotificationCenter.default.post(name: NotificationName.emojiHotkeySettingsChanged, object: nil)
 
         importData = nil
-        successMessage = "Đã nhập cài đặt thành công!"
+        successMessage = "Đã nhập dữ liệu thành công!" + systemWarning + externalFilesWarning(backup)
         showSuccess = true
     }
 
@@ -701,84 +593,7 @@ struct SettingsButtonRow: View {
     }
 }
 
-// MARK: - Settings Backup Models
-
-struct SettingsBackup: Codable, Sendable {
-    let version: String
-    let exportDate: String
-    var settings: [String: AnyCodableValue]?
-    var macros: [MacroItem]?
-    var macroCategories: [MacroCategory]?
-    var excludedApps: [String]?  // Legacy format (bundle IDs only)
-    var excludedAppsV2: [ExcludedApp]?  // New format with full app info
-    var sendKeyStepByStepApps: [ExcludedApp]?  // Apps with step-by-step key sending
-    var upperCaseExcludedApps: [ExcludedApp]?  // Apps excluded from uppercase first char
-    var macroExcludedApps: [MacroExcludedApp]? = nil
-}
-
-enum AnyCodableValue: Codable, Sendable {
-    case integer(Int)
-    case double(Double)
-    case boolean(Bool)
-    case string(String)
-
-    var value: Any {
-        switch self {
-        case .integer(let value): value
-        case .double(let value): value
-        case .boolean(let value): value
-        case .string(let value): value
-        }
-    }
-
-    init(_ value: Any) {
-        if let number = value as? NSNumber {
-            if CFGetTypeID(number) == CFBooleanGetTypeID() {
-                self = .boolean(number.boolValue)
-            } else if ["f", "d"].contains(String(cString: number.objCType)) {
-                self = .double(number.doubleValue)
-            } else {
-                self = .integer(number.intValue)
-            }
-        } else if let stringValue = value as? String {
-            self = .string(stringValue)
-        } else {
-            self = .string("")
-        }
-    }
-
-    init(from decoder: Decoder) throws {
-        let container = try decoder.singleValueContainer()
-
-        if let intValue = try? container.decode(Int.self) {
-            self = .integer(intValue)
-        } else if let doubleValue = try? container.decode(Double.self) {
-            self = .double(doubleValue)
-        } else if let boolValue = try? container.decode(Bool.self) {
-            self = .boolean(boolValue)
-        } else if let stringValue = try? container.decode(String.self) {
-            self = .string(stringValue)
-        } else {
-            self = .string("")
-        }
-    }
-
-    func encode(to encoder: Encoder) throws {
-        var container = encoder.singleValueContainer()
-
-        switch self {
-        case .integer(let intValue):
-            try container.encode(intValue)
-        case .double(let doubleValue):
-            try container.encode(doubleValue)
-        case .boolean(let boolValue):
-            try container.encode(boolValue)
-        case .string(let stringValue):
-            try container.encode(stringValue)
-        }
-    }
-}
-
+// MARK: - Settings Backup Document
 struct SettingsBackupDocument: FileDocument {
     static var readableContentTypes: [UTType] { [.json] }
 
@@ -789,13 +604,16 @@ struct SettingsBackupDocument: FileDocument {
     }
 
     init(configuration: ReadConfiguration) throws {
-        backup = SettingsBackup(version: "1.0", exportDate: "")
+        guard let data = configuration.file.regularFileContents else { throw CocoaError(.fileReadCorruptFile) }
+        backup = try SettingsBackupService.decode(data)
     }
 
     func fileWrapper(configuration: WriteConfiguration) throws -> FileWrapper {
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        try SettingsBackupSchema.validate(backup)
         let data = try encoder.encode(backup)
+        guard data.count <= 512 * 1024 * 1024 else { throw BackupError.invalid("file vượt 512 MB") }
         return FileWrapper(regularFileWithContents: data)
     }
 }

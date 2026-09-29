@@ -57,13 +57,14 @@ vi, giữ allocation/lock ngoài đường xử lý phím và benchmark lại la
 
 ## Rà soát định kỳ
 
-### Nhập/xuất dữ liệu cần hoàn thiện
+### Bất biến nhập/xuất dữ liệu
 
-[Kiểm kê sao lưu](BACKUP.md) ghi nhận thiếu cài đặt/dữ liệu Clipboard, thiếu
-metadata snippet trong xuất riêng Gõ tắt, validation schema/giá trị chưa đầy đủ
-và chưa có rollback khi nhập lỗi. Trước khi mô tả “sao lưu toàn bộ”, cần schema
-chung có phiên bản, kiểm tra giá trị trước khi ghi và test round-trip từ dữ liệu
-nguồn sang kho trống. Tách codec/persistence khỏi view để kiểm thử lỗi I/O.
+Từ 3.6.2, [sao lưu](BACKUP.md) dùng schema có phiên bản, registry khóa/giá trị,
+codec riêng và journal hoàn tác cả file/preferences. Khi thêm cài đặt, cập nhật
+registry/validator và test round-trip sang kho trống; khi thêm kho dữ liệu,
+đưa nó vào snapshot/giao dịch hoặc ghi rõ lý do không di động. Không bỏ qua lỗi
+nguồn, không dùng đường dẫn từ archive làm đích ghi, không báo thành công nếu
+chưa commit. Kiểm thử lỗi I/O và phục hồi gián đoạn bằng dữ liệu cô lập.
 
 Mỗi minor release nên kiểm tra dependency, tài liệu tương thích và privacy. Mỗi
 major release nên rà lại entitlement, deployment target, supported macOS matrix,

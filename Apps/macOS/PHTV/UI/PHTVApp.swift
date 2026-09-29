@@ -32,6 +32,11 @@ struct PHTVApp: App {
 
         // CRITICAL: Initialize AppState first so all shared state is ready
         // before any notification-driven services start.
+        do {
+            try SettingsBackupService().recoverInterruptedImport()
+        } catch {
+            SettingsBackupService.stopToProtectData(after: error)
+        }
         _ = AppState.shared
         MemoryPressureMonitor.shared.start()
 

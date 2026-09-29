@@ -81,7 +81,7 @@ Engine xử lý dữ liệu gõ **offline trên máy** và không gửi nội du
 - **Text Snippets** - Gõ tắt động với ngày, giờ, clipboard, random, counter
 - **Tự động viết hoa macro** - "Btw" → "By the way", "BTW" → "BY THE WAY"
 - **Hoạt động ở cả 2 chế độ** - Macro hoạt động cả khi gõ tiếng Việt và tiếng Anh
-- **Import/Export** - Nhập xuất macro văn bản và danh mục; dùng Xuất cấu hình để giữ loại snippet động. Xem [phạm vi sao lưu](docs/BACKUP.md).
+- **Import/Export** - Nhập xuất macro/danh mục, giữ nguyên snippet động, ID và metadata. Xem [phạm vi sao lưu](docs/BACKUP.md).
 - **Danh mục** - Tổ chức macro theo nhóm với icon và màu sắc
 
 ### Lịch sử Clipboard
@@ -126,7 +126,7 @@ Engine xử lý dữ liệu gõ **offline trên máy** và không gửi nội du
 - **Khởi động cùng macOS** - Tùy chọn chạy khi đăng nhập
 - **Hot Reload** - Thay đổi cài đặt không cần khởi động lại
 - **Tự động cập nhật (Sparkle)** - Kiểm tra và cập nhật phiên bản mới tự động từ GitHub với EdDSA signing bảo mật
-- **Import/Export cài đặt** - Sao lưu nhóm cấu hình được hỗ trợ, macro và quy tắc ứng dụng; chưa bao gồm toàn bộ dữ liệu, đặc biệt Clipboard. Xem [Nhập/xuất và sao lưu](docs/BACKUP.md).
+- **Import/Export cài đặt** - Sao lưu cài đặt, macro, quy tắc ứng dụng và dữ liệu Clipboard, gồm ảnh/file đã cache; kiểm tra và hoàn tác khi nhập lỗi. Xem [Nhập/xuất và sao lưu](docs/BACKUP.md).
 - **Menu bar icon** - Hiển thị trạng thái Vi/En trên thanh menu
 - **Trạng thái quyền rõ ràng** - Hiển thị đúng một quyền theo phiên bản macOS và chỉ báo readiness của bộ gõ riêng biệt
 - **Báo lỗi thông minh** - Tự động thu thập log debug, thống kê lỗi, gửi qua GitHub/Email

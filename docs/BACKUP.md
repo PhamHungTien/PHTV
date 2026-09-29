@@ -1,99 +1,108 @@
 # Nhập, xuất và sao lưu dữ liệu
 
-Đối chiếu mã nguồn ngày 29/09/2026, sau thay đổi 3.6.1. **Nhập/xuất hiện chưa
-phải bản sao đầy đủ của toàn bộ dữ liệu ứng dụng.** Hai luồng dưới đây có định
-dạng và cách ghi đè khác nhau.
+Từ **PHTV 3.6.2**, Xuất cấu hình dùng định dạng JSON `3.0`, bao gồm cài đặt
+di động được hỗ trợ và dữ liệu người dùng do PHTV lưu. Phiên bản định dạng độc
+lập với phiên bản ứng dụng; vẫn nhập được bản `1.0` và `2.0`.
 
-Nguồn đối chiếu: [SystemSettingsView](../Apps/macOS/PHTV/UI/SettingsTabs/SystemSettingsView.swift),
-[MacroSettingsView](../Apps/macOS/PHTV/UI/SettingsTabs/MacroSettingsView.swift),
-[MacroModels](../Apps/macOS/PHTV/Models/MacroModels.swift) và
-[ClipboardHistoryState](../Apps/macOS/PHTV/State/ClipboardHistoryState.swift).
+Nguồn triển khai: [SettingsBackup](../Apps/macOS/PHTV/Models/SettingsBackup.swift),
+[SettingsBackupSchema](../Apps/macOS/PHTV/Services/SettingsBackupSchema.swift),
+[SettingsBackupService](../Apps/macOS/PHTV/Services/SettingsBackupService.swift) và
+[MacroTransferCodec](../Apps/macOS/PHTV/Services/MacroTransferCodec.swift).
 
 ## Xuất/Nhập cấu hình trong Hệ thống
 
-Mở **Cài đặt > Hệ thống > Dữ liệu & sao lưu > Xuất cấu hình**. File JSON có
-`version: "2.0"`, ngày xuất và các phần dữ liệu tùy chọn. Phiên bản định dạng
-backup độc lập với phiên bản ứng dụng.
+Mở **Cài đặt > Hệ thống > Dữ liệu & sao lưu > Xuất cấu hình**.
 
-| Nhóm dữ liệu | Có trong file xuất hiện tại? | Giới hạn |
-| --- | --- | --- |
-| Kiểu gõ, bảng mã, chính tả, Quick Telex, phụ âm nhanh | Có | Theo danh sách khóa trong `createBackup()` |
-| Tự động khôi phục từ và chế độ khôi phục | Có | Cờ khôi phục phụ được đồng bộ lại khi nạp |
-| Phím chuyển chính, phím khôi phục, phím tạm dừng, hotkey Picker | Có | Phím chuyển thứ hai và danh sách phím modifier đơn không được xuất |
-| Macro và danh mục | Có | Lưu `MacroItem`, gồm loại snippet, ID và metadata sử dụng |
-| Tiếng Anh theo ứng dụng, gõ từng phím, loại trừ viết hoa/gõ tắt | Có | File mới dùng các đối tượng chứa thông tin ứng dụng |
-| Giao diện, âm báo, Safe Mode, layout compatibility, tùy chọn báo lỗi | Có một phần | Không bao gồm mọi khóa `UserDefaults` |
-| Khởi động cùng macOS | Có khóa trong file | Khi nạp, trạng thái thực tế của `SMAppService` được ưu tiên; nhập không đăng ký login item |
-| Dấu chấm khi gõ hai phím cách | Có | Nạp cấu hình áp dụng lại thiết lập hệ thống tương ứng |
-| Clipboard: bật/tắt, hotkey, giới hạn, thời gian giữ | Không | Cần thiết lập lại riêng |
-| Lịch sử Clipboard, mục ghim/đã lưu, nhóm, hotkey từng mục, ảnh/file đính kèm | Không | Nằm trong Application Support, ngoài định dạng backup này |
-| Tùy chọn dùng Text Replacements của macOS | Không | `UseSystemTextReplacements` không có trong danh sách xuất |
-| Phím tắt/cấu hình công cụ chuyển mã, thời gian lau bàn phím | Không | Không có trong danh sách xuất |
-| Lịch sử Smart Switch theo ứng dụng, nội dung gần đây của Picker | Không | Không xuất toàn bộ trạng thái đã ghi nhớ |
-| Quyền macOS, log, cache, mã cài đặt Klipy | Không | Quyền phải cấp trên máy đích; backup không phải ảnh chụp toàn bộ máy |
+| Nhóm dữ liệu | Phạm vi |
+| --- | --- |
+| Bộ gõ | Kiểu gõ, bảng mã, chính tả, phụ âm nhanh, tự động khôi phục từ và chế độ, tùy chọn gõ tắt |
+| Phím tắt | Hai phím chuyển Việt/Anh, modifier đơn trái/phải/Fn, khôi phục, tạm dừng, Picker, Clipboard và chuyển mã |
+| Macro/danh mục | Toàn bộ `MacroItem`: ID, nội dung, loại snippet, danh mục, thống kê và ngày tạo |
+| Quy tắc ứng dụng | Tiếng Anh theo ứng dụng, gõ từng phím, loại trừ viết hoa và gõ tắt |
+| Clipboard | Bật/tắt, hotkey, giới hạn/thời gian giữ, lịch sử, ghim, mục đã lưu, nhóm và hotkey từng mục |
+| Đính kèm Clipboard | Ảnh và file đã được PHTV lưu cache được nhúng vào JSON; nhập tạo cache mới trên máy đích |
+| Giao diện/hệ thống | Menu bar, Dock, âm báo, Safe Mode, layout compatibility, báo lỗi, cập nhật, lau bàn phím, chuyển mã |
+| Trạng thái đã lưu | Smart Switch theo ứng dụng, từ điển tùy chỉnh, emoji gần đây/tần suất, ID GIF/Sticker gần đây và tab Picker |
+| Tích hợp macOS | Lưu tùy chọn Text Replacements, dấu chấm hai phím cách và Login Items; không sao chép kho Text Replacements của macOS |
 
-Nhập cấu hình **chỉ áp dụng những trường có trong file**. Khóa/phần bị thiếu
-được giữ nguyên trên máy đích; đây không phải thao tác reset rồi thay thế toàn bộ.
-Mảng macro hoặc danh sách ứng dụng có mặt trong file sẽ thay thế danh sách tương
-ứng. Mảng rỗng sẽ xóa danh sách đó; trường bị thiếu không xóa.
+Nhập **chỉ thay thế những phần có trong file**. Khóa/phần bị thiếu giữ nguyên
+trên máy đích; mảng rỗng có mặt trong file xóa danh sách tương ứng. Không reset
+toàn bộ trước khi nhập. Nếu chỉ nhập danh mục làm mất tham chiếu của macro đang
+có, ứng dụng báo lỗi thay vì tạo dữ liệu mồ côi.
 
-File cũ có `excludedApps` là mảng bundle ID được chuyển sang đối tượng ứng dụng;
-`excludedAppsV2` được ưu tiên nếu cả hai cùng có mặt. Tùy chọn cập nhật vẫn tuân
-theo chính sách kênh stable và tự động cài đặt của ứng dụng.
+File cũ chứa `excludedApps` là mảng bundle ID được chuyển sang đối tượng ứng
+dụng; `excludedAppsV2` được ưu tiên khi có cả hai. Chế độ khôi phục phụ trong
+file cũ được chuyển sang chế độ tương ứng. Kênh cập nhật vẫn là stable.
+
+Sau khi nhập, ứng dụng nạp lại cài đặt, macro, quy tắc ứng dụng, Smart Switch và
+Clipboard. Tác vụ lưu Smart Switch cũ bị vô hiệu hóa để không ghi đè dữ liệu mới.
+Chính sách số lượng/thời gian giữ Clipboard tiếp tục áp dụng; mục ghim và thư
+viện đã lưu không bị giới hạn lịch sử thường xóa.
 
 ## Xuất/Nhập trong Gõ tắt
 
-File xuất riêng trong **Gõ tắt** chứa `categories` và danh sách macro với ba
-trường `shortcut`, `expansion`, `categoryId`. **Không lưu `snippetType`, ID,
-thống kê sử dụng hoặc ngày tạo.** Khi nhập lại, các mục được tạo như macro văn
-bản tĩnh; snippet ngày/giờ/clipboard/random/counter không giữ được loại động.
-Để giữ loại snippet, dùng **Xuất cấu hình** trong Hệ thống.
+JSON xuất riêng có `version: "1.0"`, `categories` và `macros` đầy đủ,
+giữ nguyên snippet ngày/giờ/clipboard/random/counter, ID, metadata, Unicode,
+xuống dòng và khoảng trắng nội dung. JSON cũ thiếu loại snippet vẫn được đọc
+như văn bản tĩnh; không thể suy lại loại động đã bị bản cũ bỏ khỏi file.
 
-Luồng nhập Gõ tắt chấp nhận:
+Luồng nhập chấp nhận:
 
-- JSON gồm `categories` và `macros`;
-- JSON mảng các cặp `shortcut`/`expansion`;
-- văn bản UTF-8, mỗi dòng `shortcut,expansion`; bỏ dòng trống và dòng bắt đầu
-  bằng `#`. Đây là phép tách tại dấu phẩy đầu tiên, không phải parser CSV đầy đủ.
+- JSON gồm `categories` và `macros`, hoặc mảng `MacroItem`/cặp shortcut–expansion cũ.
+- CSV/văn bản UTF-8: hai cột shortcut,nội dung; hỗ trợ dấu nháy kép, dấu phẩy
+  trong nội dung, nháy kép thoát bằng `""`, nội dung nhiều dòng, BOM và CRLF.
+- Với định dạng dòng cũ không có nháy, mọi phần sau dấu phẩy đầu tiên vẫn là
+  nội dung. Dòng trống và dòng bắt đầu bằng `#` được bỏ qua; dòng lỗi khiến
+  toàn bộ lần nhập bị từ chối, không âm thầm bỏ mất macro.
 
-Macro nhập được **gộp** vào danh sách hiện có. Shortcut được chuẩn hóa Unicode,
-cắt khoảng trắng đầu/cuối và so trùng không phân biệt hoa/thường; mục nhập sau
-ghi đè mục trùng. Danh mục mới được thêm theo ID, danh mục cùng ID đang có được giữ.
-Giá trị đếm hiện tại của snippet counter chỉ nằm trong bộ nhớ runtime, không nằm
-trong cả hai định dạng xuất.
+Macro nhập được **gộp** vào danh sách hiện có. ID trùng hoặc shortcut trùng sau
+chuẩn hóa Unicode/cắt khoảng trắng/không phân biệt hoa thường được thay bằng
+mục nhập sau. Nội dung không bị cắt khoảng trắng. Danh mục cùng ID được cập
+nhật, danh mục mới được thêm. Macro và danh mục được ghi trong cùng giao dịch.
 
-## Giới hạn cần khắc phục
+## Kiểm tra dữ liệu và phục hồi khi có lỗi
 
-Rà soát `SystemSettingsView.swift`, `MacroSettingsView.swift` và các model cho thấy:
+Trước khi ghi, kiểm tra phiên bản, khóa cài đặt cho phép, kiểu/miền giá trị,
+giới hạn engine, ID/tham chiếu danh mục, cấu trúc Clipboard, dữ liệu Smart Switch
+và đính kèm. Giá trị không hỗ trợ báo lỗi, không chuyển thành chuỗi rỗng.
+Dữ liệu nguồn hỏng hoặc cache bị mất không bị coi là dữ liệu rỗng khi xuất.
 
-1. Chưa có schema chung bao phủ mọi cài đặt/dữ liệu. Nhãn UI “toàn bộ cài đặt”
-   hiện rộng hơn dữ liệu thực sự xuất.
-2. Nhập cấu hình chưa kiểm tra phiên bản được hỗ trợ, danh sách khóa cho phép và
-   kiểu/giới hạn giá trị từng khóa trước khi ghi `UserDefaults`.
-3. `AnyCodableValue` chỉ hỗ trợ số nguyên, số thực, Bool và String; giá trị JSON
-   không hỗ trợ có thể thành chuỗi rỗng thay vì báo lỗi.
-4. Các phần được ghi lần lượt, chưa có rollback toàn bộ khi ghi thất bại;
-   kết quả `MacroStorage.save` chưa được dùng để quyết định thông báo thành công.
-5. `SettingsBackupDocument.init(configuration:)` tạo đối tượng trống thay vì
-   đọc nội dung. Luồng **Nhập cấu hình** hiện dùng decoder riêng, nên vấn đề này
-   thuộc đường đọc `FileDocument`, không phải mọi lần nhập đều nhận dữ liệu trống.
-6. Kiểm thử hiện có xác nhận round-trip giá trị scalar và danh sách loại trừ
-   macro, cùng lưu/nạp chế độ khôi phục. Chưa chứng minh quy trình xuất → nhập
-   toàn bộ dữ liệu trên máy mới hay khả năng phục hồi khi ghi lỗi giữa chừng.
+Giao dịch lưu bản cũ vào `Application Support/PHTV/backup-import-journal.json`
+trước khi thay đổi preferences hoặc file. Ghi thất bại sẽ hoàn tác; nếu ứng
+dụng bị dừng giữa chừng, lần mở sau phục hồi trước khi nạp trạng thái. Nếu
+phục hồi cũng thất bại, ứng dụng giữ journal, thông báo rồi thoát để tránh ghi
+đè tiếp. Khắc phục dung lượng/quyền ghi trước khi mở lại; không xóa journal.
 
-Lần rà soát này chạy **13/13 kiểm thử đạt** thuộc `SettingsBackupValueTests` và
-`AutoRestoreSettingsPersistenceTests`; kết luận về các trường bị thiếu dựa trên
-đối chiếu schema và đường đọc/ghi, không phải kiểm thử nhập lên dữ liệu thật.
+Đường dẫn trong file nhập không được dùng trực tiếp làm đích ghi. Cache được
+tạo với tên mới trong kho PHTV; đường dẫn symlink bị từ chối. Giới hạn bảo vệ:
+file cấu hình tối đa 512 MB, tổng ảnh/file nhúng tối đa 256 MB, file nhập Gõ tắt
+tối đa 64 MB. Vượt giới hạn thì báo lỗi, không xuất/nhập một phần.
 
-## Trước khi chuyển máy hoặc reset
+## Ranh giới và chuyển máy
 
-Xuất cấu hình trước, kiểm tra file có các phần cần giữ, và giữ bản sao dữ liệu
-Application Support bằng công cụ sao lưu máy nếu cần lịch sử/mục Clipboard đã
-lưu. Không chỉ dựa vào JSON cấu hình để xóa dữ liệu nguồn. Sau khi nhập, kiểm tra
-macro động, danh sách ứng dụng, hotkey, Clipboard và bật lại login item/quyền
-macOS trên máy đích nếu cần.
+- File gốc bên ngoài **chưa được PHTV cache** chỉ có tham chiếu; ứng dụng
+  thông báo số tham chiếu cần chuyển riêng. Không đọc đệ quy thư mục cá nhân.
+- Quyền Accessibility, quyền riêng tư macOS, kho Text Replacements của macOS,
+  log, bản cứu hộ dữ liệu hỏng, cache mạng/GIF tạm, mã cài đặt Klipy và trạng
+  thái phiên gõ không nằm trong backup. Bộ đếm snippet trong RAM vẫn reset khi
+  khởi động lại như trước; loại snippet và prefix được giữ.
+- Lịch sử GIF/Sticker lưu ID, không phải thư viện media offline; hiển thị còn
+  phụ thuộc nội dung được dịch vụ tải về.
+- Login Items được thử áp dụng trên máy đích. Nếu macOS cần duyệt hoặc đăng ký
+  thất bại, thông báo phân biệt rõ “đã nhập dữ liệu” với “chưa áp dụng Login
+  Items”. Phím tắt Clipboard không khả dụng/trùng cũng được cảnh báo.
+- Giữ bản nguồn cho đến khi kiểm tra dữ liệu trên máy đích. Hủy hộp thoại
+  không nhập dữ liệu. Bản 3.0 nên được nhập bằng PHTV 3.6.2 trở lên.
 
-File xuất là JSON đọc được, không mã hóa. Nó có thể chứa nội dung macro và
-đường dẫn ứng dụng; không đính kèm nguyên file vào issue công khai.
+File xuất là JSON **không mã hóa**, có thể chứa văn bản/ảnh/file Clipboard,
+macro, đường dẫn và dữ liệu riêng tư. Lưu ở nơi an toàn; không đưa nguyên file
+lên issue công khai. File xuất do bạn chọn vị trí không tự xóa khi gỡ PHTV.
 
-[Trang chủ](../README.md) • [Quyền riêng tư](PRIVACY.md) • [Kiểm thử](TESTING.md)
+## Kiểm thử
+
+`SettingsBackupServiceTests` dùng defaults suite và thư mục tạm riêng: round-trip
+sang kho trống, đủ nhóm cài đặt, macro động/metadata, ảnh và cache file, thư viện
+Clipboard, tương thích file cũ, thiếu/rỗng, đầu vào hỏng, lỗi ghi từng giai đoạn,
+phục hồi journal, từ chối symlink và CSV. Xem [Kiểm thử](TESTING.md).
+
+[Trang chủ](../README.md) • [Quyền riêng tư](PRIVACY.md)

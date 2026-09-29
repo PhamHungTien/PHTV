@@ -29,7 +29,7 @@ final class SettingsBackupValueTests: XCTestCase {
     }
 
     func testSupportedDefaultsValuesRoundTripWithoutUncheckedSendableStorage() throws {
-        let values = [
+        let values = try [
             AnyCodableValue(NSNumber(value: 42)),
             AnyCodableValue(NSNumber(value: 1.5)),
             AnyCodableValue(NSNumber(value: true)),

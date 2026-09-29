@@ -11,32 +11,53 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Tổng quan
 
-Đợt cập nhật này rà soát nhập/xuất dữ liệu và đồng bộ tài liệu với ứng dụng
-hiện tại; không thay đổi mã xử lý bộ gõ hoặc chức năng sao lưu.
+Hoàn thiện luồng nhập/xuất dữ liệu: mở rộng phạm vi sao lưu, giữ nguyên snippet
+động và bổ sung kiểm tra dữ liệu, giao dịch hoàn tác cùng phục hồi khi gián đoạn.
+
+### Added
+
+- Định dạng backup **3.0**, vẫn đọc bản 1.0/2.0: bổ sung cấu hình Clipboard,
+  hai phím chuyển Việt/Anh, modifier đơn/Fn, chuyển mã, lau bàn phím, tùy chọn
+  Text Replacements, cập nhật và trạng thái Picker.
+- Sao lưu lịch sử Clipboard, ghim, nhóm/mục đã lưu, hotkey từng mục, ảnh và file
+  đã cache; tạo lại đường dẫn cache khi nhập trên máy khác.
+- Giữ dữ liệu Smart Switch, từ điển tùy chỉnh, emoji gần đây/tần suất và ID
+  GIF/Sticker gần đây. Cảnh báo các file ngoài PHTV cần chuyển riêng.
+
+### Fixed
+
+- Xuất riêng Gõ tắt giữ toàn bộ loại snippet, ID, danh mục, ngày tạo và thống kê;
+  không biến snippet động thành văn bản tĩnh khi nhập lại.
+- Nhập JSON/CSV giữ nội dung Unicode, khoảng trắng, xuống dòng; hỗ trợ CSV có
+  nháy kép/dấu phẩy và từ chối cả lần nhập nếu gặp dòng lỗi.
+- Kiểm tra phiên bản, khóa, kiểu/miền giá trị, tham chiếu danh mục, dữ liệu
+  Clipboard/Smart Switch và giới hạn kích thước trước khi ghi. Không âm thầm
+  xuất nguồn hỏng thành dữ liệu rỗng hoặc đổi giá trị không hỗ trợ thành chuỗi rỗng.
+- Ghi file và preferences trong giao dịch có journal; lỗi giữa chừng hoàn tác
+  về bản cũ, lần khởi động sau phục hồi giao dịch bị gián đoạn trước khi nạp dữ
+  liệu. Nếu không thể phục hồi, giữ journal và dừng ứng dụng để bảo vệ dữ liệu.
+- Chặn đường dẫn cache qua symlink và không dùng đường dẫn archive làm đích ghi.
+- Sửa đường đọc FileDocument, xử lý hủy hộp thoại và truy cập file cục bộ không
+  yêu cầu security scope. Chỉ cập nhật trạng thái Gõ tắt sau khi ghi thành công.
+- Nạp lại runtime sau nhập, vô hiệu hóa tác vụ lưu Smart Switch cũ; thử áp dụng
+  Login Items và báo riêng lỗi/quyền macOS, phím tắt Clipboard không khả dụng.
+- Giữ phần bị thiếu trong file cũ; danh sách rỗng có mặt trong file mới thay thế
+  danh sách tương ứng, không để lại dữ liệu từ máy đích ngoài ý muốn.
 
 ### Documentation
 
-- Thêm `docs/BACKUP.md`: liệt kê dữ liệu được xuất, dữ liệu còn thiếu, cách
-  ghi đè khi nhập và khác biệt giữa Xuất cấu hình với xuất riêng Gõ tắt.
-- Sửa mô tả “sao lưu toàn bộ cài đặt”; hướng dẫn giữ loại snippet động bằng
-  Xuất cấu hình và sao lưu riêng dữ liệu Clipboard khi chuyển máy.
-- Đồng bộ README, FAQ, hướng dẫn cài đặt, kiến trúc và quyền riêng tư với các
-  tab hiện tại, hai chế độ khôi phục từ và phạm vi dữ liệu lưu trên máy.
-- Sửa hướng dẫn chạy test sang cấu hình `Testing` cô lập; cập nhật tài liệu
-  release, notarization và công cụ theo workflow hiện tại.
-
-### Known Issues
-
-- Backup cấu hình chưa bao gồm cấu hình/dữ liệu Clipboard và một số phím tắt.
-- Xuất riêng Gõ tắt chưa giữ loại snippet động; nhập lại tạo macro văn bản tĩnh.
-- Nhập cấu hình chưa kiểm tra đầy đủ schema/giá trị hoặc hoàn tác toàn bộ khi
-  ghi thất bại. Các thiếu sót này đã được ghi nhận, chưa được sửa trong đợt này.
+- Cập nhật README, hướng dẫn sao lưu, FAQ, cài đặt, kiến trúc, engineering,
+  quyền riêng tư và kiểm thử theo hành vi đã triển khai.
+- Nêu rõ phạm vi dữ liệu di động, giới hạn kích thước, tính không mã hóa của
+  file xuất và các dữ liệu thuộc macOS/file gốc bên ngoài cần chuyển riêng.
 
 ### Chất lượng
 
-- **13/13 kiểm thử liên quan đạt** trong `SettingsBackupValueTests` và
-  `AutoRestoreSettingsPersistenceTests`; chưa phải kiểm thử sao lưu toàn bộ dữ liệu.
-- Kiểm tra metadata, link tài liệu và quy chuẩn repository đều thành công.
+- Toàn bộ **581 kiểm thử: 579 đạt, 2 bỏ qua, 0 lỗi**; bổ sung 19 test nhập/xuất
+  cho kho trống, snippet/metadata, Clipboard/đính kèm, đầu vào hỏng, lỗi I/O từng
+  giai đoạn, journal phục hồi, tương thích cũ và symlink.
+- Debug/Release build, Analyze, metadata, quy chuẩn repository và kiểm tra từ
+  điển đều đạt.
 
 ## [3.6.1] - 2026-09-29
 
