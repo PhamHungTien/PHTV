@@ -7,6 +7,46 @@
         <language>vi</language>
         <!-- Intel (x86_64) feed — Most recent version first -->
         <item>
+            <title>3.6.2</title>
+            <pubDate>Tue, 29 Sep 2026 12:26:15 +0700</pubDate>
+            <sparkle:version>329</sparkle:version>
+            <sparkle:shortVersionString>3.6.2</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[
+                <h2>PHTV 3.6.2</h2>
+                <h3>Tổng quan</h3>
+                <p>Hoàn thiện luồng nhập/xuất dữ liệu: mở rộng phạm vi sao lưu, giữ nguyên snippet động và bổ sung kiểm tra dữ liệu, giao dịch hoàn tác cùng phục hồi khi gián đoạn.</p>
+                <h3>Added</h3>
+                <ul>
+                <li>Định dạng backup <strong>3.0</strong>, vẫn đọc bản 1.0/2.0: bổ sung cấu hình Clipboard, hai phím chuyển Việt/Anh, modifier đơn/Fn, chuyển mã, lau bàn phím, tùy chọn Text Replacements, cập nhật và trạng thái Picker.</li>
+                <li>Sao lưu lịch sử Clipboard, ghim, nhóm/mục đã lưu, hotkey từng mục, ảnh và file đã cache; tạo lại đường dẫn cache khi nhập trên máy khác.</li>
+                <li>Giữ dữ liệu Smart Switch, từ điển tùy chỉnh, emoji gần đây/tần suất và ID GIF/Sticker gần đây. Cảnh báo các file ngoài PHTV cần chuyển riêng.</li>
+                </ul>
+                <h3>Fixed</h3>
+                <ul>
+                <li>Xuất riêng Gõ tắt giữ toàn bộ loại snippet, ID, danh mục, ngày tạo và thống kê; không biến snippet động thành văn bản tĩnh khi nhập lại.</li>
+                <li>Nhập JSON/CSV giữ nội dung Unicode, khoảng trắng, xuống dòng; hỗ trợ CSV có nháy kép/dấu phẩy và từ chối cả lần nhập nếu gặp dòng lỗi.</li>
+                <li>Kiểm tra phiên bản, khóa, kiểu/miền giá trị, tham chiếu danh mục, dữ liệu Clipboard/Smart Switch và giới hạn kích thước trước khi ghi. Không âm thầm xuất nguồn hỏng thành dữ liệu rỗng hoặc đổi giá trị không hỗ trợ thành chuỗi rỗng.</li>
+                <li>Ghi file và preferences trong giao dịch có journal; lỗi giữa chừng hoàn tác về bản cũ, lần khởi động sau phục hồi giao dịch bị gián đoạn trước khi nạp dữ liệu. Nếu không thể phục hồi, giữ journal và dừng ứng dụng để bảo vệ dữ liệu.</li>
+                <li>Chặn đường dẫn cache qua symlink và không dùng đường dẫn archive làm đích ghi.</li>
+                <li>Sửa đường đọc FileDocument, xử lý hủy hộp thoại và truy cập file cục bộ không yêu cầu security scope. Chỉ cập nhật trạng thái Gõ tắt sau khi ghi thành công.</li>
+                <li>Nạp lại runtime sau nhập, vô hiệu hóa tác vụ lưu Smart Switch cũ; thử áp dụng Login Items và báo riêng lỗi/quyền macOS, phím tắt Clipboard không khả dụng.</li>
+                <li>Giữ phần bị thiếu trong file cũ; danh sách rỗng có mặt trong file mới thay thế danh sách tương ứng, không để lại dữ liệu từ máy đích ngoài ý muốn.</li>
+                </ul>
+                <h3>Documentation</h3>
+                <ul>
+                <li>Cập nhật README, hướng dẫn sao lưu, FAQ, cài đặt, kiến trúc, engineering, quyền riêng tư và kiểm thử theo hành vi đã triển khai.</li>
+                <li>Nêu rõ phạm vi dữ liệu di động, giới hạn kích thước, tính không mã hóa của file xuất và các dữ liệu thuộc macOS/file gốc bên ngoài cần chuyển riêng.</li>
+                </ul>
+                <h3>Chất lượng</h3>
+                <ul>
+                <li>Toàn bộ <strong>581 kiểm thử: 579 đạt, 2 bỏ qua, 0 lỗi</strong>; bổ sung 19 test nhập/xuất cho kho trống, snippet/metadata, Clipboard/đính kèm, đầu vào hỏng, lỗi I/O từng giai đoạn, journal phục hồi, tương thích cũ và symlink.</li>
+                <li>Debug/Release build, Analyze, metadata, quy chuẩn repository và kiểm tra từ điển đều đạt.</li>
+                </ul>
+            ]]></description>
+            <enclosure url="https://github.com/PhamHungTien/PHTV/releases/download/v3.6.2/PHTV-3.6.2-intel.dmg" length="10268879" type="application/octet-stream" sparkle:edSignature="EjrSrtHEqqZgCpNVeZHi+efwvzKId+dxIVXIyjM7YlcXsRxdpyIFQ8dAyavTQFp7qEB5sq644pUy2woxVzkoAw=="/>
+        </item>
+        <item>
             <title>3.6.1</title>
             <pubDate>Tue, 29 Sep 2026 06:32:19 +0700</pubDate>
             <sparkle:version>328</sparkle:version>
@@ -820,14 +860,6 @@
             <sparkle:shortVersionString>3.3.4</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
             <enclosure url="https://github.com/PhamHungTien/PHTV/releases/download/v3.3.4/PHTV-3.3.4-intel.dmg" length="9152099" type="application/octet-stream" sparkle:edSignature="VQOp+HoMiVX9jfL2417hz7RfVG1gtgzTaaftg40y4EhYYWuP376XxWHj8i0DBOBr7lfFZRF5UfKbqLpEcpRjCQ=="/>
-        </item>
-        <item>
-            <title>3.3.3</title>
-            <pubDate>Thu, 09 Jul 2026 22:35:58 +0700</pubDate>
-            <sparkle:version>299</sparkle:version>
-            <sparkle:shortVersionString>3.3.3</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <enclosure url="https://github.com/PhamHungTien/PHTV/releases/download/v3.3.3/PHTV-3.3.3-intel.dmg" length="9154815" type="application/octet-stream" sparkle:edSignature="N253VU7yZDcnw2JAbRFeK2bixprZRt91UPA+YMpByVli5Jd36byqrYIbF8IcnWsV7pF4pQY+le1YBI3J26zdCw=="/>
         </item>
         <item>
             <title>2.8.9</title>
