@@ -111,6 +111,7 @@ import Foundation
     }
 
     private static func resetTransientTapRuntimeState() {
+        PHTVTextFocusSessionService.clear()
         PHTVModifierRuntimeStateService.resetTransientHotkeyState(
             savedLanguage: PHTVEngineRuntimeFacade.currentLanguage()
         )

@@ -75,6 +75,49 @@ final class EngineRegressionTests: XCTestCase {
         }
     }
 
+    func testFinalCutTimelinePrefixDoesNotLeakIntoFirstMarkerWord() {
+        let engine = PHTVVietnameseEngine()
+        engine.vKeyInit()
+        engine.startNewSession()
+        feed(engine, [KEY_M, KEY_M, KEY_T, KEY_I, KEY_E, KEY_E, KEY_N, KEY_G, KEY_S])
+        XCTAssertNotEqual(renderedTypingWord(engine), "mmtiếng")
+        XCTAssertTrue(engine.tempDisableKey, "Timeline keys poison spelling until the session is discarded")
+        engine.resetInputSession()
+        feed(engine, [KEY_T, KEY_I, KEY_E, KEY_E, KEY_N, KEY_G, KEY_S])
+        XCTAssertEqual(renderedTypingWord(engine), "tiếng")
+    }
+
+    func testFocusResetDiscardsHistoryMacroAndTemporaryDisableState() {
+        let engine = PHTVVietnameseEngine()
+        engine.vKeyInit()
+        engine.startNewSession()
+        feed(engine, [KEY_M, KEY_M, KEY_SPACE, KEY_T, KEY_I])
+        engine.hMacroKey = [UInt32(KEY_M)]
+        engine.hMacroRawKey = [UInt32(KEY_M)]
+        engine.vTempOffEngine(true)
+        engine.resetInputSession()
+        XCTAssertFalse(engine.willTempOffEngine)
+        XCTAssertTrue(engine.typingStates.isEmpty)
+        XCTAssertTrue(engine.hMacroKey.isEmpty)
+        XCTAssertTrue(engine.hMacroRawKey.isEmpty)
+        // Backspace at the start of the new field must not resurrect timeline keys.
+        feed(engine, [KEY_DELETE, KEY_T, KEY_I, KEY_E, KEY_E, KEY_N, KEY_G, KEY_S])
+        XCTAssertEqual(renderedTypingWord(engine), "tiếng")
+    }
+
+    func testFocusResetCannotEmitAnEnglishRestoreForPreviousField() {
+        setCustomEnglishWords(["terminal"])
+        feedWord("terminal")
+        PHTVEngineSessionService.requestNewSessionInternal(allowUppercasePrime: false)
+        XCTAssertEqual(engineHookCode(), HookCodeState.doNothing.rawValue)
+        XCTAssertEqual(engineHookBackspaceCount(), 0)
+        XCTAssertEqual(engineHookNewCharCount(), 0)
+        XCTAssertEqual(
+            runtimeRenderedKeySequence("tieengs".map { (keyCode(for: $0), UInt8(0)) }, resetSession: false),
+            "tiếng"
+        )
+    }
+
     // MARK: - Helpers
 
     private func setCustomWords(english: [String] = [], vietnamese: [String] = []) {

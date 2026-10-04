@@ -15,8 +15,6 @@ import Foundation
 final class PHTVEngineSessionService: NSObject {
 
     private static let kSyncKeyReserveSize: Int32 = 256
-    private static let keyEventMouse: Int32 = Int32(PHTV_ENGINE_EVENT_MOUSE)
-    private static let keyEventStateMouseDown: Int32 = Int32(PHTV_ENGINE_EVENT_STATE_MOUSE_DOWN)
 
     @objc class func boot() {
         PHTVCoreSettingsBootstrapService.loadFromUserDefaults()
@@ -32,7 +30,7 @@ final class PHTVEngineSessionService: NSObject {
         requestNewSessionInternal(allowUppercasePrime: true)
     }
 
-    static func requestNewSessionInternal(allowUppercasePrime: Bool) {
+    static func requestNewSessionInternal(allowUppercasePrime: Bool, preserveModifierState: Bool = false) {
         // Reset AX context caches on new session (often triggered by mouse click/focus change).
         PHTVEventContextBridgeService.invalidateAccessibilityContextCaches()
 
@@ -46,13 +44,10 @@ final class PHTVEngineSessionService: NSObject {
               dbgInputType, dbgCodeTable, dbgLanguage)
         #endif
 
-        // Must use Mouse event, NOT startNewSession directly!
-        // The Mouse event triggers proper word-break handling which clears:
-        // - hMacroKey (critical for macro state)
-        // - _specialChar and _typingStates (critical for typing state)
-        // - vCheckSpelling restoration
-        // - _willTempOffEngine flag
-        phtvEngineHandleEvent(keyEventMouse, keyEventStateMouseDown, 0, 0, 0)
+        // Focus changes discard the previous composition, including history
+        // and temporary flags. A synthetic mouse word break can take an
+        // auto-restore branch whose output is never sent to the old field.
+        engineResetInputSession()
 
         let currentCodeTable = PHTVEngineRuntimeFacade.currentCodeTable()
         let frontmostBundleId = PHTVAppContextService.currentFrontmostBundleId()
@@ -74,7 +69,14 @@ final class PHTVEngineSessionService: NSObject {
         if sessionResetTransition.shouldPrimeUppercaseFirstChar {
             phtvEnginePrimeUpperCaseFirstChar()
         }
-        PHTVModifierRuntimeStateService.applySessionResetTransition(sessionResetTransition)
+        if preserveModifierState {
+            // A focus boundary observed during keyDown must not erase the
+            // preceding flagsChanged event; its release is still outstanding.
+            PHTVModifierRuntimeStateService.setPendingUppercasePrimeCheckValue(
+                sessionResetTransition.pendingUppercasePrimeCheck)
+        } else {
+            PHTVModifierRuntimeStateService.applySessionResetTransition(sessionResetTransition)
+        }
 
         // Session reset state is now applied through lock-backed services.
 

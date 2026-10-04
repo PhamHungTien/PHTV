@@ -738,6 +738,22 @@ final class PHTVVietnameseEngine {
         snapshotUpperCaseFirstChar = UInt8(phtvRuntimeUpperCaseFirstCharEnabled())
     }
 
+    /// Abandon composition when the destination changes. Unlike a delimiter,
+    /// this must not produce auto-restore/macro output for the previous field.
+    func resetInputSession() {
+        startNewSession()
+        hCode = HookCodeState.doNothing.rawValue
+        hExt = 1
+        hMacroKey.removeAll()
+        hMacroRawKey.removeAll()
+        hMacroData.removeAll()
+        specialChar.removeAll()
+        typingStates.removeAll()
+        typingStatesData.removeAll()
+        willTempOffEngine = false
+        setSpellCheckingEnabled(useSpellCheckingBefore)
+    }
+
     // MARK: - Spelling check (EngineSpellingCheck.inc)
 
     func checkSpelling(forceCheckVowel: Bool = false) {
@@ -3000,6 +3016,12 @@ func engineSetCheckSpelling() {
 func engineStartNewSession() {
     withEngineState { engine in
         engine.startNewSession()
+    }
+}
+
+func engineResetInputSession() {
+    withEngineState { engine in
+        engine.resetInputSession()
     }
 }
 

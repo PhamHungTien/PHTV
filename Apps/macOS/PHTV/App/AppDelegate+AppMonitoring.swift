@@ -331,6 +331,8 @@ private func phtvEnglishBehavior(
     }
 
     @objc func activeAppChanged(_ note: Notification) {
+        // Also cover switching away and back without any intervening typing.
+        PHTVTextFocusSessionService.clear()
         let activeApp = note.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication
         let bundleIdentifier = activeApp?.bundleIdentifier
 

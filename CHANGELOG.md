@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Tách phiên gõ giữa timeline và ô nhập trong Final Cut Pro để phím đánh dấu
+  marker không trở thành tiền tố của từ tiếng Việt đầu tiên; giữ trạng thái
+  modifier khi chuyển focus và giới hạn thời gian đọc Accessibility.
+- Reset phiên gõ dọn sạch lịch sử, macro và cờ tắt tạm, không để sót lệnh
+  phục hồi từ tiếng Anh của ô nhập trước.
+
 ## [3.6.2] - 2026-09-29
 
 ### Tổng quan

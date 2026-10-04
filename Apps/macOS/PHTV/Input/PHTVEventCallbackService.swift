@@ -471,8 +471,21 @@ final class PHTVEventCallbackService {
             }
         }
 
+        var bypassTextProcessing = false
         if type == .keyDown {
-            if settings.upperCaseFirstChar != 0 && !uppercaseExcluded {
+            let focusTransition = PHTVTextFocusSessionService.transition(
+                bundleId: preliminaryTargetBundleId,
+                pid: eventTargetPID,
+                safeMode: contextSafeMode)
+            if focusTransition.reset {
+                englishUppercaseStateBox.withLock { $0 = .idle }
+                PHTVEngineSessionService.requestNewSessionInternal(allowUppercasePrime: false, preserveModifierState: true)
+            }
+            bypassTextProcessing = focusTransition.bypass
+        }
+
+        if type == .keyDown {
+            if !bypassTextProcessing && settings.upperCaseFirstChar != 0 && !uppercaseExcluded {
                 let keyWithCaps = UInt32(eventKeycode) |
                     ((eventFlags.contains(.maskShift) || eventFlags.contains(.maskAlphaShift))
                      ? EngineBitMask.caps : 0)
@@ -598,6 +611,10 @@ final class PHTVEventCallbackService {
 
         PHTVEventRuntimeContextService.setEventTapProxyRawValue(
             UInt64(UInt(bitPattern: UnsafeRawPointer(proxy))))
+
+        if bypassTextProcessing {
+            return Unmanaged.passUnretained(event)
+        }
 
         // If is in English mode
         if currentLanguage == 0 {
