@@ -738,7 +738,7 @@ struct BugReportView: View {
             - **Smart switch:** \(appState.useSmartSwitchKey ? "✅" : "❌")
             - **Modern orthography:** \(appState.useModernOrthography ? "✅" : "❌")
             - **Quick Telex:** \(appState.quickTelex ? "✅" : "❌")
-            - **Phụ âm Z, F, W, J, DZ:** \(appState.allowConsonantZFWJ ? "✅" : "❌")
+            - **Phụ âm tùy chỉnh:** \(appState.allowConsonantZFWJ ? "✅" : "❌")
             - **Quick Start Consonant:** \(appState.quickStartConsonant ? "✅" : "❌")
             - **Quick End Consonant:** \(appState.quickEndConsonant ? "✅" : "❌")
             - **Beep on mode switch:** \(appState.beepOnModeSwitch ? "✅" : "❌")

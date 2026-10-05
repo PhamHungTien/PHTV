@@ -47,7 +47,14 @@ enum SettingsBackupSchema {
             case (.string, .string(let v)) where v.count <= 256: output[key] = v
             case (.array, .array(let values)):
                 guard values.count <= 1000 else { throw BackupError.invalid("danh sách quá dài") }
-                if key == "com.phtv.recentEmojis" {
+                if key == UserDefaultsKey.customConsonants {
+                    let strings = values.compactMap { if case .string(let s) = $0 { return s }; return nil }
+                    guard strings.count == values.count, strings.count <= PHTVCustomConsonants.maximumCount,
+                          strings.allSatisfy({ PHTVCustomConsonants.normalizedEntry($0) != nil })
+                    else { throw BackupError.invalid(key) }
+                    output[key] = PHTVCustomConsonants.normalized(strings)
+                    continue
+                } else if key == "com.phtv.recentEmojis" {
                     guard values.allSatisfy({ if case .string(let s) = $0 { return s.count <= 64 }; return false })
                     else { throw BackupError.invalid(key) }
                 } else {

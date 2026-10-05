@@ -40,6 +40,7 @@ final class EngineRegressionTests: XCTestCase {
         PHTVEngineRuntimeFacade.setQuickTelex(0)
         PHTVEngineRuntimeFacade.setFreeMark(0)
         PHTVEngineRuntimeFacade.setAllowConsonantZFWJ(1)
+        PHTVEngineRuntimeFacade.setCustomConsonants(PHTVCustomConsonants.defaults)
         PHTVEngineRuntimeFacade.setQuickStartConsonant(0)
         PHTVEngineRuntimeFacade.setQuickEndConsonant(0)
         PHTVEngineRuntimeFacade.setUseMacro(0)
@@ -116,6 +117,55 @@ final class EngineRegressionTests: XCTestCase {
             runtimeRenderedKeySequence("tieengs".map { (keyCode(for: $0), UInt8(0)) }, resetSession: false),
             "tiếng"
         )
+    }
+
+    func testUppercaseDAbbreviationsSurviveAutomaticRestore() {
+        for mode in [AutoRestoreEnglishMode.englishOnly, .nonVietnamese] {
+            PHTVEngineRuntimeFacade.setAutoRestoreEnglishWordMode(Int32(mode.rawValue))
+            for (raw, expected) in [("DDKKD", "ĐKKD"), ("DDN", "ĐN"), ("DDL", "ĐL"), ("HDD", "HĐ"), ("GDD", "GĐ")] {
+                for caps: UInt8 in [1, 2] {
+                    let events = raw.lowercased().map { (keyCode(for: $0), caps) } + [(KEY_SPACE, UInt8(0))]
+                    XCTAssertEqual(runtimeRenderedKeySequence(events), expected + " ", "\(raw), mode=\(mode), caps=\(caps)")
+                }
+            }
+        }
+    }
+
+    func testTuChoiAcrossMarkOrders() {
+        for raw in ["Tuwf choois", "Tuwf chois", "Tuwf choosi", "Tuwf chosoi"] {
+            let expected = raw == "Tuwf chois" ? "Từ chói" : "Từ chối"
+            XCTAssertEqual(runtimeRenderedKeySequence(raw.map { runtimeKeyEvent(for: $0) }), expected, raw)
+        }
+    }
+
+    func testCustomTwoLetterInitialAcceptsToneAndSurvivesRestore() {
+        defer { PHTVEngineRuntimeFacade.setCustomConsonants(PHTVCustomConsonants.defaults) }
+        PHTVEngineRuntimeFacade.setAutoRestoreEnglishWordMode(Int32(AutoRestoreEnglishMode.nonVietnamese.rawValue))
+        PHTVEngineRuntimeFacade.setCustomConsonants(["BL", "DZ"])
+        XCTAssertEqual(runtimeRenderedToken("blaas "), "blấ ")
+        XCTAssertEqual(runtimeRenderedToken("dzaas "), "dzấ ")
+        // A two-letter initial must not implicitly enable every single-letter initial.
+        XCTAssertEqual(runtimeRenderedToken("zaas "), "zaas ")
+        PHTVEngineRuntimeFacade.setAllowConsonantZFWJ(0)
+        XCTAssertEqual(runtimeRenderedToken("blaas "), "blaas ")
+        XCTAssertEqual(runtimeRenderedToken("tieengs "), "tiếng ")
+    }
+
+    func testEmptyCustomInitialsKeepStandardVietnameseAndQuickConsonants() {
+        defer { PHTVEngineRuntimeFacade.setCustomConsonants(PHTVCustomConsonants.defaults) }
+        PHTVEngineRuntimeFacade.setCustomConsonants([])
+        XCTAssertEqual(runtimeRenderedToken("tieengs vieetj"), "tiếng việt")
+        PHTVEngineRuntimeFacade.setQuickStartConsonant(1)
+        XCTAssertEqual(runtimeRenderedToken("fas "), "phá ")
+    }
+
+    func testUppercaseDAbbreviationDoesNotProtectEnglishWordsWithVowels() {
+        PHTVEngineRuntimeFacade.setAutoRestoreEnglishWordMode(Int32(AutoRestoreEnglishMode.nonVietnamese.rawValue))
+        XCTAssertEqual(runtimeRenderedKeySequence("ADDED ".map { runtimeKeyEvent(for: $0) }), "ADDED ")
+        for inputType: Int32 in [0, 2, 3] {
+            PHTVEngineRuntimeFacade.setCurrentInputType(inputType)
+            XCTAssertEqual(runtimeRenderedKeySequence("DDN,".map { ($0 == "," ? KEY_COMMA : keyCode(for: Character(String($0).lowercased())), UInt8($0 == "," ? 0 : 1)) }), "ĐN,")
+        }
     }
 
     // MARK: - Helpers

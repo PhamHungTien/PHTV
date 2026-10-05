@@ -108,6 +108,7 @@ final class PHTVVietnameseEngine {
     var specialChar: [UInt32] = []
 
     // MARK: Runtime snapshots
+    var runtimeConsonantRows = PHTVCustomConsonants.spellingRows(PHTVCustomConsonants.defaults)
     var runtimeInputTypeSnapshot: Int32 = 0
     var runtimeCodeTableSnapshot: Int32 = 0
 
@@ -198,6 +199,7 @@ final class PHTVVietnameseEngine {
     }
 
     func refreshRuntimeLayoutSnapshot() {
+        runtimeConsonantRows = phtvRuntimeConsonantSpellingRows()
         runtimeInputTypeSnapshot = phtvRuntimeInputTypeValue()
         runtimeCodeTableSnapshot = phtvRuntimeCodeTableValue()
     }
@@ -332,19 +334,11 @@ final class PHTVVietnameseEngine {
         guard englishLength > 0 else { return false }
 
         let firstKey = UInt16(keySlice[0] & UInt32(CHAR_MASK))
-        let allowExtendedInitials = phtvRuntimeAllowConsonantZFWJEnabled() != 0
+        let customMatch = PHTVCustomConsonants.matchesPrefix(
+            keySlice.prefix(englishLength).map { UInt16($0 & UInt32(CHAR_MASK)) },
+            rows: phtvRuntimeCustomConsonantRows())
         let quickStart = phtvRuntimeQuickStartConsonantEnabled() != 0
-
-        switch firstKey {
-        case KEY_Z:
-            return allowExtendedInitials
-        case KEY_F, KEY_J:
-            return allowExtendedInitials || quickStart
-        case KEY_W:
-            return allowExtendedInitials || quickStart
-        default:
-            return false
-        }
+        return customMatch || (quickStart && [KEY_F, KEY_J, KEY_W].contains(firstKey))
     }
 
     func hasVietnameseDictionaryMatchForAutoRestore(_ keySlice: [UInt32], englishLength: Int, typingLength: Int) -> Bool {
@@ -766,20 +760,18 @@ final class PHTVVietnameseEngine {
 
         if spellingEndIndex > 0 {
             let quickStart = phtvRuntimeQuickStartConsonantEnabled() != 0
-            let allowZFWJ = phtvRuntimeAllowConsonantZFWJEnabled() != 0
             let quickEnd = phtvRuntimeQuickEndConsonantEnabled() != 0
             var j = 0
             if isConsonant(chr(0)) {
                 var matched = false
-                for row in vnConsonantTable {
+                for row in runtimeConsonantRows {
                     spellingFlag = false
                     if spellingEndIndex < row.count { spellingFlag = true }
                     j = 0
                     while j < row.count {
                         let rc = row[j]
                         let noQuickStart = rc & ~(quickStart ? END_CONSONANT_MASK : 0)
-                        let noAllowMask = rc & ~(allowZFWJ ? CONSONANT_ALLOW_MASK : 0)
-                        if spellingEndIndex > j && noQuickStart != chr(j) && noAllowMask != chr(j) {
+                        if spellingEndIndex > j && noQuickStart != chr(j) {
                             spellingFlag = true; break
                         }
                         j += 1
@@ -2289,6 +2281,23 @@ final class PHTVVietnameseEngine {
         return detectorIsEnglishWord(typingSlice, length)
     }
 
+    /// Preserve deliberate all-capital consonant abbreviations containing Đ.
+    /// Vowel-bearing English words still follow the normal restore policy.
+    func isUppercaseDAbbreviation() -> Bool {
+        guard idx > 0 else { return false }
+        var hasD = false
+        for i in 0..<idx {
+            let value = typingWord[i]
+            guard (value & CAPS_MASK) != 0, isConsonant(chr(i)),
+                  isEnglishLetterKeyCode(chr(i)), (value & (MARK_MASK | TONEW_MASK)) == 0 else { return false }
+            if (value & TONE_MASK) != 0 {
+                guard chr(i) == KEY_D else { return false }
+                hasD = true
+            }
+        }
+        return hasD
+    }
+
     func evaluateAutoRestoreEnglishDecision() -> (restoreStateIndex: Int, canAutoRestore: Bool, shouldRestore: Bool, customRestoreSlice: [UInt32]?) {
         let englishStateIndex = getEnglishLookupStateLength()
         let isPureLetter = englishStateIndex == stateIdx && hasOnlyEnglishLetterKeyStates(stateIdx)
@@ -2300,6 +2309,7 @@ final class PHTVVietnameseEngine {
 
         guard phtvRuntimeAutoRestoreEnglishWordEnabled() != 0,
               idx > 0,
+              !isUppercaseDAbbreviation(),
               englishStateIndex > 1,
               canAutoRestore else {
             return (restoreStateIndex, canAutoRestore, false, nil)

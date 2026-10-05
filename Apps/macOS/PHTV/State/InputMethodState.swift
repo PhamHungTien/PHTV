@@ -73,6 +73,17 @@ final class InputMethodState {
     var allowConsonantZFWJ: Bool = true {
         didSet { handleRuntimeSettingDidChange(oldValue: oldValue, newValue: allowConsonantZFWJ) }
     }
+    var customConsonants: [String] = PHTVCustomConsonants.defaults {
+        didSet {
+            handleObservedChange(oldValue: oldValue, newValue: customConsonants) {
+                SettingsObserver.shared.suspendNotifications()
+                UserDefaults.standard.set(
+                    PHTVCustomConsonants.normalized(self.customConsonants),
+                    forKey: UserDefaultsKey.customConsonants)
+                NotificationCenter.default.post(name: NotificationName.phtvSettingsChanged, object: nil)
+            }
+        }
+    }
     var quickStartConsonant: Bool = false {
         didSet { handleRuntimeSettingDidChange(oldValue: oldValue, newValue: quickStartConsonant) }
     }
@@ -251,6 +262,8 @@ final class InputMethodState {
             forKey: UserDefaultsKey.allowConsonantZFWJ,
             default: Defaults.allowConsonantZFWJ
         )
+        customConsonants = PHTVCustomConsonants.normalized(
+            defaults.stringArray(forKey: UserDefaultsKey.customConsonants) ?? PHTVCustomConsonants.defaults)
         quickStartConsonant = defaults.bool(
             forKey: UserDefaultsKey.quickStartConsonant,
             default: Defaults.quickStartConsonant
@@ -310,6 +323,7 @@ final class InputMethodState {
         defaults.set(useSmartSwitchKey, forKey: UserDefaultsKey.useSmartSwitchKey)
         defaults.set(upperCaseFirstChar, forKey: UserDefaultsKey.upperCaseFirstChar)
         defaults.set(allowConsonantZFWJ, forKey: UserDefaultsKey.allowConsonantZFWJ)
+        defaults.set(customConsonants, forKey: UserDefaultsKey.customConsonants)
         defaults.set(quickStartConsonant, forKey: UserDefaultsKey.quickStartConsonant)
         defaults.set(quickEndConsonant, forKey: UserDefaultsKey.quickEndConsonant)
         defaults.set(rememberCode, forKey: UserDefaultsKey.rememberCode)
@@ -352,6 +366,7 @@ final class InputMethodState {
         useSmartSwitchKey = Defaults.useSmartSwitchKey
         upperCaseFirstChar = Defaults.upperCaseFirstChar
         allowConsonantZFWJ = Defaults.allowConsonantZFWJ
+        customConsonants = PHTVCustomConsonants.defaults
         quickStartConsonant = Defaults.quickStartConsonant
         quickEndConsonant = Defaults.quickEndConsonant
         rememberCode = Defaults.rememberCode

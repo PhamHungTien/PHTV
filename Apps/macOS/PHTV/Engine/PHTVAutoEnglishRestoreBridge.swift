@@ -257,20 +257,25 @@ private func startsWithNonVietnameseCluster(
         return false
     }
 
+    let customRows = phtvRuntimeCustomConsonantRows()
+    if customRows.contains(where: { row in
+        length >= row.count && row.enumerated().allSatisfy { offset, code in
+            Int(code) < detectorKeyCodeToIndex.count && detectorKeyCodeToIndex[Int(code)] == indices[offset]
+        }
+    }) { return false }
     let first = indices[0]
     let second = length > 1 ? indices[1] : detectorInvalidIndex
     let third = length > 2 ? indices[2] : detectorInvalidIndex
-    let allowZFWJ = phtvRuntimeAllowConsonantZFWJEnabled() != 0
     let quickStart = phtvRuntimeQuickStartConsonantEnabled() != 0
 
     if first == DetectorIndex.f {
-        return !(allowZFWJ || quickStart)
+        return !quickStart
     }
     if first == DetectorIndex.j {
-        return !(allowZFWJ || quickStart)
+        return !quickStart
     }
     if first == DetectorIndex.z {
-        return !allowZFWJ
+        return true
     }
 
     if second != detectorInvalidIndex {
@@ -424,20 +429,22 @@ private func startsWithNonVietnameseKeyCluster(
         return false
     }
 
+    if PHTVCustomConsonants.matchesPrefix(keyCodes.prefix(length).map(UInt16.init), rows: phtvRuntimeCustomConsonantRows()) {
+        return false
+    }
     let first = keyCodes[0]
-    let allowZFWJ = phtvRuntimeAllowConsonantZFWJEnabled() != 0
     let quickStart = phtvRuntimeQuickStartConsonantEnabled() != 0
 
     // Respect typing extensions before auto-restoring. If the current layout allows
     // these initials, auto-restore should not pre-classify them as impossible.
     if first == DetectorKeyCode.f {
-        return !(allowZFWJ || quickStart)
+        return !quickStart
     }
     if first == DetectorKeyCode.j {
-        return !(allowZFWJ || quickStart)
+        return !quickStart
     }
     if first == DetectorKeyCode.z {
-        return !allowZFWJ
+        return true
     }
 
     guard length >= 3 else {
@@ -495,7 +502,6 @@ private func startsWithVietnameseConsonantOrVowel(
 
     let first = keyCodes[0]
     let second = length >= 3 ? keyCodes[1] : detectorInvalidIndex
-    let allowZFWJ = phtvRuntimeAllowConsonantZFWJEnabled() != 0
     let quickStart = phtvRuntimeQuickStartConsonantEnabled() != 0
 
     var isVietnameseConsonant = false
@@ -507,7 +513,7 @@ private func startsWithVietnameseConsonantOrVowel(
         first == DetectorKeyCode.t || first == DetectorKeyCode.v || first == DetectorKeyCode.x {
         isVietnameseConsonant = true
     }
-    if allowZFWJ && (first == DetectorKeyCode.f || first == DetectorKeyCode.j || first == DetectorKeyCode.z) {
+    if PHTVCustomConsonants.matchesPrefix(keyCodes.prefix(length).map(UInt16.init), rows: phtvRuntimeCustomConsonantRows()) {
         isVietnameseConsonant = true
     }
     if quickStart && (first == DetectorKeyCode.f || first == DetectorKeyCode.j || first == DetectorKeyCode.w) {

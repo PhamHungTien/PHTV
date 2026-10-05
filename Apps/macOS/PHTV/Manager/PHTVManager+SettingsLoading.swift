@@ -135,6 +135,9 @@ private let phtvCoreSettingsLogState = PHTVCoreSettingsLogState()
     }
 
     private class func phtv_foldSettingsToken(_ token: UInt, _ value: Any?) -> UInt {
+        if let strings = value as? [String] {
+            return strings.reduce(token &* 16_777_619 ^ UInt(strings.count)) { phtv_foldSettingsToken($0, $1) }
+        }
         let hashValue = UInt(bitPattern: (value as AnyObject?)?.hash ?? 0)
         return (token &* 16_777_619) ^ hashValue
     }
@@ -164,6 +167,7 @@ private let phtvCoreSettingsLogState = PHTVCoreSettingsLogState()
             UserDefaultsKey.useSmartSwitchKey,
             UserDefaultsKey.upperCaseFirstChar,
             UserDefaultsKey.allowConsonantZFWJ,
+            UserDefaultsKey.customConsonants,
             UserDefaultsKey.quickStartConsonant,
             UserDefaultsKey.quickEndConsonant,
             UserDefaultsKey.rememberCode,
@@ -399,6 +403,8 @@ private let phtvCoreSettingsLogState = PHTVCoreSettingsLogState()
                 fallback: 1
             )
         )
+        PHTVEngineRuntimeFacade.setCustomConsonants(
+            defaults.stringArray(forKey: UserDefaultsKey.customConsonants) ?? PHTVCustomConsonants.defaults)
         PHTVEngineRuntimeFacade.setQuickStartConsonant(
             phtv_readIntWithFallback(
                 defaults: defaults,
@@ -578,6 +584,8 @@ private let phtvCoreSettingsLogState = PHTVCoreSettingsLogState()
 
         PHTVEngineRuntimeFacade.setAllowConsonantZFWJ(Defaults.allowConsonantZFWJ ? 1 : 0)
         defaults.set(Defaults.allowConsonantZFWJ, forKey: UserDefaultsKey.allowConsonantZFWJ)
+        defaults.set(PHTVCustomConsonants.defaults, forKey: UserDefaultsKey.customConsonants)
+        PHTVEngineRuntimeFacade.setCustomConsonants(PHTVCustomConsonants.defaults)
 
         PHTVEngineRuntimeFacade.setQuickStartConsonant(Defaults.quickStartConsonant ? 1 : 0)
         defaults.set(Defaults.quickStartConsonant, forKey: UserDefaultsKey.quickStartConsonant)

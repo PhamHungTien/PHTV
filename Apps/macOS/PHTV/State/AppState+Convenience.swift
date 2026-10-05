@@ -54,6 +54,10 @@ extension AppState {
         set { inputMethodState.upperCaseFirstChar = newValue }
     }
 
+    var customConsonants: [String] {
+        get { trackedSubstate(inputMethodState.customConsonants) }
+        set { inputMethodState.customConsonants = PHTVCustomConsonants.normalized(newValue) }
+    }
     var allowConsonantZFWJ: Bool {
         get { trackedSubstate(inputMethodState.allowConsonantZFWJ) }
         set { inputMethodState.allowConsonantZFWJ = newValue }

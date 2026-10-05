@@ -157,10 +157,14 @@ struct TypingSettingsView: View {
                         SettingsToggleRow(
                             icon: "character.cursor.ibeam",
                             iconColor: .accentColor,
-                            title: "Phụ âm Z, F, W, J, DZ",
-                            subtitle: "Cho phép gõ các phụ âm không có trong tiếng Việt",
+                            title: "Phụ âm tùy chỉnh",
+                            subtitle: "Bổ sung phụ âm đầu gồm một hoặc hai chữ cái",
                             isOn: bindable.allowConsonantZFWJ
                         )
+                        PHTVCustomConsonantsEditor(entries: bindable.customConsonants)
+                            .disabled(!appState.allowConsonantZFWJ)
+                            .opacity(appState.allowConsonantZFWJ ? 1 : 0.55)
+
 
                         SettingsDivider()
 

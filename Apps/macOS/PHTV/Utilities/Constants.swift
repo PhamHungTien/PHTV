@@ -62,6 +62,7 @@ enum UserDefaultsKey {
     static let useSmartSwitchKey = "UseSmartSwitchKey"
     static let upperCaseFirstChar = "UpperCaseFirstChar"
     static let allowConsonantZFWJ = "vAllowConsonantZFWJ"
+    static let customConsonants = "customConsonants"
     static let quickStartConsonant = "vQuickStartConsonant"
     static let quickEndConsonant = "vQuickEndConsonant"
     static let rememberCode = "vRememberCode"
@@ -778,6 +779,7 @@ final class SettingsBootstrap: NSObject {
             UserDefaultsKey.useSmartSwitchKey: Defaults.useSmartSwitchKey,
             UserDefaultsKey.upperCaseFirstChar: Defaults.upperCaseFirstChar,
             UserDefaultsKey.allowConsonantZFWJ: Defaults.allowConsonantZFWJ,
+            UserDefaultsKey.customConsonants: PHTVCustomConsonants.defaults,
             UserDefaultsKey.quickStartConsonant: Defaults.quickStartConsonant,
             UserDefaultsKey.quickEndConsonant: Defaults.quickEndConsonant,
             UserDefaultsKey.rememberCode: Defaults.rememberCode,

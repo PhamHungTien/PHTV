@@ -140,6 +140,9 @@ private final class RuntimeSettingsStateBox: @unchecked Sendable {
     var quickTelex: Int32 = 0
     var freeMark: Int32 = 0
     var allowConsonantZFWJ: Int32 = 1
+    var customConsonantSpellingRows = PHTVCustomConsonants.spellingRows(PHTVCustomConsonants.defaults)
+    var customConsonants: [String] = PHTVCustomConsonants.defaults
+    var customConsonantRows: [[UInt16]] = PHTVCustomConsonants.rows(PHTVCustomConsonants.defaults)
     var quickStartConsonant: Int32 = 0
     var quickEndConsonant: Int32 = 0
     var upperCaseFirstChar: Int32 = 0
@@ -1223,6 +1226,21 @@ final class PHTVEngineRuntimeFacade: NSObject {
         runtimeAllowConsonantZFWJ = value
     }
 
+    class func customConsonants() -> [String] {
+        withRuntimeSettings { $0.customConsonants }
+    }
+
+    class func setCustomConsonants(_ values: [String]) {
+        let normalized = PHTVCustomConsonants.normalized(values)
+        let rows = PHTVCustomConsonants.rows(normalized)
+        let spellingRows = PHTVCustomConsonants.spellingRows(normalized)
+        withRuntimeSettings {
+            $0.customConsonants = normalized
+            $0.customConsonantRows = rows
+            $0.customConsonantSpellingRows = spellingRows
+        }
+    }
+
     class func quickStartConsonant() -> Int32 {
         runtimeQuickStartConsonant
     }
@@ -1417,4 +1435,12 @@ final class PHTVEngineRuntimeFacade: NSObject {
         runtimeSingleModifierSwitchKeys = value
     }
 
+}
+
+func phtvRuntimeCustomConsonantRows() -> [[UInt16]] {
+    withRuntimeSettings { $0.allowConsonantZFWJ != 0 ? $0.customConsonantRows : [] }
+}
+
+func phtvRuntimeConsonantSpellingRows() -> [[UInt16]] {
+    withRuntimeSettings { $0.allowConsonantZFWJ != 0 ? $0.customConsonantSpellingRows : PHTVCustomConsonants.standardRows }
 }

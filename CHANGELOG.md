@@ -7,7 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Phụ âm tùy chỉnh gồm một hoặc hai chữ cái: thêm bằng Enter, xoá từng mục,
+  khôi phục mặc định và lưu trong bản sao lưu cài đặt.
+
+
 ### Fixed
+
+- Giữ chữ Đ trong các viết tắt in hoa như ĐKKD, ĐN, ĐL, HĐ, GĐ khi bật
+  tự phục hồi từ không phải tiếng Việt; áp dụng cho Shift và Caps Lock.
 
 - Tách phiên gõ giữa timeline và ô nhập trong Final Cut Pro để phím đánh dấu
   marker không trở thành tiền tố của từ tiếng Việt đầu tiên; giữ trạng thái

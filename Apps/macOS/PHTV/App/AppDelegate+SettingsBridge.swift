@@ -148,6 +148,7 @@ private func phtvSettingsBridgeLiveLog(_ message: String) {
             return
         }
 
+        let oldCustomConsonants = PHTVEngineRuntimeFacade.customConsonants()
         let reloadResult = reloadRuntimeSettingsFromUserDefaults()
         let old = reloadResult.oldSnapshot
         let new = reloadResult.newSnapshot
@@ -194,7 +195,8 @@ private func phtvSettingsBridgeLiveLog(_ message: String) {
             || changed("emojiHotkeyKeyCode")
 
         let changedDockVisibility = changed("showIconOnDock")
-        let changedSessionSettings = changed1 || changed2 || changedRestorePause || changedEmoji
+        let changedCustomConsonants = oldCustomConsonants != PHTVEngineRuntimeFacade.customConsonants()
+        let changedSessionSettings = changed1 || changed2 || changedRestorePause || changedEmoji || changedCustomConsonants
         let changedAny = changedSessionSettings || changedDockVisibility
 
         if !changedAny {
