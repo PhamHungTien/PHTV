@@ -7,6 +7,38 @@
         <language>vi</language>
         <!-- Intel (x86_64) feed — Most recent version first -->
         <item>
+            <title>3.6.3</title>
+            <pubDate>Wed, 07 Oct 2026 16:57:43 +0700</pubDate>
+            <sparkle:version>330</sparkle:version>
+            <sparkle:shortVersionString>3.6.3</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[
+                <h2>PHTV 3.6.3</h2>
+                <h3>Tổng quan</h3>
+                <p>Bổ sung phụ âm đầu tùy chỉnh, giữ đúng chữ Đ trong các từ viết tắt in hoa và cải thiện việc chuyển phiên gõ, sửa dấu, xóa ký tự.</p>
+                <h3>Added</h3>
+                <ul>
+                <li><strong>Phụ âm tùy chỉnh</strong> hỗ trợ một hoặc hai chữ cái, ví dụ <code>Z</code>, <code>DZ</code>, <code>BL</code>. Thêm bằng Enter hoặc nút <strong>Thêm</strong>, xóa từng mục và khôi phục mặc định.</li>
+                <li>Tự chuyển mục nhập sang chữ hoa, kiểm tra ký tự hợp lệ và ngăn mục trùng. Giữ nguyên phụ âm tiếng Việt chuẩn; tắt tính năng vẫn giữ danh sách đã nhập.</li>
+                <li>Lưu danh sách ngay khi thay đổi, nạp lại khi mở ứng dụng và đưa vào bản sao lưu cài đặt. Bản sao lưu cũ thiếu danh sách này vẫn giữ cấu hình đang có.</li>
+                </ul>
+                <h3>Fixed</h3>
+                <ul>
+                <li>Giữ chữ <strong>Đ</strong> trong các viết tắt như <strong>ĐKKD, ĐN, ĐL, HĐ, GĐ</strong> khi bật tự phục hồi từ không phải tiếng Việt; hỗ trợ gõ hoa bằng Shift và Caps Lock.</li>
+                <li>Cải thiện phiên gõ trong <strong>Final Cut Pro</strong>: khi nhận diện được vùng nhập, tách phím tắt timeline khỏi nội dung marker và bỏ bộ đệm cũ khi chuyển ô. Giữ trạng thái phím modifier và giới hạn thời gian truy vấn vùng nhập.</li>
+                <li>Dọn sạch lịch sử từ, bộ đệm gõ tắt và trạng thái tắt tạm khi reset phiên gõ; tránh để lệnh phục hồi từ của ô nhập trước ảnh hưởng đến ô mới.</li>
+                <li>Sửa độ dài ký tự sau khi chuyển Unicode tổ hợp sang Unicode dựng sẵn ở ứng dụng cần tương thích, tránh xóa thừa ký tự khi sửa dấu hoặc Backspace.</li>
+                </ul>
+                <h3>Chất lượng</h3>
+                <ul>
+                <li>Toàn bộ <strong>603 kiểm thử: 601 đạt, 2 bỏ qua, 0 lỗi</strong>; bổ sung kiểm thử chuyển vùng nhập, reset phiên, viết tắt có Đ, phụ âm tùy chỉnh và độ dài Unicode.</li>
+                <li>Debug/Release build, phân tích tĩnh và kiểm tra metadata đều đạt.</li>
+                <li>Luồng marker đã được kiểm thử ở mức engine và nhận diện focus; cần xác nhận thêm trên giao diện Final Cut Pro thực tế.</li>
+                </ul>
+            ]]></description>
+            <enclosure url="https://github.com/PhamHungTien/PHTV/releases/download/v3.6.3/PHTV-3.6.3-intel.dmg" length="10338814" type="application/octet-stream" sparkle:edSignature="aMECvZpRbwiXm/GfhMmgzPzV115cWpJEI/bBFyaA2kcbN/CuyMDyNlcFZDG4M3ngqLUf7dwFPrsVJ/GqCQ8xDQ=="/>
+        </item>
+        <item>
             <title>3.6.2</title>
             <pubDate>Tue, 29 Sep 2026 12:26:15 +0700</pubDate>
             <sparkle:version>329</sparkle:version>
@@ -852,14 +884,6 @@
             <sparkle:shortVersionString>3.3.5</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
             <enclosure url="https://github.com/PhamHungTien/PHTV/releases/download/v3.3.5/PHTV-3.3.5-intel.dmg" length="9150240" type="application/octet-stream" sparkle:edSignature="k4RBmBLhP4QUqkgqn8uyTcBg2JjdjjuaRd1agecmDuxAiC/pyOKuy7d/9ElbgIZGWezq8hW0xLnsbhy2xUYJAA=="/>
-        </item>
-        <item>
-            <title>3.3.4</title>
-            <pubDate>Sat, 11 Jul 2026 04:13:39 +0700</pubDate>
-            <sparkle:version>300</sparkle:version>
-            <sparkle:shortVersionString>3.3.4</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <enclosure url="https://github.com/PhamHungTien/PHTV/releases/download/v3.3.4/PHTV-3.3.4-intel.dmg" length="9152099" type="application/octet-stream" sparkle:edSignature="VQOp+HoMiVX9jfL2417hz7RfVG1gtgzTaaftg40y4EhYYWuP376XxWHj8i0DBOBr7lfFZRF5UfKbqLpEcpRjCQ=="/>
         </item>
         <item>
             <title>2.8.9</title>
