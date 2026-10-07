@@ -7,25 +7,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.6.3] - 2026-10-07
+
+### Tổng quan
+
+Bổ sung phụ âm đầu tùy chỉnh, giữ đúng chữ Đ trong các từ viết tắt in hoa và
+cải thiện việc chuyển phiên gõ, sửa dấu, xóa ký tự.
+
 ### Added
 
-- Phụ âm tùy chỉnh gồm một hoặc hai chữ cái: thêm bằng Enter, xoá từng mục,
-  khôi phục mặc định và lưu trong bản sao lưu cài đặt.
-
+- **Phụ âm tùy chỉnh** hỗ trợ một hoặc hai chữ cái, ví dụ `Z`, `DZ`, `BL`.
+  Thêm bằng Enter hoặc nút **Thêm**, xóa từng mục và khôi phục mặc định.
+- Tự chuyển mục nhập sang chữ hoa, kiểm tra ký tự hợp lệ và ngăn mục trùng.
+  Giữ nguyên phụ âm tiếng Việt chuẩn; tắt tính năng vẫn giữ danh sách đã nhập.
+- Lưu danh sách ngay khi thay đổi, nạp lại khi mở ứng dụng và đưa vào bản sao
+  lưu cài đặt. Bản sao lưu cũ thiếu danh sách này vẫn giữ cấu hình đang có.
 
 ### Fixed
 
-- Đồng bộ độ dài ký tự sau khi gộp Unicode tổ hợp cho ứng dụng cần Unicode
-  dựng sẵn, tránh xóa thừa ký tự khi sửa dấu hoặc nhấn Backspace.
+- Giữ chữ **Đ** trong các viết tắt như **ĐKKD, ĐN, ĐL, HĐ, GĐ** khi bật tự
+  phục hồi từ không phải tiếng Việt; hỗ trợ gõ hoa bằng Shift và Caps Lock.
+- Cải thiện phiên gõ trong **Final Cut Pro**: khi nhận diện được vùng nhập,
+  tách phím tắt timeline khỏi nội dung marker và bỏ bộ đệm cũ khi chuyển ô.
+  Giữ trạng thái phím modifier và giới hạn thời gian truy vấn vùng nhập.
+- Dọn sạch lịch sử từ, bộ đệm gõ tắt và trạng thái tắt tạm khi reset phiên gõ;
+  tránh để lệnh phục hồi từ của ô nhập trước ảnh hưởng đến ô mới.
+- Sửa độ dài ký tự sau khi chuyển Unicode tổ hợp sang Unicode dựng sẵn ở
+  ứng dụng cần tương thích, tránh xóa thừa ký tự khi sửa dấu hoặc Backspace.
 
-- Giữ chữ Đ trong các viết tắt in hoa như ĐKKD, ĐN, ĐL, HĐ, GĐ khi bật
-  tự phục hồi từ không phải tiếng Việt; áp dụng cho Shift và Caps Lock.
+### Chất lượng
 
-- Tách phiên gõ giữa timeline và ô nhập trong Final Cut Pro để phím đánh dấu
-  marker không trở thành tiền tố của từ tiếng Việt đầu tiên; giữ trạng thái
-  modifier khi chuyển focus và giới hạn thời gian đọc Accessibility.
-- Reset phiên gõ dọn sạch lịch sử, macro và cờ tắt tạm, không để sót lệnh
-  phục hồi từ tiếng Anh của ô nhập trước.
+- Toàn bộ **603 kiểm thử: 601 đạt, 2 bỏ qua, 0 lỗi**; bổ sung kiểm thử chuyển
+  vùng nhập, reset phiên, viết tắt có Đ, phụ âm tùy chỉnh và độ dài Unicode.
+- Debug/Release build, phân tích tĩnh và kiểm tra metadata đều đạt.
+- Luồng marker đã được kiểm thử ở mức engine và nhận diện focus; cần xác nhận
+  thêm trên giao diện Final Cut Pro thực tế.
 
 ## [3.6.2] - 2026-09-29
 
@@ -1817,7 +1833,8 @@ Phạm Hùng Tiến
 - Macro (gõ tắt)
 - Hoàn toàn offline
 
-[Unreleased]: https://github.com/PhamHungTien/PHTV/compare/v3.5.4...HEAD
+[Unreleased]: https://github.com/PhamHungTien/PHTV/compare/v3.6.3...HEAD
+[3.6.3]: https://github.com/PhamHungTien/PHTV/compare/v3.6.2...v3.6.3
 [3.5.4]: https://github.com/PhamHungTien/PHTV/compare/v3.5.3...v3.5.4
 [3.2.5]: https://github.com/PhamHungTien/PHTV/compare/v3.2.4...v3.2.5
 [3.2.4]: https://github.com/PhamHungTien/PHTV/compare/v3.1.8...v3.2.4
