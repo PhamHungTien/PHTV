@@ -44,7 +44,8 @@ final class PHTVCharacterOutputService: NSObject {
                 sourceCount: sourceCount,
                 sourceOffset: sourceOffset,
                 reversed: !dataFromMacro,
-                codeTable: codeTable
+                codeTable: codeTable,
+                forcePrecomposed: forcePrecomposed
             )
             sourceOffset = chunk.nextSourceOffset
             var finalChars = chunk.units

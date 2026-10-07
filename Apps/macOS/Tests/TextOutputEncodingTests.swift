@@ -46,6 +46,47 @@ final class TextOutputEncodingTests: XCTestCase {
         XCTAssertEqual(output.flatMap(\.syncKeyLengths), Array(repeating: 2, count: 30) + [1, 1, 1])
     }
 
+    func testPrecomposedOutputTracksActualDeletionLength() {
+        // Simulate an editor that deletes one UTF-16 unit per Backspace.
+        // Replacing á with à must preserve the preceding consonant.
+        let output = PHTVTextOutputEncoder.nextChunk(
+            from: [acuteA], sourceCount: 1, sourceOffset: 0,
+            reversed: false, codeTable: 3, forcePrecomposed: true)
+        XCTAssertEqual(output.units, Array("á".utf16))
+        XCTAssertEqual(output.syncKeyLengths, [1])
+        var editor = Array("ch".utf16) + output.units
+        editor.removeLast(Int(output.syncKeyLengths[0]))
+        editor += Array("à".utf16)
+        XCTAssertEqual(String(decoding: editor, as: UTF16.self), "chà")
+    }
+
+    func testPrecompositionPreservesVietnameseMarksAtChunkBoundaries() {
+        for base in "aăâeêioôơuưyAĂÂEÊIOÔƠUƯY".utf16 {
+            for mark: UInt32 in 1...5 {
+                let packed = EngineBitMask.charCode | UInt32(base) | (mark << 13)
+                let original = PHTVTextOutputEncoder.item(packed, codeTable: 3)!
+                var originalUnits: [UInt16] = []
+                original.append(to: &originalUnits)
+                let expected = String(decoding: originalUnits, as: UTF16.self)
+                    .precomposedStringWithCanonicalMapping
+                let output = PHTVTextOutputEncoder.nextChunk(
+                    from: [packed, packed], sourceCount: 2, sourceOffset: 0,
+                    reversed: true, codeTable: 3, forcePrecomposed: true,
+                    maximumUTF16Count: 1)
+                XCTAssertEqual(output.units, Array(expected.utf16))
+                XCTAssertEqual(output.syncKeyLengths, [Int32(expected.utf16.count)])
+                XCTAssertEqual(output.nextSourceOffset, 1)
+            }
+        }
+        // The compatibility option must not normalize legacy byte encodings.
+        let legacy = EngineBitMask.charCode | UInt32(0x4561)
+        let output = PHTVTextOutputEncoder.nextChunk(
+            from: [legacy], sourceCount: 1, sourceOffset: 0,
+            reversed: false, codeTable: 2, forcePrecomposed: true)
+        XCTAssertEqual(output.units, [0x61, 0x45])
+        XCTAssertEqual(output.syncKeyLengths, [2])
+    }
+
     func testExplicitSourceOffsetIsInItemsNotUTF16Units() {
         let output = chunks([acuteA, acuteA] + pure("z"), offset: 1)
         XCTAssertEqual(output.flatMap(\.units), Array("a\u{0301}z".utf16))

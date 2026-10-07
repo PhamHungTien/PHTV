@@ -15,6 +15,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Đồng bộ độ dài ký tự sau khi gộp Unicode tổ hợp cho ứng dụng cần Unicode
+  dựng sẵn, tránh xóa thừa ký tự khi sửa dấu hoặc nhấn Backspace.
+
 - Giữ chữ Đ trong các viết tắt in hoa như ĐKKD, ĐN, ĐL, HĐ, GĐ khi bật
   tự phục hồi từ không phải tiếng Việt; áp dụng cho Shift và Caps Lock.
 

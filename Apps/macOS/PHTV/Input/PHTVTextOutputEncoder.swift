@@ -42,7 +42,7 @@ enum PHTVTextOutputEncoder {
         )
     }
 
-    static func item(_ data: UInt32, codeTable: Int32) -> Item? {
+    static func item(_ data: UInt32, codeTable: Int32, forcePrecomposed: Bool = false) -> Item? {
         let tracksSyncKeys = EngineInputClassification.isDoubleCodeTable(codeTable)
         if (data & EngineBitMask.pureCharacter) != 0 {
             // The engine stores a full Unicode scalar, not a truncated UInt16.
@@ -70,11 +70,19 @@ enum PHTVTextOutputEncoder {
         case 3:
             let packed = UInt16(truncatingIfNeeded: data)
             let markIndex = packed >> 13
-            return Item(
-                first: packed & 0x1FFF,
-                second: markIndex > 0 ? EnginePackedData.unicodeCompoundMark(at: Int32(markIndex) - 1) : nil,
-                syncKeyLength: markIndex > 0 ? 2 : 1
-            )
+            let base = packed & 0x1FFF
+            let mark = markIndex > 0 ? EnginePackedData.unicodeCompoundMark(at: Int32(markIndex) - 1) : nil
+            if forcePrecomposed, let mark {
+                // Record the representation actually sent to the editor. Keeping
+                // the NFD length after NFC conversion causes an extra deletion
+                // on the next replacement in editors that delete code units.
+                let units = Array(String(decoding: [base, mark], as: UTF16.self)
+                    .precomposedStringWithCanonicalMapping.utf16)
+                if units.count == 1 {
+                    return Item(first: units[0], second: nil, syncKeyLength: 1)
+                }
+            }
+            return Item(first: base, second: mark, syncKeyLength: mark == nil ? 1 : 2)
         default:
             return nil
         }
@@ -86,6 +94,7 @@ enum PHTVTextOutputEncoder {
         sourceOffset: Int,
         reversed: Bool,
         codeTable: Int32,
+        forcePrecomposed: Bool = false,
         maximumUTF16Count: Int = 16
     ) -> Chunk {
         let count = max(0, min(sourceCount, items.count))
@@ -100,7 +109,7 @@ enum PHTVTextOutputEncoder {
 
         while cursor < count {
             let sourceIndex = reversed ? count - 1 - cursor : cursor
-            guard let encoded = item(items[sourceIndex], codeTable: codeTable) else {
+            guard let encoded = item(items[sourceIndex], codeTable: codeTable, forcePrecomposed: forcePrecomposed) else {
                 cursor += 1
                 continue
             }
