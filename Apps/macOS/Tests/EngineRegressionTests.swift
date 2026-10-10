@@ -399,30 +399,6 @@ final class EngineRegressionTests: XCTestCase {
         }
     }
 
-    @MainActor
-    func testVietnameseOutputAfterRepeatedSecureInputRecovery() {
-        let previousCodeTable = PHTVEngineRuntimeFacade.currentCodeTable()
-        defer {
-            PHTVEngineRuntimeFacade.setCurrentInputType(0)
-            PHTVEngineRuntimeFacade.setCurrentCodeTable(previousCodeTable)
-            engineInitialize()
-        }
-        PHTVEngineRuntimeFacade.setCurrentCodeTable(0)
-        for (inputType, token) in [(Int32(0), "tieengs vieetj"), (Int32(1), "tie6ng1 vie6t5")] {
-            PHTVEngineRuntimeFacade.setCurrentInputType(inputType)
-            for _ in 0..<20 {
-                engineInitialize()
-                // The secure interval hides subsequent keystrokes and word boundaries.
-                feedWord("ban")
-                engineTempOff(1)
-                PHTVEventTapService.resetAfterSecureInput()
-                let events = token.map { (keyCode(for: $0), UInt8(0)) }
-                XCTAssertEqual(runtimeRenderedKeySequence(events, resetSession: false), "tiếng việt")
-                XCTAssertEqual(PHTVEngineRuntimeFacade.currentLanguage(), 1)
-            }
-        }
-    }
-
     private func runSpaceCase(
         _ token: String,
         customEnglish: [String] = [],
@@ -1993,4 +1969,38 @@ final class EngineRegressionTests: XCTestCase {
         XCTAssertEqual(runtimeRenderedToken("muowfng"), "mường")
     }
 
+    // MARK: - Regression: Spelling check buffer boundary crash (Index out of range at idx == 32)
+
+    func testSpellingCheckAtBufferBoundaryDoesNotCrash() {
+        engineInitialize()
+        // Enable spell checking to exercise checkSpelling() on every key insertion
+        let savedSpell = PHTVEngineRuntimeFacade.checkSpelling()
+        PHTVEngineRuntimeFacade.setCheckSpelling(1)
+        defer { PHTVEngineRuntimeFacade.setCheckSpelling(savedSpell) }
+
+        // Type 32 consecutive unmatched consonants (fills buffer to ENGINE_MAX_BUFF = 32)
+        let thirtyTwoConsonants = String(repeating: "j", count: 32)
+        let result32 = runtimeRenderedToken(thirtyTwoConsonants)
+        XCTAssertEqual(result32.count, 32)
+
+        // Continue typing past 32 characters (exercises longWordHelper and shift)
+        let sixtyChars = String(repeating: "j", count: 60)
+        let result60 = runtimeRenderedToken(sixtyChars)
+        XCTAssertEqual(result60.count, 60)
+
+        // Type 31 consonants followed by 'q' then 'u' at boundary
+        let prefix30 = String(repeating: "j", count: 30)
+        let atBoundary = runtimeRenderedToken(prefix30 + "qu")
+        XCTAssertEqual(atBoundary.count, 32)
+    }
+
+    func testTyping100ArbitraryCharactersDoesNotCrash() {
+        engineInitialize()
+        let savedSpell = PHTVEngineRuntimeFacade.checkSpelling()
+        PHTVEngineRuntimeFacade.setCheckSpelling(1)
+        defer { PHTVEngineRuntimeFacade.setCheckSpelling(savedSpell) }
+
+        let arbitraryString = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+{}[]:;<>?,./"
+        _ = runtimeRenderedToken(arbitraryString)
+    }
 }

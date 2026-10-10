@@ -197,7 +197,7 @@ private func phtvEmojiHotkeyLooksValid(enabled: Int32, modifiers: Int32, keyCode
         let runtimeHealth = currentTypingRuntimeHealthSnapshot()
         guard PHTVTypingRuntimeStateMachine.shouldPerformInProcessRecovery(snapshot: runtimeHealth) else {
             if attempt == 1 {
-                NSLog("[EventTap] Recovery (%@) skipped: relaunch pending or Secure Input active", reason)
+                NSLog("[EventTap] Recovery (%@) skipped: relaunch pending", reason)
             }
             return
         }

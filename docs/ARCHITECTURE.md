@@ -141,7 +141,6 @@ PHTV dùng active `.defaultTap` tại `.cgSessionEventTap`. AX trust chỉ cho p
 - `accessibilityRequired`
 - `waitingForEventTap`
 - `relaunchPending`
-- `secureInputActive`
 - `ready`
 
 Các phase này là nguồn sự thật cho onboarding, Settings status card, menu bar và bug report.

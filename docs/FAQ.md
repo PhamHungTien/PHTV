@@ -21,7 +21,6 @@ Quyền AX là điều kiện cần; PHTV còn phải tạo và enable event tap
 1. Mở **PHTV > Settings** hoặc màn hình onboarding.
 2. Nếu đang thiếu quyền, bấm nút mở **Trợ năng** hoặc **Device Control and Data Access**.
 3. Nếu trạng thái là đang khởi tạo, bấm **Thử lại ngay** hoặc mở lại PHTV.
-4. Rời khỏi ô mật khẩu/ứng dụng đang bật Secure Input rồi thử lại.
 
 Nếu PHTV vẫn báo thiếu quyền dù đã bật, bấm lại nút mở quyền trong PHTV. Ứng dụng sẽ làm mới entry TCC Accessibility rồi mở đúng mục System Settings để bạn bật lại.
 

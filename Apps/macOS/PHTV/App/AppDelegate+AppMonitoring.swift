@@ -249,9 +249,8 @@ private func phtvEnglishBehavior(
         let eventTapReady = initSucceeded && PHTVManager.isEventTapEnabled()
         publishTypingPermissionState(eventTapReady: eventTapReady)
         startInputSourceMonitoring()
-        // A session tap can be unavailable while another app owns Secure
-        // Input. Keep polling after wake so the tap is recreated as soon as
-        // macOS releases it instead of waiting for the 20-second permission
+        // Keep polling after wake so the tap is recreated as soon as
+        // possible instead of waiting for the 20-second permission
         // monitor or another lifecycle event (issue #230).
         startHealthCheckMonitoring()
         syncCurrentFrontmostAppContext(reason: "didWake", forceExcludedRecheck: true)
@@ -298,8 +297,8 @@ private func phtvEnglishBehavior(
         publishTypingPermissionState(eventTapReady: eventTapReady)
         startInputSourceMonitoring()
         startAccessibilityMonitoring()
-        // See receiveWakeNote: Secure Input may outlive the session transition.
-        // The health monitor detects its release and restores the event tap.
+        // Keep polling after session became active so the health monitor
+        // verifies and restores the event tap if needed.
         startHealthCheckMonitoring()
         syncCurrentFrontmostAppContext(reason: "sessionBecomeActive", forceExcludedRecheck: true)
         refreshEmojiHotkeyRegistration(reason: "sessionBecomeActive", settledRetries: true)
@@ -317,7 +316,7 @@ private func phtvEnglishBehavior(
         _ = note
         // This notification can be the only resume signal after some macOS
         // 27 transitions. Re-arm the watchdog even if the workspace session
-        // notification was missed or Secure Input delayed tap creation.
+        // notification was missed.
         startHealthCheckMonitoring()
         refreshEmojiHotkeyRegistration(reason: "didBecomeActive", settledRetries: false)
         refreshClipboardHotkeyRegistration(reason: "didBecomeActive", settledRetries: false)

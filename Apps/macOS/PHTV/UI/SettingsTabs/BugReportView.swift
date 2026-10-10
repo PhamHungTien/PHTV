@@ -533,8 +533,6 @@ struct BugReportView: View {
             return "✅ Running"
         case .relaunchPending:
             return "🔄 Relaunch pending after permission grant"
-        case .secureInputActive:
-            return "🔒 Secure Input active; keyboard events blocked by macOS"
         case .waitingForEventTap:
             return "⚠️ Permission OK, tap not initialized"
         case .accessibilityRequired:

@@ -118,17 +118,6 @@ import Foundation
         PHTVEventCallbackService.resetTransientStateForTapLifecycle()
     }
 
-    @MainActor static func resetAfterSecureInput() {
-        if let language = PHTVModifierRuntimeStateService.takePausedLanguageForRecovery() {
-            // Mirror the missed pause-key release. The setter still enforces
-            // the active application's English-language lock.
-            PHTVEngineRuntimeFacade.setCurrentLanguage(language)
-        }
-        resetTransientTapRuntimeState()
-        PHTVEngineSessionService.requestNewSessionInternal(allowUppercasePrime: false)
-        NSLog("[EventTap] Secure Input ended; reset transient typing state")
-    }
-
     @objc static func hasPermissionLost() -> Bool {
         runtimeState.withLock { $0.permissionLost }
     }

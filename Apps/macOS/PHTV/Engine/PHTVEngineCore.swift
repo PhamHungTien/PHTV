@@ -115,7 +115,10 @@ final class PHTVVietnameseEngine {
     // MARK: - Inline key helpers
 
     @inline(__always)
-    func chr(_ i: Int) -> UInt16 { UInt16(typingWord[i] & CHAR_MASK) }
+    func chr(_ i: Int) -> UInt16 {
+        guard i >= 0 && i < typingWord.count else { return KEY_EMPTY }
+        return UInt16(typingWord[i] & CHAR_MASK)
+    }
 
     @inline(__always)
     func get(_ data: UInt32) -> UInt32 { getCharacterCode(data) }
@@ -285,7 +288,7 @@ final class PHTVVietnameseEngine {
         var buf = [UInt32](repeating: 0, count: 64)
         var len = 0
         var toneKey: UInt32 = 0
-        for i in 0..<length where len < 60 {
+        for i in 0..<min(length, typingWord.count) where len < 60 {
             let tw = typingWord[i]
             let baseKey = tw & 0x3F
             if baseKey == UInt32(KEY_D) && (tw & TONE_MASK) != 0 {
@@ -357,17 +360,18 @@ final class PHTVVietnameseEngine {
     }
 
     func checkRestoreIfWrongSpelling(_ handleCode: Int32) -> Bool {
-        for ii in 0..<idx {
+        for ii in 0..<min(idx, typingWord.count) {
             if !isConsonant(chr(ii)) &&
                ((typingWord[ii] & MARK_MASK) != 0 || (typingWord[ii] & TONE_MASK) != 0 || (typingWord[ii] & TONEW_MASK) != 0) {
                 hCode = handleCode
                 hBPC = idx
-                hNCC = stateIdx
-                for i in 0..<stateIdx {
+                let copyCount = min(stateIdx, min(typingWord.count, min(keyStates.count, hData.count)))
+                hNCC = copyCount
+                for i in 0..<copyCount {
                     typingWord[i] = keyStates[i]
-                    hData[stateIdx - 1 - i] = typingWord[i]
+                    hData[copyCount - 1 - i] = typingWord[i]
                 }
-                idx = stateIdx
+                idx = copyCount
                 return true
             }
         }
@@ -660,7 +664,7 @@ final class PHTVVietnameseEngine {
                     longWordHelper.removeAll()
                 }
                 typingStatesData.removeAll()
-                for i in 0..<idx { typingStatesData.append(typingWord[i]) }
+                for i in 0..<min(idx, typingWord.count) { typingStatesData.append(typingWord[i]) }
                 typingStates.append(typingStatesData)
             }
         } else {
@@ -755,8 +759,10 @@ final class PHTVVietnameseEngine {
             spellingOK = true; spellingVowelOK = true; tempDisableKey = false; return
         }
         spellingOK = false; spellingVowelOK = true
-        spellingEndIndex = idx
-        if idx > 0 && chr(idx - 1) == KEY_RIGHT_BRACKET { spellingEndIndex = idx - 1 }
+        spellingEndIndex = min(idx, ENGINE_MAX_BUFF)
+        if spellingEndIndex > 0 && chr(spellingEndIndex - 1) == KEY_RIGHT_BRACKET {
+            spellingEndIndex -= 1
+        }
 
         if spellingEndIndex > 0 {
             let quickStart = phtvRuntimeQuickStartConsonantEnabled() != 0
@@ -786,15 +792,17 @@ final class PHTVVietnameseEngine {
 
             var k = j
             VSI = k
-            if chr(VSI) == KEY_U && k > 0 && k < spellingEndIndex - 1 && chr(VSI - 1) == KEY_Q {
-                k += 1; j = k; VSI = k
-            } else if idx >= 2 && chr(0) == KEY_G && chr(1) == KEY_I && isConsonant(chr(2)) {
-                VSI = 1; k = 1; j = 1
-            }
-            var l = 0
-            while l < 3 {
-                if k < spellingEndIndex && !isConsonant(chr(k)) { k += 1; VEI = k }
-                l += 1
+            if k < spellingEndIndex {
+                if k > 0 && k < spellingEndIndex - 1 && chr(VSI) == KEY_U && chr(VSI - 1) == KEY_Q {
+                    k += 1; j = k; VSI = k
+                } else if spellingEndIndex >= 3 && chr(0) == KEY_G && chr(1) == KEY_I && isConsonant(chr(2)) {
+                    VSI = 1; k = 1; j = 1
+                }
+                var l = 0
+                while l < 3 {
+                    if k < spellingEndIndex && !isConsonant(chr(k)) { k += 1; VEI = k }
+                    l += 1
+                }
             }
 
             if k > j {
@@ -841,11 +849,11 @@ final class PHTVVietnameseEngine {
 
                 if spellingOK {
                     if idx >= 3 && chr(idx - 1) == KEY_H && chr(idx - 2) == KEY_C {
-                        let tw = typingWord[idx - 3]
+                        let tw = typingWord[min(idx - 3, typingWord.count - 1)]
                         let okMark = (tw & MARK1_MASK) != 0 || (tw & MARK5_MASK) != 0 || (tw & MARK_MASK) == 0
                         if !okMark { spellingOK = false }
                     } else if idx >= 2 && chr(idx - 1) == KEY_T {
-                        let tw = typingWord[idx - 2]
+                        let tw = typingWord[min(idx - 2, typingWord.count - 1)]
                         let okMark = (tw & MARK1_MASK) != 0 || (tw & MARK5_MASK) != 0 || (tw & MARK_MASK) == 0
                         if !okMark { spellingOK = false }
                     }
@@ -987,7 +995,7 @@ final class PHTVVietnameseEngine {
         for pattern in vo {
             var kk = VSI
             var iii = 1
-            while iii < pattern.count {
+            while iii < pattern.count && kk < typingWord.count {
                 let tw = typingWord[kk]
                 if kk > VEI || (UInt32(chr(kk)) | (tw & TONE_MASK) | (tw & TONEW_MASK)) != pattern[iii] { break }
                 kk += 1; iii += 1
@@ -1046,7 +1054,7 @@ final class PHTVVietnameseEngine {
             if row[1] == KEY_C || row[1] == KEY_T { isCorect = false; return }
             if row.count > 2 && row[2] == KEY_T { isCorect = false; return }
         }
-        if isCorect && k >= 0 {
+        if isCorect && k >= 0 && k + 1 < min(idx, typingWord.count) {
             if chr(k) == chr(k + 1) &&
                (typingWord[k] & (TONE_MASK | TONEW_MASK)) == 0 &&
                (typingWord[k + 1] & (TONE_MASK | TONEW_MASK)) == 0 {

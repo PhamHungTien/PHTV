@@ -109,8 +109,13 @@ let CONSONANT_ALLOW_MASK: UInt16 = 0x8000
 // MARK: - Inline helpers
 
 @inline(__always)
+func isVowel(_ k: UInt16) -> Bool {
+    k == KEY_A || k == KEY_E || k == KEY_U || k == KEY_Y || k == KEY_I || k == KEY_O
+}
+
+@inline(__always)
 func isConsonant(_ k: UInt16) -> Bool {
-    k != KEY_A && k != KEY_E && k != KEY_U && k != KEY_Y && k != KEY_I && k != KEY_O
+    k != KEY_EMPTY && !isVowel(k)
 }
 
 @inline(__always)

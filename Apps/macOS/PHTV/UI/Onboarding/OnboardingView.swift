@@ -974,13 +974,6 @@ struct AccessibilityStepView: View {
                     "Khi PHTV mở lại, trạng thái sẽ tự chuyển sang sẵn sàng."
                 ]
             )
-        case .secureInputActive:
-            OnboardingStatusCard(
-                icon: "lock.shield.fill",
-                title: "Tạm dừng do nhập liệu bảo mật",
-                description: PHTVSecureInputStatus.guidance,
-                tint: .orange
-            )
         case .waitingForEventTap:
             OnboardingStatusCard(
                 icon: "clock.badge.exclamationmark.fill",
@@ -1026,7 +1019,7 @@ struct AccessibilityStepView: View {
             return "Mở \(PHTVAccessibilityPermissionNaming.displayName)"
         case .waitingForEventTap:
             return "Thử lại ngay"
-        case .ready, .relaunchPending, .secureInputActive:
+        case .ready, .relaunchPending:
             return nil
         }
     }
