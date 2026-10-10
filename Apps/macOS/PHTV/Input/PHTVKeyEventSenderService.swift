@@ -53,7 +53,11 @@ class PHTVKeyEventSenderService: NSObject {
         } else {
             let proxyRaw = PHTVEventRuntimeContextService.eventTapProxyRawValue()
             let proxy = UnsafeMutableRawPointer(bitPattern: UInt(proxyRaw)).map { OpaquePointer($0) }
-            event.tapPostEvent(proxy)
+            if let proxy {
+                event.tapPostEvent(proxy)
+            } else {
+                event.post(tap: .cgSessionEventTap)
+            }
         }
     }
 

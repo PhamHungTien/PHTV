@@ -633,11 +633,13 @@ final class PHTVAccessibilityService: NSObject {
 
     private class func focusedElement() -> AXUIElement? {
         let systemWide = AXUIElementCreateSystemWide()
+        _ = AXUIElementSetMessagingTimeout(systemWide, 0.05)
         return elementAttribute(systemWide, kAXFocusedUIElementAttribute)
     }
 
     private class func focusedApplicationElement() -> AXUIElement? {
         let systemWide = AXUIElementCreateSystemWide()
+        _ = AXUIElementSetMessagingTimeout(systemWide, 0.05)
         return elementAttribute(systemWide, kAXFocusedApplicationAttribute)
     }
 

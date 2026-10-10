@@ -322,16 +322,14 @@ import Foundation
             return
         }
 
-        if let tap, !CGEvent.tapIsEnabled(tap: tap) {
-            Task { @MainActor in
-                if !runtimeState.withLock({ $0.isInited }) {
-                    return
-                }
-                NSLog("[EventTap] Re-enabling failed, recreating event tap")
-                runtimeState.withLock { $0.tapRecreateCount += 1 }
-                _ = stopEventTap()
-                _ = initEventTap()
+        Task { @MainActor in
+            if !runtimeState.withLock({ $0.isInited }) {
+                return
             }
+            NSLog("[EventTap] Re-enabling failed, recreating event tap")
+            runtimeState.withLock { $0.tapRecreateCount += 1 }
+            _ = stopEventTap()
+            _ = initEventTap()
         }
     }
 

@@ -331,9 +331,7 @@ final class PHTVAppDetectionService: NSObject {
         "com.microsoft.Edge.Dev.app.*"
     ])
 
-    private static let disableVietnameseApps = BundlePatternSet([
-        "com.apple.apps.launcher"
-    ])
+    private static let disableVietnameseApps = BundlePatternSet([])
 
     private static let appListMatchingAliases: [String: String] = [
         "com.apple.spotlight": "com.apple.spotlight",
