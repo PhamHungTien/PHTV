@@ -108,7 +108,7 @@ enum PHTVTextFocusSessionService {
               let value, CFGetTypeID(value) == AXUIElementGetTypeID() else {
             return (false, false)
         }
-        let element = unsafeBitCast(value, to: AXUIElement.self)
+        let element = unsafeDowncast(value, to: AXUIElement.self)
         guard prepareRead(element) else {
             return (false, false)
         }
@@ -124,7 +124,7 @@ enum PHTVTextFocusSessionService {
                 let result = AXUIElementCopyAttributeValue(element, kAXSelectedTextRangeAttribute as CFString, &selection)
                 if result == .success, let selection,
                    CFGetTypeID(selection) == AXValueGetTypeID(),
-                   AXValueGetType(unsafeBitCast(selection, to: AXValue.self)) == .cfRange {
+                   AXValueGetType(unsafeDowncast(selection, to: AXValue.self)) == .cfRange {
                     editable = true
                 } else if result != .attributeUnsupported && result != .noValue {
                     editable = nil
