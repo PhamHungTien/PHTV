@@ -7,6 +7,25 @@
         <language>vi</language>
         <!-- Intel (x86_64) feed — Most recent version first -->
         <item>
+            <title>3.6.4</title>
+            <pubDate>Sat, 10 Oct 2026 19:40:45 +0700</pubDate>
+            <sparkle:version>331</sparkle:version>
+            <sparkle:shortVersionString>3.6.4</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[
+                <h2>PHTV 3.6.4</h2>
+                <h3>Fixed</h3>
+                <ul>
+                <li><strong>Sửa lỗi crash Event Tap:</strong> Khắc phục lỗi <code>Index out of range</code> trong bộ kiểm tra chính tả khi gõ chuỗi dài liên tục chạm mốc 32 ký tự; bổ sung kiểm tra biên an toàn cho toàn bộ engine.</li>
+                <li><strong>Gõ tiếng Việt ở mọi vị trí:</strong> Hỗ trợ gõ trong Launchpad và các launcher hệ thống; bổ sung cơ chế fallback tự động sang Session Tap khi gửi phím giả lập để không bị rơi ký tự.</li>
+                <li><strong>Bỏ tạm dừng do Secure Input:</strong> Loại bỏ hoàn toàn tính năng tạm dừng do nhập liệu bảo mật, đảm bảo gõ liên tục không bị gián đoạn.</li>
+                <li><strong>Chống treo Event Tap:</strong> Thêm giới hạn thời gian chờ (50ms) cho các truy vấn Accessibility UI, ngăn chặn hiện tượng đơ bàn phím khi có ứng dụng khác bị treo hoặc beachball.</li>
+                <li><strong>Tối ưu mã nguồn:</strong> Chuẩn hóa ép kiểu an toàn (<code>unsafeDowncast</code>) trong quản lý phiên gõ focus text.</li>
+                </ul>
+            ]]></description>
+            <enclosure url="https://github.com/PhamHungTien/PHTV/releases/download/v3.6.4/PHTV-3.6.4-intel.dmg" length="10307541" type="application/octet-stream" sparkle:edSignature="eQbyrVHj1b6t2OWj32TSQL1kwK0lof8H7AVx7SXLm7kigfS4WG92J6NrZawjBOM+TlHNZRQNDfc2Vn80HM3mAw=="/>
+        </item>
+        <item>
             <title>3.6.3</title>
             <pubDate>Wed, 07 Oct 2026 16:57:43 +0700</pubDate>
             <sparkle:version>330</sparkle:version>
@@ -876,14 +895,6 @@
             <sparkle:shortVersionString>3.3.6</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
             <enclosure url="https://github.com/PhamHungTien/PHTV/releases/download/v3.3.6/PHTV-3.3.6-intel.dmg" length="9150708" type="application/octet-stream" sparkle:edSignature="GDGyWULVexQ+hB9UIUxKGt2lz0CZ1bjWSDfWWJ37OKGO7o/Twold9bTKuJpOQBCmRfL7p5kwGT2PZ3eaIJTpAA=="/>
-        </item>
-        <item>
-            <title>3.3.5</title>
-            <pubDate>Mon, 13 Jul 2026 13:46:22 +0700</pubDate>
-            <sparkle:version>301</sparkle:version>
-            <sparkle:shortVersionString>3.3.5</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <enclosure url="https://github.com/PhamHungTien/PHTV/releases/download/v3.3.5/PHTV-3.3.5-intel.dmg" length="9150240" type="application/octet-stream" sparkle:edSignature="k4RBmBLhP4QUqkgqn8uyTcBg2JjdjjuaRd1agecmDuxAiC/pyOKuy7d/9ElbgIZGWezq8hW0xLnsbhy2xUYJAA=="/>
         </item>
         <item>
             <title>2.8.9</title>
