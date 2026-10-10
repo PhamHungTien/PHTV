@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.6.4] - 2026-10-10
+
+### Fixed
+
+- **Sửa lỗi crash Event Tap:** Khắc phục lỗi `Index out of range` trong bộ kiểm tra chính tả khi gõ chuỗi dài liên tục chạm mốc 32 ký tự; bổ sung kiểm tra biên an toàn cho toàn bộ engine.
+- **Gõ tiếng Việt ở mọi vị trí:** Hỗ trợ gõ trong Launchpad và các launcher hệ thống; bổ sung cơ chế fallback tự động sang Session Tap khi gửi phím giả lập để không bị rơi ký tự.
+- **Bỏ tạm dừng do Secure Input:** Loại bỏ hoàn toàn tính năng tạm dừng do nhập liệu bảo mật, đảm bảo gõ liên tục không bị gián đoạn.
+- **Chống treo Event Tap:** Thêm giới hạn thời gian chờ (50ms) cho các truy vấn Accessibility UI, ngăn chặn hiện tượng đơ bàn phím khi có ứng dụng khác bị treo hoặc beachball.
+- **Tối ưu mã nguồn:** Chuẩn hóa ép kiểu an toàn (`unsafeDowncast`) trong quản lý phiên gõ focus text.
+
 ## [3.6.3] - 2026-10-07
 
 ### Tổng quan
@@ -1833,7 +1843,8 @@ Phạm Hùng Tiến
 - Macro (gõ tắt)
 - Hoàn toàn offline
 
-[Unreleased]: https://github.com/PhamHungTien/PHTV/compare/v3.6.3...HEAD
+[Unreleased]: https://github.com/PhamHungTien/PHTV/compare/v3.6.4...HEAD
+[3.6.4]: https://github.com/PhamHungTien/PHTV/compare/v3.6.3...v3.6.4
 [3.6.3]: https://github.com/PhamHungTien/PHTV/compare/v3.6.2...v3.6.3
 [3.5.4]: https://github.com/PhamHungTien/PHTV/compare/v3.5.3...v3.5.4
 [3.2.5]: https://github.com/PhamHungTien/PHTV/compare/v3.2.4...v3.2.5
