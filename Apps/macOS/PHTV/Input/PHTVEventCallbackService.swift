@@ -380,16 +380,14 @@ final class PHTVEventCallbackService {
         // runtime-settings store for every field read below.
         let settings = PHTVEngineRuntimeFacade.eventDispatchSettingsSnapshot()
         let currentLanguage = settings.language
-        let safeModeEnabled = settings.safeMode
         let eventTargetPID = Int32(event.getIntegerValueField(.eventTargetUnixProcessID))
         let preliminaryTargetBundleId =
             (eventTargetPID > 0
-                ? PHTVAppContextService.bundleId(fromPID: eventTargetPID, safeMode: true)
+                ? PHTVAppContextService.bundleId(fromPID: eventTargetPID, skipAccessibility: true)
                 : nil)
             ?? PHTVAppContextService.currentFrontmostBundleId()
         PHTVEngineRuntimeFacade.configureMacroTarget(bundleIdentifier: preliminaryTargetBundleId)
-        let contextSafeMode =
-            safeModeEnabled ||
+        let skipAccessibilityContext =
             PHTVAppDetectionService.prefersLowLatencyEventContext(preliminaryTargetBundleId)
         // The auto-capitalize exclusion list is scoped per typing language, so
         // an app can suppress it for English (an IDE) yet keep it for
@@ -476,7 +474,7 @@ final class PHTVEventCallbackService {
             let focusTransition = PHTVTextFocusSessionService.transition(
                 bundleId: preliminaryTargetBundleId,
                 pid: eventTargetPID,
-                safeMode: contextSafeMode)
+                skipAccessibility: skipAccessibilityContext)
             if focusTransition.reset {
                 englishUppercaseStateBox.withLock { $0 = .idle }
                 PHTVEngineSessionService.requestNewSessionInternal(allowUppercasePrime: false, preserveModifierState: true)
@@ -496,7 +494,7 @@ final class PHTVEventCallbackService {
                     keyCode: eventKeycode,
                     keyCharacter: keyCharacter,
                     isNavigationKey: isNavigationKey,
-                    safeMode: contextSafeMode,
+                    skipAccessibility: skipAccessibilityContext,
                     uppercaseEnabled: settings.upperCaseFirstChar,
                     uppercaseExcluded: uppercaseExcludedFlag)
                 if shouldPrime {
@@ -692,7 +690,7 @@ final class PHTVEventCallbackService {
                 if PHTVEngineRuntimeFacade.engineDataCode() == EngineSignalCode.replaceMacro {
                     _ = PHTVEventContextBridgeService.prepareTargetContextAndConfigureRuntime(
                         forEvent: event,
-                        safeMode: contextSafeMode,
+                        skipAccessibility: skipAccessibilityContext,
                         spotlightCacheDurationMs: kSpotlightCacheDurationMs,
                         appCharacteristicsMaxAgeMs: kAppCharacteristicsCacheMaxAgeMs)
                     if PHTVCharacterOutputService.handleMacro(
@@ -720,7 +718,7 @@ final class PHTVEventCallbackService {
                                  eventKeycode: eventKeycode,
                                  eventFlags: eventFlags,
                                  settings: settings,
-                                 contextSafeMode: contextSafeMode)
+                                 skipAccessibilityContext: skipAccessibilityContext)
         }
 
         return Unmanaged.passUnretained(event)
@@ -733,11 +731,11 @@ final class PHTVEventCallbackService {
                                       eventKeycode: CGKeyCode,
                                       eventFlags: CGEventFlags,
                                       settings: PHTVEventDispatchSettings,
-                                      contextSafeMode: Bool) -> Unmanaged<CGEvent>? {
-        let safeModeEnabled = contextSafeMode
+                                      skipAccessibilityContext: Bool) -> Unmanaged<CGEvent>? {
+        let skipAccessibility = skipAccessibilityContext
         let targetContext = PHTVEventContextBridgeService.prepareTargetContextAndConfigureRuntime(
             forEvent: event,
-            safeMode: safeModeEnabled,
+            skipAccessibility: skipAccessibility,
             spotlightCacheDurationMs: kSpotlightCacheDurationMs,
             appCharacteristicsMaxAgeMs: kAppCharacteristicsCacheMaxAgeMs)
         let spotlightActive = targetContext.spotlightActive
@@ -745,7 +743,7 @@ final class PHTVEventCallbackService {
         let appChars = targetContext.appCharacteristics
 
         let nativeTextReplacementEnabled =
-            !contextSafeMode &&
+            !skipAccessibilityContext &&
             PHTVSystemTextReplacementService.canUseNativeTextReplacementMode(
                 enabled: PHTVSystemTextReplacementService.isEnabled(),
                 inputType: settings.inputType
@@ -910,7 +908,7 @@ final class PHTVEventCallbackService {
             var isAddrBar = false
             if processSignalPlan.shouldTryBrowserAddressBarFix {
                 isAddrBar = PHTVEventContextBridgeService.isFocusedElementAddressBar(
-                    forSafeMode: safeModeEnabled)
+                    skippingAccessibility: skipAccessibility)
                 #if DEBUG
                 NSLog("[BrowserFix] isFocusedElementAddressBar returned: %d", isAddrBar ? 1 : 0)
                 #endif
@@ -921,7 +919,7 @@ final class PHTVEventCallbackService {
                 hookData.backspaceCount > 0 &&
                 PHTVEventContextBridgeService.isGoogleSheetsContext(
                     forBundleId: effectiveBundleId,
-                    safeMode: safeModeEnabled
+                    skipAccessibility: skipAccessibility
                 )
             #if DEBUG
             if isGoogleSheetsContext {
@@ -937,7 +935,7 @@ final class PHTVEventCallbackService {
             var isNotionCodeBlockDetected = false
             if shouldInspectNotionCodeBlock {
                 isNotionCodeBlockDetected = PHTVEventContextBridgeService.isNotionCodeBlock(
-                    forSafeMode: safeModeEnabled)
+                    skippingAccessibility: skipAccessibility)
                 #if DEBUG
                 if isNotionCodeBlockDetected {
                     NSLog("[Notion] Code Block detected - using selection-overwrite backspace fix")

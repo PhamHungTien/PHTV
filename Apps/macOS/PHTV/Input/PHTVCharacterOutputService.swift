@@ -78,8 +78,7 @@ final class PHTVCharacterOutputService: NSObject {
                     let axSucceeded = PHTVEventContextBridgeService.replaceFocusedTextViaAX(
                         backspaceCount: backspaceCount,
                         insertText: String(decoding: chars, as: UTF16.self),
-                        verify: backspaceCount > 0,
-                        safeMode: PHTVEngineRuntimeFacade.safeModeEnabled())
+                        verify: backspaceCount > 0)
                     if !axSucceeded {
                         PHTVKeyEventSenderService.sendBackspaceSequenceWithDelay(backspaceCount)
                         if let ptr = chars.baseAddress, !chars.isEmpty {
@@ -110,7 +109,7 @@ final class PHTVCharacterOutputService: NSObject {
         var effectiveTarget = PHTVEventRuntimeContextService.effectiveTargetBundleIdValue()
         if effectiveTarget == nil {
             effectiveTarget = PHTVAppContextService.focusedBundleId(
-                forSafeMode: PHTVEngineRuntimeFacade.safeModeEnabled(),
+                skippingAccessibility: false,
                 cacheDurationMs: kSpotlightCacheDurationMs)
             if effectiveTarget == nil {
                 effectiveTarget = PHTVAppContextService.currentFrontmostBundleId()
@@ -133,10 +132,9 @@ final class PHTVCharacterOutputService: NSObject {
         }
 
         let originalBackspaceCount = PHTVEngineRuntimeFacade.engineDataBackspaceCount()
-        let safeModeEnabled = PHTVEngineRuntimeFacade.safeModeEnabled()
         let isZaloContext = PHTVEventContextBridgeService.isZaloContext(
             forBundleId: effectiveTarget,
-            safeMode: safeModeEnabled)
+            skipAccessibility: false)
         let macroPlan = PHTVInputStrategyService.macroPlan(
             forPostToHIDTap: PHTVEventRuntimeContextService.postToHIDTapEnabled(),
             appIsSpotlightLike: PHTVEventRuntimeContextService.appIsSpotlightLike(),
@@ -171,8 +169,7 @@ final class PHTVCharacterOutputService: NSObject {
                 isSpotlightLike ? 1 : 0,
                 backspaceCount: originalBackspaceCount,
                 macroData: macroData,
-                codeTable: codeTable,
-                safeMode: safeModeEnabled)
+                codeTable: codeTable)
             if replacedByAX {
                 #if DEBUG
                 NSLog("[Macro] Spotlight: AX API succeeded")

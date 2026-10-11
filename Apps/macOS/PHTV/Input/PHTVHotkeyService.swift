@@ -1379,11 +1379,11 @@ final class PHTVHotkeyService: NSObject {
         )
     }
 
-    @objc(sessionResetTransitionForCodeTable:allowUppercasePrime:safeMode:uppercaseEnabled:uppercaseExcluded:)
+    @objc(sessionResetTransitionForCodeTable:allowUppercasePrime:skipAccessibility:uppercaseEnabled:uppercaseExcluded:)
     class func sessionResetTransition(
         forCodeTable codeTable: Int32,
         allowUppercasePrime: Bool,
-        safeMode: Bool,
+        skipAccessibility: Bool,
         uppercaseEnabled: Int32,
         uppercaseExcluded: Int32
     ) -> PHTVSessionResetTransitionBox {
@@ -1393,7 +1393,7 @@ final class PHTVHotkeyService: NSObject {
         var shouldPrimeUppercaseFirstChar = false
         if allowUppercasePrime {
             shouldPrimeUppercaseFirstChar = PHTVAccessibilityService.shouldPrimeUppercaseFromAX(
-                safeMode: safeMode,
+                skipAccessibility: skipAccessibility,
                 uppercaseEnabled: uppercaseEnabled != 0,
                 uppercaseExcluded: uppercaseExcluded != 0
             )

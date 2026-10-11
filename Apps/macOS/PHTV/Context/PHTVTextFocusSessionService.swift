@@ -81,8 +81,8 @@ enum PHTVTextFocusSessionService {
 
     /// Called only for real keydowns, before either the Vietnamese or English
     /// macro engine sees them. No text content is read or retained.
-    static func transition(bundleId: String?, pid: pid_t, safeMode: Bool) -> (reset: Bool, bypass: Bool) {
-        guard isSupported(bundleId: bundleId), !safeMode else {
+    static func transition(bundleId: String?, pid: pid_t, skipAccessibility: Bool) -> (reset: Bool, bypass: Bool) {
+        guard isSupported(bundleId: bundleId), !skipAccessibility else {
             clear()
             return (false, false)
         }

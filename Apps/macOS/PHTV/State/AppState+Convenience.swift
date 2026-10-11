@@ -219,11 +219,6 @@ extension AppState {
         set { systemState.settingsWindowAlwaysOnTop = newValue }
     }
 
-    var safeMode: Bool {
-        get { trackedSubstate(systemState.safeMode) }
-        set { systemState.safeMode = newValue }
-    }
-
     var autoRestartOnSettingsClose: Bool {
         get { trackedSubstate(systemState.autoRestartOnSettingsClose) }
         set { systemState.autoRestartOnSettingsClose = newValue }

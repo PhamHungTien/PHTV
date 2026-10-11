@@ -214,13 +214,12 @@ private struct StepByStepSettingsCard: View {
 
 private struct AdvancedCompatibilitySettingsCard: View {
     @Environment(AppState.self) private var appState
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     private var bindable: Bindable<AppState> { Bindable(appState) }
 
     var body: some View {
         SettingsCard(
             title: "Tương thích nâng cao",
-            subtitle: "Chỉ thay đổi khi bàn phím hoặc Accessibility hoạt động không ổn định",
+            subtitle: "Hỗ trợ các bố cục bàn phím đặc biệt",
             icon: "puzzlepiece.extension.fill",
             displaysSubtitle: true
         ) {
@@ -232,51 +231,8 @@ private struct AdvancedCompatibilitySettingsCard: View {
                     subtitle: "Hỗ trợ Dvorak, Colemak và các bố cục đặc biệt",
                     isOn: bindable.performLayoutCompat
                 )
-
-                SettingsDivider()
-
-                SettingsToggleRow(
-                    icon: "shield.fill",
-                    iconColor: .accentColor,
-                    title: "Chế độ an toàn",
-                    subtitle: "Tự phục hồi khi Accessibility API gặp lỗi",
-                    isOn: bindable.safeMode
-                )
-
-                if appState.safeMode {
-                    SettingsDivider()
-
-                    safeModeNote
-                        .transition(.opacity.combined(with: .move(edge: .top)))
-                }
             }
-            .animation(
-                reduceMotion ? nil : .easeInOut(duration: 0.18),
-                value: appState.safeMode
-            )
         }
-    }
-
-    private var safeModeNote: some View {
-        HStack(alignment: .top, spacing: 10) {
-            Image(systemName: "info.circle")
-                .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(.secondary)
-                .accessibilityHidden(true)
-
-            Text(
-                "Phù hợp với Mac chạy OpenCore Legacy Patcher (OCLP) "
-                    + "hoặc thường gặp lỗi Accessibility."
-            )
-            .font(.caption)
-            .foregroundStyle(.secondary)
-            .fixedSize(horizontal: false, vertical: true)
-
-            Spacer(minLength: 0)
-        }
-        .padding(.horizontal, 4)
-        .padding(.vertical, 8)
-        .accessibilityElement(children: .combine)
     }
 }
 

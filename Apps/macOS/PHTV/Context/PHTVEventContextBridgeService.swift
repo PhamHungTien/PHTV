@@ -36,52 +36,48 @@ final class PHTVEventContextBridgeService: NSObject {
         PHTVAccessibilityService.invalidateContextDetectionCaches()
     }
 
-    @objc(replaceFocusedTextViaAXWithBackspaceCount:insertText:verify:safeMode:)
+    @objc(replaceFocusedTextViaAXWithBackspaceCount:insertText:verify:)
     class func replaceFocusedTextViaAX(backspaceCount: Int32,
                                        insertText: String?,
-                                       verify: Bool,
-                                       safeMode: Bool) -> Bool {
-        guard !safeMode else {
-            return false
-        }
+                                       verify: Bool) -> Bool {
         return PHTVAccessibilityService.replaceFocusedTextViaAX(Int(backspaceCount),
                                                                 insertText: insertText,
                                                                 verify: verify)
     }
 
-    @objc(isFocusedElementAddressBarForSafeMode:)
-    class func isFocusedElementAddressBar(forSafeMode safeMode: Bool) -> Bool {
-        guard !safeMode else {
+    @objc(isFocusedElementAddressBarSkippingAccessibility:)
+    class func isFocusedElementAddressBar(skippingAccessibility skipAccessibility: Bool) -> Bool {
+        guard !skipAccessibility else {
             return false
         }
         return PHTVAccessibilityService.isFocusedElementAddressBar()
     }
 
-    @objc(isNotionCodeBlockForSafeMode:)
-    class func isNotionCodeBlock(forSafeMode safeMode: Bool) -> Bool {
-        guard !safeMode else {
+    @objc(isNotionCodeBlockSkippingAccessibility:)
+    class func isNotionCodeBlock(skippingAccessibility skipAccessibility: Bool) -> Bool {
+        guard !skipAccessibility else {
             return false
         }
         return PHTVAccessibilityService.isNotionCodeBlock()
     }
 
-    @objc(isZaloContextForBundleId:safeMode:)
-    class func isZaloContext(forBundleId bundleId: String?, safeMode: Bool) -> Bool {
+    @objc(isZaloContextForBundleId:skipAccessibility:)
+    class func isZaloContext(forBundleId bundleId: String?, skipAccessibility: Bool) -> Bool {
         if PHTVAppDetectionService.isZaloApp(bundleId) {
             return true
         }
-        guard !safeMode else {
+        guard !skipAccessibility else {
             return false
         }
         return PHTVAccessibilityService.isZaloContext(forBundleId: bundleId)
     }
 
-    @objc(isGoogleSheetsContextForBundleId:safeMode:)
+    @objc(isGoogleSheetsContextForBundleId:skipAccessibility:)
     class func isGoogleSheetsContext(
         forBundleId bundleId: String?,
-        safeMode: Bool
+        skipAccessibility: Bool
     ) -> Bool {
-        guard !safeMode else {
+        guard !skipAccessibility else {
             return false
         }
         return PHTVAccessibilityService.isGoogleSheetsContext(forBundleId: bundleId)
@@ -131,15 +127,15 @@ final class PHTVEventContextBridgeService: NSObject {
         PHTVSpotlightDetectionService.elapsedSinceLastExternalDeleteMs()
     }
 
-    @objc(prepareTargetContextAndConfigureRuntimeForEvent:safeMode:spotlightCacheDurationMs:appCharacteristicsMaxAgeMs:)
+    @objc(prepareTargetContextAndConfigureRuntimeForEvent:skipAccessibility:spotlightCacheDurationMs:appCharacteristicsMaxAgeMs:)
     class func prepareTargetContextAndConfigureRuntime(forEvent event: CGEvent,
-                                                       safeMode: Bool,
+                                                       skipAccessibility: Bool,
                                                        spotlightCacheDurationMs: UInt64,
                                                        appCharacteristicsMaxAgeMs: UInt64) -> PHTVEventTargetContextBox {
         let eventTargetPID = Int32(event.getIntegerValueField(.eventTargetUnixProcessID))
         let targetContext = PHTVAppContextService.eventTargetContext(
             forEventTargetPid: eventTargetPID,
-            safeMode: safeMode,
+            skipAccessibility: skipAccessibility,
             spotlightCacheDurationMs: spotlightCacheDurationMs,
             appCharacteristicsMaxAgeMs: appCharacteristicsMaxAgeMs
         )
@@ -347,12 +343,12 @@ final class PHTVEventContextBridgeService: NSObject {
         }
     }
 
-    @objc(shouldPrimeUppercaseOnKeyDownWithFlags:keyCode:keyCharacter:isNavigationKey:safeMode:uppercaseEnabled:uppercaseExcluded:)
+    @objc(shouldPrimeUppercaseOnKeyDownWithFlags:keyCode:keyCharacter:isNavigationKey:skipAccessibility:uppercaseEnabled:uppercaseExcluded:)
     class func shouldPrimeUppercaseOnKeyDown(withFlags flags: UInt64,
                                              keyCode: UInt16,
                                              keyCharacter: UInt16,
                                              isNavigationKey: Bool,
-                                             safeMode: Bool,
+                                             skipAccessibility: Bool,
                                              uppercaseEnabled: Int32,
                                              uppercaseExcluded: Int32) -> Bool {
         guard uppercaseEnabled != 0, uppercaseExcluded == 0 else {
@@ -372,7 +368,7 @@ final class PHTVEventContextBridgeService: NSObject {
             return false
         }
         return PHTVAccessibilityService.shouldPrimeUppercaseFromAX(
-            safeMode: safeMode,
+            skipAccessibility: skipAccessibility,
             uppercaseEnabled: uppercaseEnabled != 0,
             uppercaseExcluded: uppercaseExcluded != 0
         )

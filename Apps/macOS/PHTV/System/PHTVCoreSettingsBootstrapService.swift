@@ -27,6 +27,11 @@ final class PHTVCoreSettingsBootstrapService: NSObject {
 
         PHTVEngineRuntimeFacade.setOtherLanguageMode(Int32(defaults.integer(forKey: UserDefaultsKey.otherLanguage)))
         PHTVEngineRuntimeFacade.setTempOffEngine(Int32(defaults.integer(forKey: UserDefaultsKey.tempOffPHTV)))
-        PHTVEngineRuntimeFacade.setSafeMode(defaults.bool(forKey: UserDefaultsKey.safeMode))
+        // Retired settings must not disable Accessibility after an upgrade or restore.
+        removeRetiredAccessibilitySettings(from: defaults)
+    }
+    static func removeRetiredAccessibilitySettings(from defaults: UserDefaults) {
+        defaults.removeObject(forKey: "SafeMode")
+        defaults.removeObject(forKey: "AXTestInProgress")
     }
 }

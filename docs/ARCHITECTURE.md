@@ -86,7 +86,6 @@ Engine xử lý tiếng Việt viết bằng Swift. Nhận keycode và trả v�
 - `PHTVPermissionService.swift` — Kiểm tra AX trust và readiness của active event tap
 - `PHTVTCCMaintenanceService.swift` — Query/reset TCC entry, restart `tccd` khi cần
 - `PHTVTCCNotificationService.swift` — Lắng nghe thay đổi TCC và kích hoạt recovery
-- `PHTVSafeModeStartupService.swift` — Khởi động Safe Mode
 - `PHTVBinaryIntegrityService.swift` — Kiểm tra tính toàn vẹn binary
 - `PHTVCacheStateService.swift` — Cache state
 - `PHTVConvertToolTextConversionService.swift` — Convert bảng mã

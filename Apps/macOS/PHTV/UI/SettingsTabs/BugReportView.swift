@@ -759,7 +759,6 @@ struct BugReportView: View {
 
             ## 🔧 Advanced Settings
             - **Layout Compat:** \(appState.performLayoutCompat ? "✅" : "❌")
-            - **Safe Mode:** \(appState.safeMode ? "✅" : "❌")
             - **Send key step by step:** \(appState.sendKeyStepByStep ? "✅" : "❌")
             - **Auto restore word:** \(appState.autoRestoreEnglishWord ? "✅ (\(appState.autoRestoreEnglishWordMode.reportLabel))" : "❌")
             - **Restore on Escape:** \(appState.restoreOnEscape ? "✅" : "❌")

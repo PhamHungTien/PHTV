@@ -131,8 +131,8 @@ final class PHTVCacheStateService: NSObject {
 
     // MARK: - PID Cache
 
-    @objc(bundleIdFromPID:safeMode:)
-    class func bundleIdFromPID(_ pid: Int32, safeMode: Bool) -> String? {
+    @objc(bundleIdFromPID:skipAccessibility:)
+    class func bundleIdFromPID(_ pid: Int32, skipAccessibility: Bool) -> String? {
         guard pid > 0 else {
             return nil
         }
@@ -173,7 +173,7 @@ final class PHTVCacheStateService: NSObject {
             return bundleId.isEmpty ? nil : bundleId
         }
 
-        if safeMode {
+        if skipAccessibility {
             pidState.withLock { state in
                 state.pidBundleCache[pid] = pidCacheEmptyValue
             }

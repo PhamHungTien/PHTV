@@ -181,8 +181,7 @@ final class PHTVEngineDataBridge: NSObject {
         _ spotlightLike: Int32,
         backspaceCount: Int32,
         macroData: [UInt32],
-        codeTable: Int32,
-        safeMode: Bool
+        codeTable: Int32
     ) -> Bool {
         guard spotlightLike != 0 else {
             return false
@@ -197,8 +196,7 @@ final class PHTVEngineDataBridge: NSObject {
         return PHTVEventContextBridgeService.replaceFocusedTextViaAX(
             backspaceCount: backspaceCount,
             insertText: macroText,
-            verify: shouldVerify,
-            safeMode: safeMode
+            verify: shouldVerify
         )
     }
 }

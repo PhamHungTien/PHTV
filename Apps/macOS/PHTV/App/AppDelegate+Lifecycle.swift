@@ -240,7 +240,6 @@ func phtvIsRunningUnderXCTest() -> Bool {
         stopAccessibilityMonitoring()
         stopHealthCheckMonitoring()
 
-        PHTVManager.clearAXTestFlag()
 
         NotificationCenter.default.post(name: phtvNotificationApplicationWillTerminate, object: nil)
     }

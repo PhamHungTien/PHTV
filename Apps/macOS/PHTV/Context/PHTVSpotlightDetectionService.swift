@@ -202,7 +202,7 @@ final class PHTVSpotlightDetectionService: NSObject {
             return false
         }
 
-        let bundleId = PHTVCacheStateService.bundleIdFromPID(Int32(focusedPID), safeMode: false)
+        let bundleId = PHTVCacheStateService.bundleIdFromPID(Int32(focusedPID), skipAccessibility: false)
 
         if let bundleId, bundleId == Bundle.main.bundleIdentifier {
             PHTVCacheStateService.updateSpotlightCache(false, pid: Int32(focusedPID), bundleId: bundleId)

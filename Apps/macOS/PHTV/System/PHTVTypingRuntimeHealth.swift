@@ -54,7 +54,6 @@ struct PHTVTypingRuntimeHealthSnapshot: Equatable, Sendable {
     let axTrusted: Bool
     let eventTapReady: Bool
     let relaunchPending: Bool
-    let safeModeEnabled: Bool
     let activeAppProfile: PHTVActiveAppProfile
     let activeBundleId: String?
 
@@ -92,7 +91,6 @@ struct PHTVTypingRuntimeHealthSnapshot: Equatable, Sendable {
         axTrusted: Bool,
         eventTapReady: Bool,
         relaunchPending: Bool,
-        safeModeEnabled: Bool,
         activeAppProfile: PHTVActiveAppProfile,
         activeBundleId: String? = nil
     ) -> Self {
@@ -100,7 +98,6 @@ struct PHTVTypingRuntimeHealthSnapshot: Equatable, Sendable {
             axTrusted: axTrusted,
             eventTapReady: axTrusted && eventTapReady,
             relaunchPending: relaunchPending,
-            safeModeEnabled: safeModeEnabled,
             activeAppProfile: activeAppProfile,
             activeBundleId: activeBundleId
         )
@@ -112,7 +109,6 @@ enum PHTVTypingRuntimeStateMachine {
         axTrusted: Bool,
         eventTapReady: Bool,
         relaunchPending: Bool,
-        safeModeEnabled: Bool,
         activeAppProfile: PHTVActiveAppProfile,
         activeBundleId: String? = nil
     ) -> PHTVTypingRuntimeHealthSnapshot {
@@ -120,7 +116,6 @@ enum PHTVTypingRuntimeStateMachine {
             axTrusted: axTrusted,
             eventTapReady: eventTapReady,
             relaunchPending: relaunchPending,
-            safeModeEnabled: safeModeEnabled,
             activeAppProfile: activeAppProfile,
             activeBundleId: activeBundleId
         )

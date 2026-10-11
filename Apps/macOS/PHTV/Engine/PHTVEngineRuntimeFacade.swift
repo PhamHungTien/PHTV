@@ -166,7 +166,6 @@ private final class RuntimeSettingsStateBox: @unchecked Sendable {
     var emojiHotkeyKeyCode: Int32 = Int32(KeyCode.eKey)
     var showIconOnDock: Int32 = 0
     var performLayoutCompat: Int32 = 0
-    var safeMode: Int32 = 0
     var singleModifierSwitchKeys: Int32 = 0
     var switchKey2Status: Int32 = 0
 }
@@ -389,10 +388,6 @@ private var runtimePerformLayoutCompat: Int32 {
     set { withRuntimeSettings { $0.performLayoutCompat = newValue } }
 }
 
-private var runtimeSafeMode: Int32 {
-    get { withRuntimeSettings { $0.safeMode } }
-    set { withRuntimeSettings { $0.safeMode = newValue } }
-}
 private let macroCharacterToKeyState: [UInt16: UInt32] = {
     var mapping: [UInt16: UInt32] = [:]
     let capsMask = EngineBitMask.caps
@@ -942,7 +937,6 @@ func phtvRuntimeQuickEndConsonantEnabled() -> Int32 {
 struct PHTVEventDispatchSettings {
     let language: Int32
     let inputType: Int32
-    let safeMode: Bool
     let performLayoutCompat: Int32
     let switchKeyStatus: Int32
     let switchKey2Status: Int32
@@ -976,7 +970,6 @@ final class PHTVEngineRuntimeFacade: NSObject {
             PHTVEventDispatchSettings(
                 language: state.language,
                 inputType: state.inputType,
-                safeMode: state.safeMode != 0,
                 performLayoutCompat: state.performLayoutCompat,
                 switchKeyStatus: state.switchKeyStatus,
                 switchKey2Status: state.switchKey2Status,
@@ -1002,10 +995,6 @@ final class PHTVEngineRuntimeFacade: NSObject {
 
     @objc class func initializeAndGetKeyHookState() {
         phtvEngineInitialize()
-    }
-
-    class func safeModeEnabled() -> Bool {
-        runtimeSafeMode != 0
     }
 
     class func rememberCode() -> Int32 {
@@ -1349,10 +1338,6 @@ final class PHTVEngineRuntimeFacade: NSObject {
 
     class func setTempOffEngine(_ value: Int32) {
         runtimeTempOffEngine = value
-    }
-
-    class func setSafeMode(_ enabled: Bool) {
-        runtimeSafeMode = enabled ? 1 : 0
     }
 
     class func tempOffSpelling() -> Int32 {

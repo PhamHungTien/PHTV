@@ -36,7 +36,6 @@ enum PHTVTypingPermissionState: Equatable {
                 axTrusted: accessibilityTrusted,
                 eventTapReady: eventTapReady,
                 relaunchPending: false,
-                safeModeEnabled: false,
                 activeAppProfile: .generic
             )
         )
@@ -76,7 +75,6 @@ enum PHTVPermissionGuidanceStep: Equatable {
                 axTrusted: accessibilityTrusted,
                 eventTapReady: eventTapReady,
                 relaunchPending: false,
-                safeModeEnabled: false,
                 activeAppProfile: .generic
             )
         )
@@ -120,9 +118,6 @@ final class SystemState {
             }
         }
     }
-    var safeMode: Bool = false {
-        didSet { handleSystemSettingDidChange(oldValue: oldValue, newValue: safeMode) }
-    }
     var autoRestartOnSettingsClose: Bool = true {
         didSet {
             handleObservedChange(oldValue: oldValue, newValue: autoRestartOnSettingsClose) {
@@ -155,7 +150,6 @@ final class SystemState {
         axTrusted: false,
         eventTapReady: false,
         relaunchPending: false,
-        safeModeEnabled: false,
         activeAppProfile: .generic
     ) {
         didSet {
@@ -366,7 +360,6 @@ final class SystemState {
             forKey: UserDefaultsKey.settingsWindowAlwaysOnTop,
             default: Defaults.settingsWindowAlwaysOnTop
         )
-        safeMode = defaults.bool(forKey: UserDefaultsKey.safeMode, default: Defaults.safeMode)
         autoRestartOnSettingsClose = defaults.bool(
             forKey: UserDefaultsKey.autoRestartOnSettingsClose,
             default: Defaults.autoRestartOnSettingsClose
@@ -417,10 +410,6 @@ final class SystemState {
         defaults.set(performLayoutCompat, forKey: UserDefaultsKey.performLayoutCompat)
         defaults.set(showIconOnDock, forKey: UserDefaultsKey.showIconOnDock)
         defaults.set(settingsWindowAlwaysOnTop, forKey: UserDefaultsKey.settingsWindowAlwaysOnTop)
-
-        // Save safe mode and sync with backend
-        defaults.set(safeMode, forKey: UserDefaultsKey.safeMode)
-        PHTVManager.setSafeModeEnabled(safeMode)
 
         // Save Sparkle settings
         let autoChecks = updateCheckFrequency != .never
@@ -478,7 +467,6 @@ final class SystemState {
             axTrusted: accessibilityTrusted,
             eventTapReady: effectiveEventTapReady,
             relaunchPending: isRelaunchPending,
-            safeModeEnabled: safeMode,
             activeAppProfile: profile.kind,
             activeBundleId: activeBundleId
         )
@@ -663,7 +651,6 @@ final class SystemState {
         runOnStartup = Defaults.runOnStartup
         performLayoutCompat = Defaults.performLayoutCompat
         showIconOnDock = Defaults.showIconOnDock
-        safeMode = Defaults.safeMode
         settingsWindowAlwaysOnTop = Defaults.settingsWindowAlwaysOnTop
 
         let checkInterval = Defaults.updateCheckInterval

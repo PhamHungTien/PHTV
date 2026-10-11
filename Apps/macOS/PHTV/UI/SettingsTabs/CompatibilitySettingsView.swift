@@ -31,48 +31,6 @@ struct CompatibilitySettingsView: View {
                     )
                 }
 
-                // Safe Mode
-                SettingsCard(
-                    title: "Chế độ an toàn",
-                    subtitle: "Tự phục hồi khi API gặp lỗi",
-                    icon: "shield.lefthalf.filled"
-                ) {
-                    VStack(spacing: 0) {
-                        SettingsToggleRow(
-                            icon: "shield.fill",
-                            iconColor: .accentColor,
-                            title: "Bật chế độ an toàn",
-                            subtitle: "Tự phục hồi khi Accessibility API gặp lỗi",
-                            isOn: bindable.safeMode
-                        )
-
-                        if appState.safeMode {
-                            SettingsDivider()
-
-                            HStack(spacing: 14) {
-                                SettingsIconTile(color: .accentColor) {
-                                    Image(systemName: "info.circle.fill")
-                                        .font(.system(size: 16, weight: .medium))
-                                        .foregroundStyle(Color.accentColor)
-                                }
-
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text("Gợi ý cho máy Mac cũ")
-                                        .font(.caption)
-                                        .fontWeight(.medium)
-                                        .foregroundStyle(.primary)
-
-                                    Text("Khuyến nghị cho Mac chạy OpenCore Legacy Patcher (OCLP) hoặc gặp vấn đề ổn định với Accessibility API.")
-                                        .font(.caption2)
-                                        .foregroundStyle(.secondary)
-                                        .fixedSize(horizontal: false, vertical: true)
-                                }
-                            }
-                            .padding(.vertical, 6)
-                        }
-                    }
-                }
-
                 Spacer(minLength: SettingsLayout.sectionSpacing)
             }
             .settingsPageFrame()

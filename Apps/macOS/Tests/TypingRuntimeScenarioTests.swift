@@ -25,7 +25,6 @@ final class TypingRuntimeScenarioTests: XCTestCase {
                     axTrusted: false,
                         eventTapReady: false,
                     relaunchPending: false,
-                    safeModeEnabled: false,
                     activeAppProfile: .generic
                 ),
                 expectedPhase: .accessibilityRequired,
@@ -38,7 +37,6 @@ final class TypingRuntimeScenarioTests: XCTestCase {
                     axTrusted: true,
                         eventTapReady: false,
                     relaunchPending: true,
-                    safeModeEnabled: false,
                     activeAppProfile: .generic
                 ),
                 expectedPhase: .relaunchPending,
@@ -51,7 +49,6 @@ final class TypingRuntimeScenarioTests: XCTestCase {
                     axTrusted: true,
                         eventTapReady: false,
                     relaunchPending: false,
-                    safeModeEnabled: false,
                     activeAppProfile: .browser
                 ),
                 expectedPhase: .waitingForEventTap,
@@ -64,7 +61,6 @@ final class TypingRuntimeScenarioTests: XCTestCase {
                     axTrusted: true,
                         eventTapReady: true,
                     relaunchPending: false,
-                    safeModeEnabled: false,
                     activeAppProfile: .chat
                 ),
                 expectedPhase: .ready,
@@ -85,7 +81,6 @@ final class TypingRuntimeScenarioTests: XCTestCase {
             axTrusted: true,
             eventTapReady: false,
             relaunchPending: false,
-            safeModeEnabled: false,
             activeAppProfile: .generic
         )
 
@@ -103,7 +98,6 @@ final class TypingRuntimeScenarioTests: XCTestCase {
             axTrusted: true,
             eventTapReady: false,
             relaunchPending: true,
-            safeModeEnabled: false,
             activeAppProfile: .generic
         )
 
@@ -123,7 +117,6 @@ final class TypingRuntimeScenarioTests: XCTestCase {
             axTrusted: true,
             eventTapReady: false,
             relaunchPending: false,
-            safeModeEnabled: false,
             activeAppProfile: .browser
         )
 
@@ -135,14 +128,12 @@ final class TypingRuntimeScenarioTests: XCTestCase {
             axTrusted: false,
             eventTapReady: false,
             relaunchPending: false,
-            safeModeEnabled: false,
             activeAppProfile: .generic
         )
         let relaunchPending = PHTVTypingRuntimeStateMachine.snapshot(
             axTrusted: true,
             eventTapReady: false,
             relaunchPending: true,
-            safeModeEnabled: false,
             activeAppProfile: .generic
         )
 

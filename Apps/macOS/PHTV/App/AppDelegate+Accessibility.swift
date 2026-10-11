@@ -28,7 +28,6 @@ func phtvShouldRelaunchAfterAccessibilityGrant(
             axTrusted: axTrusted,
             eventTapReady: false,
             relaunchPending: isRelaunchAlreadyScheduled,
-            safeModeEnabled: false,
             activeAppProfile: .generic
         ),
         needsRelaunchAfterPermission: needsRelaunchAfterPermission,
@@ -46,7 +45,6 @@ func phtvShouldFallbackRelaunchAfterEventTapFailures(
             axTrusted: accessibilityTrusted,
             eventTapReady: false,
             relaunchPending: isRelaunchAlreadyScheduled,
-            safeModeEnabled: false,
             activeAppProfile: .generic
         ),
         needsRelaunchAfterPermission: needsRelaunchAfterPermission
@@ -61,7 +59,6 @@ func phtvShouldPerformInProcessRecovery(
             axTrusted: true,
             eventTapReady: false,
             relaunchPending: isRelaunchAlreadyScheduled,
-            safeModeEnabled: false,
             activeAppProfile: .generic
         )
     )
@@ -178,7 +175,6 @@ private nonisolated func phtvAttemptTCCRepairInBackground() async -> (fixed: Boo
             axTrusted: axTrusted,
             eventTapReady: effectiveEventTapReady,
             relaunchPending: isRelaunchingAfterPermissionGrant,
-            safeModeEnabled: PHTVManager.isSafeModeEnabled(),
             activeAppProfile: profile.kind,
             activeBundleId: activeBundleId
         )
@@ -202,13 +198,12 @@ private nonisolated func phtvAttemptTCCRepairInBackground() async -> (fixed: Boo
                 object: snapshot
             )
             NSLog(
-                "[Accessibility] Runtime health: phase=%@ profile=%@ ax=%@ tap=%@ relaunch=%@ safeMode=%@",
+                "[Accessibility] Runtime health: phase=%@ profile=%@ ax=%@ tap=%@ relaunch=%@",
                 snapshot.phase.rawValue,
                 snapshot.activeAppProfile.rawValue,
                 snapshot.axTrusted ? "YES" : "NO",
                 snapshot.eventTapReady ? "YES" : "NO",
-                snapshot.relaunchPending ? "YES" : "NO",
-                snapshot.safeModeEnabled ? "YES" : "NO"
+                snapshot.relaunchPending ? "YES" : "NO"
             )
         }
 

@@ -42,7 +42,7 @@ private final class PHTVSessionRequestState: @unchecked Sendable {
 
     private class func smartSwitchFocusedBundleId() -> String? {
         PHTVAppContextService.focusedBundleId(
-            forSafeMode: PHTVEngineRuntimeFacade.safeModeEnabled(),
+            skippingAccessibility: false,
             cacheDurationMs: smartSwitchSpotlightCacheDurationMs
         )
     }

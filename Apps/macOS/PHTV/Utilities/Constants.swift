@@ -99,7 +99,6 @@ enum UserDefaultsKey {
     static let performLayoutCompat = "vPerformLayoutCompat"
     static let showIconOnDock = "vShowIconOnDock"
     static let settingsWindowAlwaysOnTop = "vSettingsWindowAlwaysOnTop"
-    static let safeMode = "SafeMode"
     static let convertToolDontAlertWhenCompleted = "convertToolDontAlertWhenCompleted"
     static let convertToolHotKey = "convertToolHotKey"
     static let convertToolFromCode = "convertToolFromCode"
@@ -553,7 +552,6 @@ enum Defaults {
     static let performLayoutCompat = false
     static let showIconOnDock = false
     static let settingsWindowAlwaysOnTop = false
-    static let safeMode = false
     static let autoRestartOnSettingsClose = true
     /// macOS "add period with double-space" substitution. Off by default:
     /// while typing Vietnamese, two spaces should stay two spaces.
@@ -802,7 +800,6 @@ final class SettingsBootstrap: NSObject {
             UserDefaultsKey.showIconOnDock: Defaults.showIconOnDock,
             UserDefaultsKey.performLayoutCompat: Defaults.performLayoutCompat,
             UserDefaultsKey.settingsWindowAlwaysOnTop: Defaults.settingsWindowAlwaysOnTop,
-            UserDefaultsKey.safeMode: Defaults.safeMode,
             UserDefaultsKey.convertToolDontAlertWhenCompleted: Defaults.convertToolDontAlertWhenCompleted,
             UserDefaultsKey.convertToolFromCode: Defaults.convertToolFromCode,
             UserDefaultsKey.convertToolToCode: Defaults.convertToolToCode,

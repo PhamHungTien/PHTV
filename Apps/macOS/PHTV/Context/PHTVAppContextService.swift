@@ -141,17 +141,17 @@ final class PHTVAppContextService: NSObject {
         makeDefaultAppCharacteristics()
     }
 
-    @objc(spotlightActiveForSafeMode:)
-    class func spotlightActive(forSafeMode safeMode: Bool) -> Bool {
-        guard !safeMode else {
+    @objc(spotlightActiveSkippingAccessibility:)
+    class func spotlightActive(skippingAccessibility skipAccessibility: Bool) -> Bool {
+        guard !skipAccessibility else {
             return false
         }
         return PHTVSpotlightDetectionService.isSpotlightActive()
     }
 
-    @objc(bundleIdFromPID:safeMode:)
-    class func bundleId(fromPID pid: Int32, safeMode: Bool) -> String? {
-        PHTVCacheStateService.bundleIdFromPID(pid, safeMode: safeMode)
+    @objc(bundleIdFromPID:skipAccessibility:)
+    class func bundleId(fromPID pid: Int32, skipAccessibility: Bool) -> String? {
+        PHTVCacheStateService.bundleIdFromPID(pid, skipAccessibility: skipAccessibility)
     }
 
     @objc(shouldDisableVietnameseForBundleId:)
@@ -164,15 +164,15 @@ final class PHTVAppContextService: NSObject {
         PHTVAppDetectionService.needsNiceSpace(bundleId)
     }
 
-    @objc(focusedBundleIdForSafeMode:cacheDurationMs:)
-    class func focusedBundleId(forSafeMode safeMode: Bool, cacheDurationMs: UInt64) -> String? {
-        focusedBundleId(forSafeMode: safeMode, cacheDurationMs: cacheDurationMs, spotlightAlreadyChecked: false)
+    @objc(focusedBundleIdSkippingAccessibility:cacheDurationMs:)
+    class func focusedBundleId(skippingAccessibility skipAccessibility: Bool, cacheDurationMs: UInt64) -> String? {
+        focusedBundleId(skippingAccessibility: skipAccessibility, cacheDurationMs: cacheDurationMs, spotlightAlreadyChecked: false)
     }
 
-    private class func focusedBundleId(forSafeMode safeMode: Bool,
+    private class func focusedBundleId(skippingAccessibility skipAccessibility: Bool,
                                        cacheDurationMs: UInt64,
                                        spotlightAlreadyChecked: Bool) -> String? {
-        guard !safeMode else {
+        guard !skipAccessibility else {
             return frontmostBundleId
         }
 
@@ -235,15 +235,15 @@ final class PHTVAppContextService: NSObject {
         return box
     }
 
-    @objc(eventTargetContextForEventTargetPid:safeMode:spotlightCacheDurationMs:appCharacteristicsMaxAgeMs:)
+    @objc(eventTargetContextForEventTargetPid:skipAccessibility:spotlightCacheDurationMs:appCharacteristicsMaxAgeMs:)
     class func eventTargetContext(forEventTargetPid eventTargetPid: Int32,
-                                  safeMode: Bool,
+                                  skipAccessibility: Bool,
                                   spotlightCacheDurationMs: UInt64,
                                   appCharacteristicsMaxAgeMs: UInt64) -> PHTVEventTargetContextBox {
-        let eventTargetBundleId = eventTargetPid > 0 ? bundleId(fromPID: eventTargetPid, safeMode: safeMode) : nil
-        let spotlightActive = spotlightActive(forSafeMode: safeMode)
+        let eventTargetBundleId = eventTargetPid > 0 ? bundleId(fromPID: eventTargetPid, skipAccessibility: skipAccessibility) : nil
+        let spotlightActive = spotlightActive(skippingAccessibility: skipAccessibility)
         let focusedBundleId = focusedBundleId(
-            forSafeMode: safeMode,
+            skippingAccessibility: skipAccessibility,
             cacheDurationMs: spotlightCacheDurationMs,
             spotlightAlreadyChecked: true
         )
@@ -258,11 +258,11 @@ final class PHTVAppContextService: NSObject {
 
         let isTerminalApp = effectiveBundleId.map(PHTVAppDetectionService.isTerminalApp(_:)) ?? false
         let isJetBrainsApp = effectiveBundleId.map(PHTVAppDetectionService.isJetBrainsApp(_:)) ?? false
-        let isTerminalPanel = (!safeMode && !isTerminalApp)
+        let isTerminalPanel = (!skipAccessibility && !isTerminalApp)
             ? PHTVAccessibilityService.isTerminalPanelFocused()
             : false
         let canContainClaudeCodeSession = isTerminalApp || isTerminalPanel
-        let isClaudeCodeSession = (!safeMode && canContainClaudeCodeSession)
+        let isClaudeCodeSession = (!skipAccessibility && canContainClaudeCodeSession)
             ? PHTVAccessibilityService.isClaudeCodeSessionFocused()
             : false
         let compatibilityProfile = PHTVCompatibilityProfileResolver.resolve(

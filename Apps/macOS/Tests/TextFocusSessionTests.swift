@@ -42,7 +42,7 @@ final class TextFocusSessionTests: XCTestCase {
         for bundle in [nil, "com.apple.TextEdit", "com.apple.FinalCut.fake"] {
             XCTAssertFalse(PHTVTextFocusSessionService.isSupported(bundleId: bundle))
         }
-        let result = PHTVTextFocusSessionService.transition(bundleId: "com.apple.FinalCut", pid: 0, safeMode: true)
+        let result = PHTVTextFocusSessionService.transition(bundleId: "com.apple.FinalCut", pid: 0, skipAccessibility: true)
         XCTAssertFalse(result.reset)
         XCTAssertFalse(result.bypass)
     }

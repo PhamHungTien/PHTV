@@ -40,6 +40,14 @@ do {
     let intelSHA = try argument("--intel-sha256", arguments: arguments)
     var text = try String(contentsOfFile: path, encoding: .utf8)
 
+    // Homebrew verifies download URLs by default; the old verified keyword
+    // now emits a deprecation warning, including in legacy release branches.
+    text = try replacing(
+        text,
+        pattern: #"(?m)^([ \t]*url[ \t]+\"[^\"\r\n]+\"),[ \t]*(?:\r?\n[ \t]*)?verified:[ \t]*\"[^\"\r\n]+\""#,
+        template: "$1"
+    ).0
+
     let versionResult = try replacing(
         text,
         pattern: #"(?m)^(\s*)version\s+\"[^\"]+\"\s*$"#,

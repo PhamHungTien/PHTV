@@ -138,27 +138,4 @@ func phtvShouldTreatTCCEntryAsCorrupt(
         }
         return true
     }
-
-    @objc(phtv_isSafeModeEnabled)
-    class func phtv_isSafeModeEnabled() -> Bool {
-        PHTVEngineRuntimeFacade.safeModeEnabled()
-    }
-
-    @objc(phtv_setSafeModeEnabled:)
-    class func phtv_setSafeModeEnabled(_ enabled: Bool) {
-        PHTVEngineRuntimeFacade.setSafeMode(enabled)
-        UserDefaults.standard.set(enabled, forKey: "SafeMode")
-
-        if enabled {
-            NSLog("[SafeMode] ENABLED - Accessibility API calls will be skipped")
-        } else {
-            NSLog("[SafeMode] DISABLED - Normal Accessibility API calls")
-        }
-    }
-
-    @objc(phtv_clearAXTestFlag)
-    class func phtv_clearAXTestFlag() {
-        UserDefaults.standard.set(false, forKey: "AXTestInProgress")
-        NSLog("[SafeMode] Cleared AX test flag on normal termination")
-    }
 }

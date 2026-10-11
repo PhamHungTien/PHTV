@@ -18,7 +18,6 @@ final class PHTVEngineSessionService: NSObject {
 
     @objc class func boot() {
         PHTVCoreSettingsBootstrapService.loadFromUserDefaults()
-        PHTVSafeModeStartupService.recoverAndValidateAccessibilityState()
         PHTVLayoutCompatibilityService.autoEnableIfNeeded()
         PHTVKeyEventSenderService.initializeEventSource()
         PHTVEngineRuntimeFacade.initializeAndGetKeyHookState()
@@ -51,13 +50,12 @@ final class PHTVEngineSessionService: NSObject {
 
         let currentCodeTable = PHTVEngineRuntimeFacade.currentCodeTable()
         let frontmostBundleId = PHTVAppContextService.currentFrontmostBundleId()
-        let contextSafeMode =
-            PHTVEngineRuntimeFacade.safeModeEnabled() ||
+        let skipAccessibilityContext =
             PHTVAppDetectionService.prefersLowLatencyEventContext(frontmostBundleId)
         let sessionResetTransition = PHTVHotkeyService.sessionResetTransition(
             forCodeTable: currentCodeTable,
             allowUppercasePrime: allowUppercasePrime,
-            safeMode: contextSafeMode,
+            skipAccessibility: skipAccessibilityContext,
             uppercaseEnabled: PHTVEngineRuntimeFacade.upperCaseFirstChar(),
             // Session reset only primes the Vietnamese engine's auto-capitalize,
             // so resolve the exclusion for the Vietnamese side of the scope.

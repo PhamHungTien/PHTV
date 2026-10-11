@@ -309,21 +309,6 @@ import Foundation
         phtv_getApplicationSupportFolder()
     }
 
-    @objc(isSafeModeEnabled)
-    class func isSafeModeEnabled() -> Bool {
-        phtv_isSafeModeEnabled()
-    }
-
-    @objc(setSafeModeEnabled:)
-    class func setSafeModeEnabled(_ enabled: Bool) {
-        phtv_setSafeModeEnabled(enabled)
-    }
-
-    @objc(clearAXTestFlag)
-    class func clearAXTestFlag() {
-        phtv_clearAXTestFlag()
-    }
-
     @objc(getBinaryArchitectures)
     class func getBinaryArchitectures() -> String {
         phtv_getBinaryArchitectures()

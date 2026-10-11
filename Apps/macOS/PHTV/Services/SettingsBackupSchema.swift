@@ -27,6 +27,15 @@ enum SettingsBackupSchema {
         let registry = defaults
         var output: [String: Any] = [:]
         for (key, value) in settings {
+            // Older backups exported this preference. Accept its former
+            // boolean representation without restoring the retired mode.
+            if key == "SafeMode" {
+                switch value {
+                case .boolean: continue
+                case .integer(let v) where v == 0 || v == 1: continue
+                default: throw BackupError.invalid("sai kiểu dữ liệu: \(key)")
+                }
+            }
             guard let fallback = registry[key] else { throw BackupError.invalid("khóa cài đặt không hỗ trợ: \(key)") }
             let example = try AnyCodableValue(fallback)
             switch (example, value) {

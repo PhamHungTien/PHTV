@@ -177,11 +177,11 @@ final class PHTVAccessibilityService: NSObject {
         return lhs.decomposedStringWithCanonicalMapping == rhs.decomposedStringWithCanonicalMapping
     }
 
-    @objc(shouldPrimeUppercaseFromAXWithSafeMode:uppercaseEnabled:uppercaseExcluded:)
-    class func shouldPrimeUppercaseFromAX(safeMode: Bool,
+    @objc(shouldPrimeUppercaseFromAXSkippingAccessibility:uppercaseEnabled:uppercaseExcluded:)
+    class func shouldPrimeUppercaseFromAX(skipAccessibility: Bool,
                                           uppercaseEnabled: Bool,
                                           uppercaseExcluded: Bool) -> Bool {
-        guard uppercaseEnabled, !uppercaseExcluded, !safeMode else {
+        guard uppercaseEnabled, !uppercaseExcluded, !skipAccessibility else {
             return false
         }
 

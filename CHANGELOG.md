@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.6.5] - 2026-10-11
+
+### Fixed
+
+- Khôi phục nhận diện ô nhập Spotlight và thay thế ký tự qua Accessibility
+  khi cài đặt Safe Mode từ phiên bản cũ còn bật; tránh áp dụng cách gửi phím
+  của ứng dụng phía sau Spotlight, gây dư chữ như `dđi`, `choơi`, `voới`.
+- Sửa cảnh báo Homebrew về tham số `url verified:` đã lỗi thời. Script cập
+  nhật cask tự loại bỏ tham số này ở cả URL hiện tại và nhánh phiên bản cũ,
+  giữ nguyên việc kiểm tra SHA-256.
+
+### Removed
+
+- Gỡ Safe Mode khỏi cài đặt, tìm kiếm, báo cáo lỗi và trạng thái runtime.
+  Loại bỏ cơ chế tự bật chế độ này khi khởi động; dọn các khóa `SafeMode`
+  và `AXTestInProgress` cũ khi nạp cấu hình. Bản sao lưu cũ vẫn nhập được,
+  bỏ qua tùy chọn Safe Mode đã gỡ.
+- Giữ chính sách hạn chế truy vấn Accessibility riêng cho ứng dụng cần
+  độ trễ thấp, độc lập với tùy chọn Safe Mode đã gỡ.
+
+### Chất lượng
+
+- Toàn bộ 600 kiểm thử: 598 đạt, 2 bỏ qua, 0 lỗi; bổ sung kiểm thử dọn cấu
+  hình cũ và giữ nguyên các tùy chọn gõ khác.
+- Kiểm tra script cask với URL một dòng/nhiều dòng, cask hai kiến trúc và
+  cask cũ; xác nhận cú pháp Ruby và kết quả không đổi khi chạy lại.
+- Chưa xác nhận lại trên giao diện Spotlight ở máy của người báo lỗi.
+
 ## [3.6.4] - 2026-10-10
 
 ### Fixed
