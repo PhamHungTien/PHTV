@@ -55,7 +55,10 @@ changelog chuẩn bị release.
    commit notes làm nội dung chính.
 6. **Publish**: commit hai appcast và đồng bộ version/build mặc định của Xcode
    về `main`.
-7. **Homebrew**: cập nhật URL và SHA256 theo kiến trúc.
+7. **Homebrew**: PHTV được quản lý trong `Homebrew/homebrew-cask`. Homebrew
+   theo dõi tag GitHub chuẩn `vX.Y.Z` để cập nhật cask; kiểm tra phiên bản
+   trên `https://formulae.brew.sh/cask/phtv` sau phát hành. Workflow không còn
+   ghi vào tap cũ và không tự push vào repo Homebrew.
 
 Các GitHub Action được pin bằng commit SHA. Dependabot theo dõi phiên bản action;
 Sparkle được pin bằng exact version trong Xcode project và revision trong
@@ -69,10 +72,13 @@ Sparkle được pin bằng exact version trong Xcode project và revision trong
 - `APPLE_APP_SPECIFIC_PASSWORD`
 - `APPLE_TEAM_ID`
 - `SPARKLE_PRIVATE_KEY`
-- `TAP_REPO_TOKEN`
 
 Không in secret vào log. Certificate tạm phải nằm trong keychain riêng của job
 và luôn được xóa ở bước `if: always()`.
+
+`TAP_REPO_TOKEN` không còn được workflow sử dụng; có thể xoá secret này khỏi
+GitHub sau khi chuyển tap. Giữ repo tap cũ với `tap_migrations.json` để người
+dùng hiện tại tìm được cask chính thức.
 
 ## Xác minh sau phát hành
 

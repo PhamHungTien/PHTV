@@ -56,7 +56,7 @@ Engine gõ tiếng Việt chạy offline trên máy và không gửi nội dung 
 Khuyên dùng nếu bạn đã có Homebrew:
 
 ```bash
-brew install --cask phamhungtien/tap/phtv
+brew install --cask phtv
 ```
 
 Cập nhật thủ công khi cần:
@@ -76,6 +76,36 @@ Gỡ sạch cả cấu hình:
 ```bash
 brew uninstall --zap --cask phtv
 ```
+
+### Chuyển từ tap Homebrew cũ
+
+PHTV đã chuyển từ `phamhungtien/tap` sang `homebrew/cask` chính thức.
+Tap cũ giữ thông tin migration để Homebrew nhận ra đích mới khi cập nhật.
+
+```bash
+brew update
+brew info --cask phtv
+```
+
+Kiểm tra dòng `From` trỏ tới `Homebrew/homebrew-cask`. Nếu bản đã cài vẫn
+thuộc tap cũ, thoát PHTV rồi chuyển thủ công:
+
+```bash
+brew uninstall --cask phamhungtien/tap/phtv
+brew install --cask homebrew/cask/phtv
+```
+
+Không dùng `--zap` khi chuyển để giữ cấu hình, macro và dữ liệu PHTV.
+Sau khi cài thành công, có thể gỡ tap cũ nếu không dùng package khác trong tap:
+
+```bash
+brew untap phamhungtien/tap
+```
+
+Nếu macOS yêu cầu lại quyền sau khi thay ứng dụng, cấp quyền cho PHTV trong
+System Settings như hướng dẫn bên dưới. Nếu lệnh cài chưa tìm thấy cask mới,
+đợi API Homebrew cập nhật; không gỡ bản đang dùng trước khi kiểm tra được
+`brew info --cask homebrew/cask/phtv`.
 
 ### Tải DMG
 

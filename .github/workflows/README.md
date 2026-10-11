@@ -38,7 +38,9 @@ Luồng công việc:
 3. **release**: tạo GitHub Release với nội dung render từ đúng mục trong
    `CHANGELOG.md`;
 4. **publish_appcast**: commit hai feed đã ký về `main`;
-5. **update-homebrew**: cập nhật `Casks/phtv.rb` trong Homebrew tap.
+
+PHTV hiện được phân phối qua `Homebrew/homebrew-cask`. Homebrew theo dõi
+tag GitHub chuẩn để cập nhật cask; workflow release không còn ghi vào tap cũ.
 
 Hai kiến trúc dùng DMG và appcast riêng; đây không phải một Universal DMG.
 Nhánh build cho phép tối đa hai kiến trúc chạy đồng thời. Notarization dùng
@@ -56,7 +58,6 @@ local để kiểm tra link và quy chuẩn repository.
 - `APPLE_APP_SPECIFIC_PASSWORD`
 - `APPLE_TEAM_ID`
 - `SPARKLE_PRIVATE_KEY`
-- `TAP_REPO_TOKEN`
 
 `CERTIFICATES_P12` phải chứa **Developer ID Application**, không phải Apple
 Development. `APPLE_APP_SPECIFIC_PASSWORD` dùng để gửi notarization. Không in,

@@ -32,7 +32,7 @@
 
 ```bash
 # Cài đặt bằng Homebrew
-brew install --cask phamhungtien/tap/phtv
+brew install --cask phtv
 
 # Mở ứng dụng
 open /Applications/PHTV.app
@@ -178,8 +178,10 @@ hiện tại. Bảng cài đặt và hướng dẫn bên dưới mô tả giao d
 
 ### Homebrew (khuyên dùng)
 
+PHTV đã có trong [Homebrew Cask chính thức](https://formulae.brew.sh/cask/phtv), không cần thêm tap riêng.
+
 ```bash
-brew install --cask phamhungtien/tap/phtv
+brew install --cask phtv
 ```
 
 > **Tự động cập nhật**: Sau khi cài, PHTV sẽ tự động kiểm tra và thông báo khi có phiên bản mới. Không cần `brew upgrade` thủ công.
