@@ -188,7 +188,7 @@ brew install --cask phtv
 
 **Cập nhật thủ công qua Homebrew (nếu muốn):**
 ```bash
-brew upgrade --cask phtv
+brew upgrade --cask --greedy phtv
 ```
 
 **Gỡ cài đặt:**

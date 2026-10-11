@@ -112,7 +112,7 @@ Safe Mode giúp PHTV giảm phụ thuộc vào một số luồng Accessibility 
 PHTV dùng Sparkle để tự kiểm tra và thông báo khi có bản mới. Nếu cài bằng Homebrew, bạn cũng có thể chạy:
 
 ```bash
-brew upgrade --cask phtv
+brew upgrade --cask --greedy phtv
 ```
 
 ### 13. Gỡ sạch PHTV như thế nào?

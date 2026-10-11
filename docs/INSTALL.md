@@ -62,7 +62,7 @@ brew install --cask phtv
 Cập nhật thủ công khi cần:
 
 ```bash
-brew upgrade --cask phtv
+brew upgrade --cask --greedy phtv
 ```
 
 Gỡ cài đặt:
@@ -87,8 +87,9 @@ brew update
 brew info --cask phtv
 ```
 
-Kiểm tra dòng `From` trỏ tới `Homebrew/homebrew-cask`. Nếu bản đã cài vẫn
-thuộc tap cũ, thoát PHTV rồi chuyển thủ công:
+Dòng `From` trỏ tới `Homebrew/homebrew-cask` xác nhận cask chính thức có sẵn;
+không chứng minh nguồn của bản đã cài đã đổi. Nếu bạn cài từ tap cũ và chưa
+chuyển thủ công, thoát PHTV rồi thực hiện:
 
 ```bash
 brew uninstall --cask phamhungtien/tap/phtv

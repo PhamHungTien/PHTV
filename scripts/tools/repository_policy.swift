@@ -135,7 +135,6 @@ let executableAllowlist: Set<String> = [
     "scripts/tools/generate_dict_binary.swift",
     "scripts/tools/release_notes.swift",
     "scripts/tools/repository_policy.swift",
-    "scripts/tools/update_homebrew_cask.swift",
 ]
 let unexpectedExecutables = files(under: root).filter { url in
     let relativePath = url.path.replacingOccurrences(of: root.path + "/", with: "")
