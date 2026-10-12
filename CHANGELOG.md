@@ -1915,7 +1915,9 @@ Phạm Hùng Tiến
 - Macro (gõ tắt)
 - Hoàn toàn offline
 
-[Unreleased]: https://github.com/PhamHungTien/PHTV/compare/v3.6.4...HEAD
+[Unreleased]: https://github.com/PhamHungTien/PHTV/compare/v3.6.6...HEAD
+[3.6.6]: https://github.com/PhamHungTien/PHTV/compare/v3.6.5...v3.6.6
+[3.6.5]: https://github.com/PhamHungTien/PHTV/compare/v3.6.4...v3.6.5
 [3.6.4]: https://github.com/PhamHungTien/PHTV/compare/v3.6.3...v3.6.4
 [3.6.3]: https://github.com/PhamHungTien/PHTV/compare/v3.6.2...v3.6.3
 [3.5.4]: https://github.com/PhamHungTien/PHTV/compare/v3.5.3...v3.5.4
