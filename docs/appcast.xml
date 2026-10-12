@@ -7,6 +7,46 @@
         <language>vi</language>
         <!-- Most recent version first -->
         <item>
+            <title>3.6.6</title>
+            <pubDate>Mon, 12 Oct 2026 07:52:39 +0700</pubDate>
+            <sparkle:version>333</sparkle:version>
+            <sparkle:shortVersionString>3.6.6</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[
+                <h2>PHTV 3.6.6</h2>
+                <h3>Added</h3>
+                <ul>
+                <li>PHTV đã có trên Homebrew chính thức: cài bằng <code>brew install --cask phtv</code>. Người dùng tap cũ được chuyển sang <code>homebrew/cask</code> khi cập nhật Homebrew.</li>
+                <li>Thêm tùy chọn <strong>Bỏ qua nội dung nhạy cảm</strong> trong Clipboard, mặc định bật. Khi tắt, lịch sử lưu cả nội dung nhạy cảm/tạm thời có định dạng được hỗ trợ.</li>
+                </ul>
+                <h3>Changed</h3>
+                <ul>
+                <li>Tinh gọn Cài đặt theo giao diện macOS: onboarding dạng sheet, nút hệ thống, nền Liquid Glass phù hợp và hỗ trợ Reduce Transparency.</li>
+                <li>Giảm lớp nền và công việc dựng giao diện khi ẩn/hiện sidebar; nạp lười các phần thiết lập bộ gõ.</li>
+                <li>Thu gọn phụ âm tùy chỉnh và mô tả Clipboard; giữ đầy đủ thêm, xoá, khôi phục mặc định và kiểm tra dữ liệu đầu vào.</li>
+                <li>Đồng bộ cửa sổ Clipboard, PHTV Picker và chuyển đổi bảng mã; dùng biểu tượng hệ thống, segmented control native và nút đóng tròn.</li>
+                <li>Bổ sung menu ứng dụng và tinh gọn menu icon; truy cập đầy đủ cài đặt, công cụ, gõ tắt, hướng dẫn và báo lỗi. Giữ yêu cầu điều hướng khi Cài đặt chưa mở.</li>
+                <li>Lau bàn phím chỉ hiển thị hướng dẫn cấp quyền khi chưa đủ quyền nhập liệu.</li>
+                </ul>
+                <h3>Fixed</h3>
+                <ul>
+                <li>Khôi phục từ trước <code>@</code>, <code>#</code>, <code>$</code>, <code>%</code>, <code>^</code>, <code>&amp;</code>, <code>*</code>, tránh biến đổi tên trong địa chỉ email ở chế độ <strong>Không phải tiếng Việt</strong>.</li>
+                <li>Khôi phục chuỗi chữ–số không phải tiếng Việt khi tắt kiểm tra chính tả; giữ từ VNI hợp lệ có phím dấu đặt giữa từ.</li>
+                <li>Chặn khôi phục sai chính tả khi lịch sử phím không đủ để dựng lại nội dung, tránh xoá vượt phần chữ đang gõ.</li>
+                <li>Nhập JSON gõ tắt có BOM UTF-8, gồm cả định dạng danh sách cũ; xuất/nhập cấu hình giữ đúng lựa chọn lọc nội dung Clipboard.</li>
+                <li>Căn đều chiều rộng và hai mép của menu phương pháp gõ/bảng mã.</li>
+                <li>Sửa script kiểm tra khởi chạy ứng dụng.</li>
+                </ul>
+                <h3>Chất lượng</h3>
+                <ul>
+                <li>Kiểm tra 5.120 tổ hợp kiểu gõ, bảng mã, chính tả, phụ âm tùy chỉnh và dấu kết thúc; bổ sung ca xoá/gõ lại, Tab/Enter, gõ tắt và phụ âm nhanh.</li>
+                <li>Toàn bộ 618 kiểm thử: 616 đạt, 2 bỏ qua, không có lỗi.</li>
+                <li>Workflow phát hành giữ DMG riêng cho Apple Silicon/Intel, ký Developer ID, notarize/staple và appcast Sparkle; không còn cập nhật tap Homebrew cũ.</li>
+                </ul>
+            ]]></description>
+            <enclosure url="https://github.com/PhamHungTien/PHTV/releases/download/v3.6.6/PHTV-3.6.6-arm64.dmg" length="9989128" type="application/octet-stream" sparkle:edSignature="3S5i6WBibyyNYYUPznX2kuVfamjmCElnr+jVyjyrmWeQ1mqMsLd/balR2jQN1elv9zys/2Ki8q+lWHKIPVr8Ag=="/>
+        </item>
+        <item>
             <title>3.6.5</title>
             <pubDate>Sun, 11 Oct 2026 20:15:07 +0700</pubDate>
             <sparkle:version>332</sparkle:version>
@@ -906,14 +946,6 @@
             <sparkle:shortVersionString>3.3.8</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
             <enclosure url="https://github.com/PhamHungTien/PHTV/releases/download/v3.3.8/PHTV-3.3.8-arm64.dmg" length="8931761" type="application/octet-stream" sparkle:edSignature="t3bZpd9SVT28aDHTODPaCi+OQU6DPXNKzeAGJpe3kK/dLasZUqSkWz50oHdM02Gr2lMQefIe/aCWQcHsfOelBQ=="/>
-        </item>
-        <item>
-            <title>3.3.7</title>
-            <pubDate>Thu, 16 Jul 2026 19:17:12 +0700</pubDate>
-            <sparkle:version>303</sparkle:version>
-            <sparkle:shortVersionString>3.3.7</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <enclosure url="https://github.com/PhamHungTien/PHTV/releases/download/v3.3.7/PHTV-3.3.7-arm64.dmg" length="8922583" type="application/octet-stream" sparkle:edSignature="Rj9qkU5jEA/idu+cC0vYyH8vnkZiWuiYppORY2MAh6A2hwI3YbvLuvj69X/7+YSiAUVF2ddesNm42Rb+dwCnBQ=="/>
         </item>
         <item>
             <title>2.8.9</title>
