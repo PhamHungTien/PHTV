@@ -252,10 +252,12 @@ final class StatusBarMenuManager: NSObject, NSMenuDelegate {
         menu.addItem(.separator())
 
         let version = PHTVBuildInfo.displayVersion
-        menu.addItem(actionItem("Về PHTV v\(version)", image: "info.circle", sel: #selector(openAbout)))
-        menu.addItem(closureAction("Báo lỗi...", image: "ladybug") { self.openSettingsTab(.bugReport) })
-        menu.addItem(actionItem("Ủng hộ PHTV...", image: "heart", sel: #selector(openDonate)))
-        menu.addItem(actionItem("Kiểm tra cập nhật", image: "arrow.down.circle", sel: #selector(checkUpdates)))
+        let aboutItem = actionItem("Giới thiệu PHTV...", image: "info.circle", sel: #selector(openAbout))
+        aboutItem.toolTip = "PHTV \(version)"
+        menu.addItem(aboutItem)
+        menu.addItem(submenu("Hỗ trợ", image: "questionmark.circle", build: buildSupportMenu))
+
+        menu.addItem(.separator())
 
         let quitItem = NSMenuItem(title: "Thoát PHTV", action: #selector(quitApp), keyEquivalent: "q")
         quitItem.keyEquivalentModifierMask = .command
@@ -332,7 +334,7 @@ final class StatusBarMenuManager: NSObject, NSMenuDelegate {
         m.addItem(.separator())
 
         sectionHeader("Tùy chọn nhập", in: m)
-        m.addItem(closureToggle("Gõ nhanh (Quick Telex)", image: "hare", on: appState.quickTelex) {
+        m.addItem(closureToggle("Gõ nhanh Telex", image: "hare", on: appState.quickTelex) {
             AppState.shared.quickTelex.toggle()
         })
         m.addItem(closureToggle("Viết hoa đầu câu", image: "textformat.size.larger", on: appState.upperCaseFirstChar) {
@@ -371,7 +373,7 @@ final class StatusBarMenuManager: NSObject, NSMenuDelegate {
 
         m.addItem(.separator())
 
-        sectionHeader("Gõ tắt & Macro", in: m)
+        sectionHeader("Gõ tắt", in: m)
         m.addItem(closureToggle("Bật gõ tắt", image: "text.badge.plus", on: appState.useMacro) {
             AppState.shared.useMacro.toggle()
         })
@@ -385,11 +387,12 @@ final class StatusBarMenuManager: NSObject, NSMenuDelegate {
         m.addItem(.separator())
 
         sectionHeader("Clipboard", in: m)
-        m.addItem(closureAction("Mở Clipboard", image: "doc.on.clipboard.fill") {
-            ClipboardHistoryManager.shared.show()
-        })
         m.addItem(closureToggle("Ghi lại lịch sử", image: "clock.arrow.circlepath", on: appState.enableClipboardHistory) {
             AppState.shared.enableClipboardHistory.toggle()
+        })
+
+        m.addItem(closureToggle("Bỏ qua nội dung nhạy cảm", image: "lock.shield", on: appState.skipSensitiveClipboardContent) {
+            AppState.shared.skipSensitiveClipboardContent.toggle()
         })
 
         m.addItem(.separator())
@@ -492,6 +495,16 @@ final class StatusBarMenuManager: NSObject, NSMenuDelegate {
         }
 
         return m
+    }
+
+    private func buildSupportMenu() -> NSMenu {
+        let menu = NSMenu()
+        menu.addItem(actionItem("Hướng dẫn sử dụng", image: "book", sel: #selector(openHelp)))
+        menu.addItem(closureAction("Báo lỗi...", image: "ladybug") { self.openSettingsTab(.bugReport) })
+        menu.addItem(actionItem("Ủng hộ PHTV...", image: "heart", sel: #selector(openDonate)))
+        menu.addItem(.separator())
+        menu.addItem(actionItem("Kiểm tra cập nhật...", image: "arrow.down.circle", sel: #selector(checkUpdates)))
+        return menu
     }
 
     private func buildSettingsMenu() -> NSMenu {
@@ -598,6 +611,11 @@ final class StatusBarMenuManager: NSObject, NSMenuDelegate {
 
     @objc private func openDonate() {
         SettingsWindowOpener.requestDonatePopover()
+    }
+
+    @objc private func openHelp() {
+        guard let url = URL(string: "https://phamhungtien.com/PHTV/") else { return }
+        NSWorkspace.shared.open(url)
     }
 
     @objc private func checkUpdates() {

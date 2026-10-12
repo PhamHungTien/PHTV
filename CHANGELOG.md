@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Thu gọn menu icon: gom hỗ trợ, bỏ lối mở Clipboard trùng và thêm tùy chọn
+  lọc nhạy cảm; giữ đầy đủ lựa chọn bộ gõ và các trang cài đặt.
+
 - Thu gọn mô tả Clipboard và thêm tùy chọn bỏ qua nội dung nhạy cảm, mặc định bật;
   khi tắt, lưu cả nội dung nhạy cảm/tạm thời được hỗ trợ.
 
