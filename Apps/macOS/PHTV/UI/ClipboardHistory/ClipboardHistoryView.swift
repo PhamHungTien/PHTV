@@ -210,17 +210,10 @@ struct ClipboardHistoryView: View {
                         Image(systemName: "trash")
                             .font(.system(size: 12, weight: .medium))
                             .foregroundStyle(.secondary)
-                            .frame(width: 28, height: 28)
-                            .background {
-                                Circle()
-                                    .fill(Color.primary.opacity(colorScheme == .dark ? 0.1 : 0.06))
-                                    .overlay {
-                                        Circle()
-                                            .stroke(Color.primary.opacity(0.1), lineWidth: 1)
-                                    }
-                            }
+                            .frame(width: 12, height: 12)
                     }
-                    .buttonStyle(.plain)
+                    .adaptiveBorderedButtonStyle()
+                    .buttonBorderShape(.circle)
                     .help("Xoá tất cả (mục đã ghim được giữ lại)")
                 }
 
@@ -286,14 +279,7 @@ struct ClipboardHistoryView: View {
             .frame(height: 20)
         }
         .padding(8)
-        .background {
-            PHTVRoundedRect(cornerRadius: 8)
-                .fill(Color.primary.opacity(colorScheme == .dark ? 0.08 : 0.05))
-                .overlay(
-                    PHTVRoundedRect(cornerRadius: 8)
-                        .stroke(Color.primary.opacity(colorScheme == .dark ? 0.12 : 0.06), lineWidth: 1)
-                )
-        }
+        .background(.quaternary, in: RoundedRectangle(cornerRadius: 8))
         .padding(.horizontal, 12)
         .padding(.bottom, 8)
         .contentShape(Rectangle())
@@ -389,23 +375,14 @@ struct ClipboardHistoryView: View {
     @ViewBuilder
     private var clipboardBackground: some View {
         if #available(macOS 26.0, *), !reduceTransparency {
-            PHTVRoundedRect(cornerRadius: 16)
-                .fill(Color(NSColor.windowBackgroundColor).opacity(colorScheme == .dark ? 0.2 : 0.25))
-                .glassEffect(
-                    .regular,
-                    in: .rect(corners: .fixed(16), isUniform: true)
-                )
-                .overlay(
-                    PHTVRoundedRect(cornerRadius: 16)
-                        .stroke(Color.primary.opacity(colorScheme == .dark ? 0.12 : 0.06), lineWidth: 1)
-                )
+            Color.clear
+                .glassEffect(.regular, in: .rect(cornerRadius: 16))
+        } else if reduceTransparency {
+            RoundedRectangle(cornerRadius: 16)
+                .fill(Color(nsColor: .windowBackgroundColor))
         } else {
-            ZStack {
-                PHTVRoundedRect(cornerRadius: 16)
-                    .fill(Color(NSColor.windowBackgroundColor).opacity(0.85))
-                VisualEffectBlur(material: .hudWindow, blendingMode: .behindWindow)
-            }
-            .clipShape(PHTVRoundedRect(cornerRadius: 16))
+            RoundedRectangle(cornerRadius: 16)
+                .fill(.regularMaterial)
         }
     }
 

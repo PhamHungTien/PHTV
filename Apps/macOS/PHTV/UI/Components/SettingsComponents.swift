@@ -18,7 +18,7 @@ enum SettingsLayout {
     static let rowVerticalPadding: CGFloat = 7
     static let rowControlColumnWidth: CGFloat = 168
     static let toggleControlWidth: CGFloat = 54
-    static let defaultPickerWidth: CGFloat = 148
+    static let defaultPickerWidth: CGFloat = 168
     static let sidebarMinWidth: CGFloat = 200
     static let sidebarIdealWidth: CGFloat = 240
     static let sidebarMaxWidth: CGFloat = 300
@@ -47,7 +47,6 @@ struct SettingsCard<Content: View, Trailing: View>: View {
     let displaysSubtitle: Bool
     let trailing: Trailing
     let content: Content
-    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
 
     init(
         title: String,
@@ -73,7 +72,7 @@ struct SettingsCard<Content: View, Trailing: View>: View {
                 .padding(.horizontal, SettingsLayout.cardContentHorizontalPadding)
                 .padding(.vertical, SettingsLayout.cardContentVerticalPadding)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .settingsCardGlassSurface(reduceTransparency: reduceTransparency)
+                .settingsCardSurface()
         }
         .frame(maxWidth: SettingsLayout.contentMaxWidth, alignment: .leading)
     }
@@ -120,29 +119,19 @@ struct SettingsCard<Content: View, Trailing: View>: View {
     }
 }
 
-private struct SettingsCardGlassSurface: ViewModifier {
-    let reduceTransparency: Bool
-
-    @ViewBuilder
+private struct SettingsCardSurface: ViewModifier {
     func body(content: Content) -> some View {
-        if #available(macOS 26.0, *),
-           SettingsVisualEffects.enableGlassEffects,
-           !reduceTransparency {
-            content
-                .glassEffect(.regular, in: .rect(cornerRadius: SettingsLayout.cardCornerRadius))
-        } else {
-            content
-                .background {
-                    PHTVRoundedRect(cornerRadius: SettingsLayout.cardCornerRadius)
-                        .fill(Color(NSColor.controlBackgroundColor))
-                }
-        }
+        content
+            .background {
+                RoundedRectangle(cornerRadius: SettingsLayout.cardCornerRadius)
+                    .fill(Color.primary.opacity(0.035))
+            }
     }
 }
 
 private extension View {
-    func settingsCardGlassSurface(reduceTransparency: Bool) -> some View {
-        modifier(SettingsCardGlassSurface(reduceTransparency: reduceTransparency))
+    func settingsCardSurface() -> some View {
+        modifier(SettingsCardSurface())
     }
 }
 
@@ -180,8 +169,11 @@ struct SettingsPickerRow<SelectionValue: Hashable, PickerContent: View>: View {
                 pickerContent
             }
             .labelsHidden()
+            .pickerStyle(.menu)
             .controlSize(.small)
-            .frame(width: SettingsLayout.rowControlColumnWidth, alignment: .trailing)
+            .frame(maxWidth: .infinity)
+            .frame(width: controlWidth)
+            .frame(width: max(controlWidth, SettingsLayout.rowControlColumnWidth), alignment: .trailing)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.vertical, SettingsLayout.rowVerticalPadding)
@@ -281,7 +273,6 @@ struct SettingsDivider: View {
 
 struct StatusCard: View {
     let runtimeHealth: PHTVTypingRuntimeHealthSnapshot
-    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
 
     var body: some View {
         HStack(alignment: .center, spacing: 12) {
@@ -312,7 +303,7 @@ struct StatusCard: View {
         }
         .padding(.horizontal, SettingsLayout.cardContentHorizontalPadding)
         .padding(.vertical, SettingsLayout.cardContentVerticalPadding)
-        .settingsCardGlassSurface(reduceTransparency: reduceTransparency)
+        .settingsCardSurface()
         .frame(maxWidth: SettingsLayout.contentMaxWidth)
     }
 

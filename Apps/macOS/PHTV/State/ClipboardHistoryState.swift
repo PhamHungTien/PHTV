@@ -13,6 +13,9 @@ import Observation
 @MainActor
 @Observable
 final class ClipboardHistoryState {
+    var skipSensitiveClipboardContent: Bool = Defaults.skipSensitiveClipboardContent {
+        didSet { handleClipboardSettingDidChange(oldValue: oldValue, newValue: skipSensitiveClipboardContent) }
+    }
     var enableClipboardHistory: Bool = false {
         didSet { handleClipboardSettingDidChange(oldValue: oldValue, newValue: enableClipboardHistory) }
     }
@@ -76,6 +79,7 @@ final class ClipboardHistoryState {
     func loadSettings() {
         let defaults = UserDefaults.standard
 
+        skipSensitiveClipboardContent = defaults.bool(forKey: UserDefaultsKey.skipSensitiveClipboardContent, default: Defaults.skipSensitiveClipboardContent)
         enableClipboardHistory = defaults.bool(
             forKey: UserDefaultsKey.enableClipboardHistory,
             default: Defaults.enableClipboardHistory
@@ -123,6 +127,7 @@ final class ClipboardHistoryState {
         SettingsObserver.shared.suspendNotifications()
         let defaults = UserDefaults.standard
 
+        defaults.set(skipSensitiveClipboardContent, forKey: UserDefaultsKey.skipSensitiveClipboardContent)
         defaults.set(enableClipboardHistory, forKey: UserDefaultsKey.enableClipboardHistory)
         defaults.set(clipboardHotkeyModifiersRaw, forKey: UserDefaultsKey.clipboardHotkeyModifiers)
         defaults.set(Int(clipboardHotkeyKeyCode), forKey: UserDefaultsKey.clipboardHotkeyKeyCode)
@@ -144,6 +149,7 @@ final class ClipboardHistoryState {
         isLoadingSettings = true
         defer { isLoadingSettings = false }
 
+        skipSensitiveClipboardContent = Defaults.skipSensitiveClipboardContent
         enableClipboardHistory = Defaults.enableClipboardHistory
         clipboardHotkeyModifiersRaw = Int(Defaults.clipboardHotkeyModifiers)
         clipboardHotkeyKeyCode = Defaults.clipboardHotkeyKeyCode

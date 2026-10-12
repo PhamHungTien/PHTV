@@ -3,7 +3,7 @@
 //  PHTV
 //
 //  Legacy NSStatusItem implementation has been retired.
-//  Menu bar UI is now fully owned by SwiftUI MenuBarExtra, but some
+//  Menu bar UI is now owned by StatusBarMenuManager (NSStatusItem + NSMenu), but some
 //  Objective-C-era runtime paths still call these selectors to request a UI
 //  refresh after backend state changes.
 //  Created by Phạm Hùng Tiến on 2026.

@@ -292,6 +292,62 @@ final class ClipboardMonitorPrivacyTests: XCTestCase {
     }
 
     @MainActor
+    func testReenablingFilterDiscardsCaptureAlreadyInFlight() async {
+        let fixture = ClipboardMonitorFixture()
+        defer { fixture.close() }
+        fixture.skipSensitiveContent = false
+        fixture.monitor.startMonitoring()
+        fixture.copy("fixture")
+        fixture.monitor.checkForChanges()
+        await fulfillment(of: [fixture.started], timeout: 2)
+        fixture.skipSensitiveContent = true
+        await finishCapture(fixture)
+        XCTAssertTrue(fixture.stored.isEmpty)
+        XCTAssertEqual(fixture.discarded.ids.count, 1)
+    }
+
+    @MainActor
+    func testDisabledFilterCapturesEveryExcludedMarker() {
+        let pasteboard = NSPasteboard.withUniqueName()
+        defer { pasteboard.releaseGlobally() }
+        for marker in ClipboardHistoryPrivacyPolicy.excludedPasteboardTypes {
+            pasteboard.declareTypes([NSPasteboard.PasteboardType(marker), .string], owner: nil)
+            pasteboard.setData(Data(), forType: NSPasteboard.PasteboardType(marker))
+            pasteboard.setString("explicit opt-out fixture", forType: .string)
+            let request = ClipboardHistoryCaptureRequest(
+                itemID: UUID(), changeCount: pasteboard.changeCount,
+                sourceApp: "com.apple.Passwords", skipSensitiveContent: false
+            )
+            XCTAssertEqual(ClipboardHistoryPasteboardReader.read(pasteboard, request: request)?.payload.textContent,
+                           "explicit opt-out fixture", marker)
+        }
+    }
+
+    @MainActor
+    func testDisabledFilterCapturesDeclaredPasswordManagerSource() {
+        let pasteboard = NSPasteboard.withUniqueName()
+        defer { pasteboard.releaseGlobally() }
+        pasteboard.declareTypes([.string, ClipboardHistoryPrivacyPolicy.sourceType], owner: nil)
+        pasteboard.setString("fixture", forType: .string)
+        pasteboard.setString("com.bitwarden.desktop", forType: ClipboardHistoryPrivacyPolicy.sourceType)
+        let request = ClipboardHistoryCaptureRequest(
+            itemID: UUID(), changeCount: pasteboard.changeCount,
+            sourceApp: "com.example.browser", skipSensitiveContent: false
+        )
+        XCTAssertEqual(ClipboardHistoryPasteboardReader.read(pasteboard, request: request)?.sourceApp,
+                       "com.bitwarden.desktop")
+        XCTAssertNil(read(pasteboard))
+    }
+
+    func testPrivacyPreferenceIsPortableAndDefaultsToFiltering() throws {
+        XCTAssertEqual(SettingsBackupSchema.defaults[UserDefaultsKey.skipSensitiveClipboardContent] as? Bool, true)
+        let normalized = try SettingsBackupSchema.normalizedSettings([
+            UserDefaultsKey.skipSensitiveClipboardContent: .boolean(false)
+        ])
+        XCTAssertEqual(normalized[UserDefaultsKey.skipSensitiveClipboardContent] as? Bool, false)
+    }
+
+    @MainActor
     private func read(
         _ pasteboard: NSPasteboard,
         sourceApp: String? = "com.example.editor"
@@ -396,6 +452,7 @@ private final class ClipboardMonitorFixture {
     var timeoutCount = 0
     var isSuppressed = false
     var allowsCommit = true
+    var skipSensitiveContent = true
 
     lazy var monitor = makeMonitor()
 
@@ -411,7 +468,8 @@ private final class ClipboardMonitorFixture {
                 capture: { await worker.capture($0) },
                 discard: { discarded.append($0) },
                 store: { [unowned self] in stored.append($0) },
-                didTimeout: { [unowned self] in timeoutCount += 1 }
+                didTimeout: { [unowned self] in timeoutCount += 1 },
+                skipSensitiveContent: { [unowned self] in skipSensitiveContent }
             ),
             pollingInterval: nil,
             now: { [unowned self] in time }

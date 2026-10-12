@@ -14,61 +14,65 @@ struct PHTVCustomConsonantsEditor: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Chấp nhận thêm phụ âm đầu khi kiểm tra chính tả. Phụ âm tiếng Việt chuẩn luôn được giữ nguyên.")
-                .font(.callout)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-
+        VStack(alignment: .leading, spacing: 8) {
             if entries.isEmpty {
                 Text("Chưa có phụ âm bổ sung.")
                     .font(.callout)
                     .foregroundStyle(.secondary)
             } else {
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 76), spacing: 8)], alignment: .leading, spacing: 8) {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 56, maximum: 64), spacing: 6)], alignment: .leading, spacing: 6) {
                     ForEach(entries, id: \.self) { entry in
-                        HStack(spacing: 8) {
-                            Text(entry).font(.system(.body, design: .monospaced).weight(.semibold))
+                        HStack(spacing: 4) {
+                            Text(entry).font(.system(.callout, design: .monospaced).weight(.medium))
                             Spacer(minLength: 0)
                             Button {
                                 entries.removeAll { $0 == entry }
                             } label: {
-                                Image(systemName: "xmark.circle.fill").foregroundStyle(.secondary)
+                                Image(systemName: "xmark")
+                                    .font(.system(size: 9, weight: .semibold))
+                                    .foregroundStyle(.secondary)
+                                    .frame(width: 20, height: 20)
                             }
                             .buttonStyle(.plain)
                             .accessibilityLabel("Xoá phụ âm \(entry)")
                             .help("Xoá \(entry)")
                         }
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 7)
-                        .background(Color.accentColor.opacity(0.10), in: RoundedRectangle(cornerRadius: 8))
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 3)
+                        .background(Color.secondary.opacity(0.08), in: Capsule())
                     }
                 }
             }
 
             HStack(spacing: 8) {
-                TextField("Z hoặc DZ", text: $draft)
+                TextField("Z, DZ", text: $draft)
                     .textFieldStyle(.roundedBorder)
-                    .frame(width: 140)
+                    .frame(width: 96)
                     .focused($inputFocused)
                     .accessibilityLabel("Phụ âm mới, một hoặc hai chữ cái")
+                    .help("Nhập 1–2 chữ cái phụ âm không dấu. Không phân biệt hoa/thường.")
                     .onSubmit(addEntry)
                 Button(action: addEntry) { Label("Thêm", systemImage: "plus") }
                     .disabled(candidate == nil || validation != nil)
                 Spacer()
-                Button("Khôi phục mặc định") {
+                Button("Mặc định") {
                     entries = PHTVCustomConsonants.defaults
                     draft = ""
                 }
                 .disabled(entries == PHTVCustomConsonants.defaults)
                 .help("Khôi phục Z, F, W, J và DZ")
+                .accessibilityLabel("Khôi phục phụ âm mặc định")
             }
-            Text(validation ?? "Một hoặc hai chữ cái • Không phân biệt chữ hoa, chữ thường")
-                .font(.caption)
-                .foregroundStyle(validation == nil ? Color.secondary : Color.orange)
-                .fixedSize(horizontal: false, vertical: true)
+            .controlSize(.small)
+            if let validation {
+                Text(validation)
+                    .font(.caption)
+                    .foregroundStyle(.orange)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         }
-        .padding(.vertical, 12)
+        .padding(.top, 2)
+        .padding(.bottom, 8)
     }
 
     private func addEntry() {

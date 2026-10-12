@@ -93,7 +93,7 @@ do {
     case "verify":
         try run("/usr/bin/open", ["-n", appURL.path])
         for _ in 0..<5 {
-            if run("/usr/bin/pgrep", ["-x", "PHTV"], allowFailure: true) == 0 {
+            if try run("/usr/bin/pgrep", ["-x", "PHTV"], allowFailure: true) == 0 {
                 print("PHTV launched successfully.")
                 exit(0)
             }

@@ -21,22 +21,9 @@ struct SettingsWindowContent: View {
     @State private var windowLifecycleToken = UUID()
     @State private var showDonatePopover = false
 
-    @ViewBuilder
     var body: some View {
-        if #available(macOS 26.0, *) {
-            settingsWindowContent
-                .toolbar(removing: .title)
-                .toolbarBackgroundVisibility(.hidden, for: .windowToolbar)
-                .containerBackground(.thinMaterial, for: .window)
-                .toolbar { settingsToolbarContent }
-        } else if #available(macOS 15.0, *) {
-            settingsWindowContent
-                .toolbar(removing: .title)
-                .toolbar { settingsToolbarContent }
-        } else {
-            settingsWindowContent
-                .toolbar { settingsToolbarContent }
-        }
+        settingsWindowContent
+            .toolbar { settingsToolbarContent }
     }
 
     private var settingsWindowContent: some View {
@@ -48,6 +35,11 @@ struct SettingsWindowContent: View {
                 UpdateBannerView()
                     .zIndex(1000)
             }
+        }
+        .onChange(of: appState.donatePopoverRequested, initial: true) { _, requested in
+            guard requested else { return }
+            showDonatePopover = true
+            appState.donatePopoverRequested = false
         }
         .task {
             isClosingSettingsWindow = false
@@ -119,20 +111,20 @@ struct SettingsWindowContent: View {
     @ToolbarContentBuilder
     private var settingsToolbarContent: some ToolbarContent {
         if #available(macOS 26.0, *) {
-            ToolbarItem(placement: .primaryAction) {
+            ToolbarItem(placement: .navigation) {
                 pinToolbarButton
             }
+            .sharedBackgroundVisibility(.hidden)
 
-            ToolbarSpacer(.fixed, placement: .primaryAction)
-
-            ToolbarItemGroup(placement: .primaryAction) {
-                updateToolbarButton
+            ToolbarItem(placement: .primaryAction) {
                 donateToolbarButton
             }
+            .sharedBackgroundVisibility(.hidden)
         } else {
-            ToolbarItemGroup(placement: .primaryAction) {
+            ToolbarItem(placement: .navigation) {
                 pinToolbarButton
-                updateToolbarButton
+            }
+            ToolbarItem(placement: .primaryAction) {
                 donateToolbarButton
             }
         }
@@ -144,16 +136,9 @@ struct SettingsWindowContent: View {
         } label: {
             Image(systemName: appState.settingsWindowAlwaysOnTop ? "pin.fill" : "pin")
         }
+        .adaptiveBorderedButtonStyle()
+        .buttonBorderShape(.circle)
         .help(appState.settingsWindowAlwaysOnTop ? "Bỏ ghim cửa sổ Cài đặt" : "Ghim cửa sổ Cài đặt")
-    }
-
-    private var updateToolbarButton: some View {
-        Button {
-            NotificationCenter.default.post(name: NotificationName.sparkleManualCheck, object: nil)
-        } label: {
-            Image(systemName: "arrow.clockwise")
-        }
-        .help("Kiểm tra cập nhật")
     }
 
     private var donateToolbarButton: some View {
@@ -162,6 +147,8 @@ struct SettingsWindowContent: View {
         } label: {
             Image(systemName: "heart")
         }
+        .adaptiveBorderedButtonStyle()
+        .buttonBorderShape(.circle)
         .popover(isPresented: $showDonatePopover, arrowEdge: .bottom) {
             DonateQRPopoverView()
         }

@@ -59,12 +59,7 @@ struct PHTVApp: App {
                 )
         }
         .commands {
-            CommandGroup(replacing: .appSettings) {
-                SettingsLink {
-                    Text("Cài đặt PHTV...")
-                }
-                .keyboardShortcut(",", modifiers: .command)
-            }
+            PHTVCommands()
         }
     }
 }

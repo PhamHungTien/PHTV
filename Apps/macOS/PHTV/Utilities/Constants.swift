@@ -81,6 +81,7 @@ enum UserDefaultsKey {
     static let pauseKeyName = "vPauseKeyName"
 
     // MARK: - Clipboard History
+    static let skipSensitiveClipboardContent = "vSkipSensitiveClipboardContent"
     static let enableClipboardHistory = "vEnableClipboardHistory"
     static let clipboardHotkeyModifiers = "vClipboardHotkeyModifiers"
     static let clipboardHotkeyKeyCode = "vClipboardHotkeyKeyCode"
@@ -535,6 +536,7 @@ enum Defaults {
     static let pauseKeyName = "Option"
 
     // MARK: - Clipboard History
+    static let skipSensitiveClipboardContent = true
     static let enableClipboardHistory = false
     static let clipboardHotkeyModifiers = NSEvent.ModifierFlags.control.rawValue
     static let clipboardHotkeyKeyCode = KeyCode.vKey
@@ -804,6 +806,7 @@ final class SettingsBootstrap: NSObject {
             UserDefaultsKey.convertToolFromCode: Defaults.convertToolFromCode,
             UserDefaultsKey.convertToolToCode: Defaults.convertToolToCode,
             UserDefaultsKey.keyboardCleaningDuration: Defaults.keyboardCleaningDuration,
+            UserDefaultsKey.skipSensitiveClipboardContent: Defaults.skipSensitiveClipboardContent,
             UserDefaultsKey.enableClipboardHistory: Defaults.enableClipboardHistory,
             UserDefaultsKey.clipboardHotkeyModifiers: Int(Defaults.clipboardHotkeyModifiers),
             UserDefaultsKey.clipboardHotkeyKeyCode: Int(Defaults.clipboardHotkeyKeyCode),

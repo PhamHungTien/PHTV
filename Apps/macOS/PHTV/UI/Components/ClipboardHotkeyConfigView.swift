@@ -118,11 +118,6 @@ struct ClipboardHotkeyConfigView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.vertical, SettingsLayout.rowVerticalPadding)
 
-                Text("Mặc định: ⌃V. Bấm lại phím tắt hoặc Esc để đóng.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .padding(.top, -4)
-
                 Divider()
 
                 // Max items slider
@@ -163,6 +158,17 @@ struct ClipboardHotkeyConfigView: View {
 
                 Divider()
 
+                SettingsToggleRow(
+                    icon: "lock.shield",
+                    iconColor: .accentColor,
+                    title: "Bỏ qua nội dung nhạy cảm",
+                    subtitle: "",
+                    isOn: bindable.skipSensitiveClipboardContent
+                )
+                .help("Khi tắt, lưu cả nội dung nhạy cảm, tạm thời và nội dung từ trình quản lý mật khẩu.")
+
+                Divider()
+
                 // Retention window
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {
@@ -186,16 +192,11 @@ struct ClipboardHotkeyConfigView: View {
                         }
                         .labelsHidden()
                         .pickerStyle(.menu)
-                        .fixedSize()
+                        .frame(width: SettingsLayout.defaultPickerWidth)
+                        .help(retentionFootnote)
                     }
 
-                    Text(retentionFootnote)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
 
-                    Text("Bỏ qua nội dung được đánh dấu nhạy cảm hoặc tạm thời, cùng các password manager được nhận diện. Nội dung không có dấu hiệu này vẫn có thể được lưu.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
                 }
             }
         }

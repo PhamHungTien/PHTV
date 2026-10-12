@@ -39,7 +39,7 @@ private struct PerAppMemorySettingsCard: View {
             title: "Ghi nhớ theo ứng dụng",
             subtitle: "Khôi phục chế độ gõ và bảng mã đã dùng gần nhất",
             icon: "brain.fill",
-            displaysSubtitle: true
+            displaysSubtitle: false
         ) {
             VStack(spacing: 0) {
                 SettingsToggleRow(
@@ -75,7 +75,7 @@ private struct EnglishAppRulesSettingsCard: View {
             title: "Tiếng Anh theo ứng dụng",
             subtitle: "Tự chuyển hoặc khóa tiếng Anh riêng cho từng ứng dụng",
             icon: "e.circle.fill",
-            displaysSubtitle: true,
+            displaysSubtitle: false,
             trailing: {
                 AppSelectionAddMenu {
                     pickerDestination = $0
@@ -142,7 +142,7 @@ private struct StepByStepSettingsCard: View {
             title: "Gửi từng phím",
             subtitle: "Bật cho mọi ứng dụng hoặc tự động bật ở ứng dụng đã chọn",
             icon: "keyboard.badge.ellipsis",
-            displaysSubtitle: true,
+            displaysSubtitle: false,
             trailing: {
                 AppSelectionAddMenu {
                     pickerDestination = $0
@@ -221,7 +221,7 @@ private struct AdvancedCompatibilitySettingsCard: View {
             title: "Tương thích nâng cao",
             subtitle: "Hỗ trợ các bố cục bàn phím đặc biệt",
             icon: "puzzlepiece.extension.fill",
-            displaysSubtitle: true
+            displaysSubtitle: false
         ) {
             VStack(spacing: 0) {
                 SettingsToggleRow(

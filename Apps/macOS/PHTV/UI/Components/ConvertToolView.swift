@@ -169,7 +169,6 @@ struct ConvertToolView: View {
             toolbarView
                 .padding(.horizontal, 20)
                 .padding(.vertical, 8)
-                .background(Color(NSColor.windowBackgroundColor).opacity(0.4))
 
             Divider()
 
@@ -264,22 +263,15 @@ struct ConvertToolView: View {
                     .font(.headline)
                     .foregroundStyle(.primary)
 
-                Text("Chuyển đổi văn bản giữa các bảng mã tiếng Việt")
+                Text("Văn bản và Clipboard")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
 
             Spacer()
 
-            Button {
-                dismiss()
-            } label: {
-                Image(systemName: "xmark")
-                    .font(.system(size: 11, weight: .bold))
-            }
-            .buttonStyle(.plain)
-            .foregroundStyle(.secondary)
-            .padding(4)
+            GlassCloseButton(action: { dismiss() }, size: 32)
+                .help("Đóng (Esc)")
         }
         .padding(.horizontal, 20)
         .padding(.top, 12)
@@ -308,12 +300,13 @@ struct ConvertToolView: View {
                                     } else {
                                         Image(systemName: "sparkles")
                                     }
-                                    Text("Nhận diện (AI)")
+                                    Text("Nhận diện")
                                         .font(.system(size: 10, weight: .semibold))
                                 }
                             }
-                            .buttonStyle(.plain)
-                            .foregroundStyle(Color.accentColor)
+                            .adaptiveBorderedButtonStyle()
+                            .controlSize(.small)
+                            .help("Nhận diện bảng mã trên thiết bị")
                             .disabled(inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isDetectingAI)
                         }
                     }
@@ -339,14 +332,12 @@ struct ConvertToolView: View {
                     showResult = false
                 } label: {
                     Image(systemName: "arrow.left.arrow.right")
-                        .font(.system(size: 14, weight: .bold))
-                        .foregroundStyle(Color.accentColor)
-                        .frame(width: 28, height: 28)
-                        .background(Color(NSColor.controlBackgroundColor))
-                        .clipShape(Circle())
-                        .overlay(Circle().stroke(Color(NSColor.separatorColor), lineWidth: 1))
+                        .font(.system(size: 12, weight: .medium))
+                        .frame(width: 16, height: 16)
                 }
-                .buttonStyle(.plain)
+                .adaptiveBorderedButtonStyle()
+                .buttonBorderShape(.circle)
+                .help("Đổi chiều chuyển mã")
                 .padding(.top, 14)
                 
                 // Target Picker
@@ -371,7 +362,7 @@ struct ConvertToolView: View {
 
             // Quick Presets
             HStack(spacing: 8) {
-                Text("Gợi ý nhanh:")
+                Text("Nhanh:")
                     .font(.caption2)
                     .foregroundStyle(.secondary)
 
@@ -391,17 +382,9 @@ struct ConvertToolView: View {
             targetCodeTable = target
             showResult = false
         }
-        .font(.caption2.weight(.medium))
-        .padding(.horizontal, 8)
-        .padding(.vertical, 3)
-        .background(isSelected ? Color.accentColor.opacity(0.15) : Color.clear)
-        .foregroundStyle(isSelected ? Color.accentColor : .secondary)
-        .cornerRadius(4)
-        .overlay(
-            RoundedRectangle(cornerRadius: 4)
-                .stroke(isSelected ? Color.accentColor.opacity(0.4) : Color(NSColor.separatorColor), lineWidth: 1)
-        )
-        .buttonStyle(.plain)
+        .adaptiveBorderedButtonStyle()
+        .controlSize(.small)
+        .tint(isSelected ? .accentColor : .secondary)
     }
 
     // MARK: - Clipboard View (Dashboard Layout)
@@ -492,13 +475,12 @@ struct ConvertToolView: View {
             .background(Color(NSColor.controlBackgroundColor).opacity(0.4))
             .cornerRadius(12)
             .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color(NSColor.separatorColor), lineWidth: 1))
-            .settingsGlassEffect(cornerRadius: 12)
             
             // Clipboard Options Strip
             HStack(spacing: 20) {
                 // Dropdown for Case transformation
                 HStack(spacing: 6) {
-                    Text("Chuyển chữ:")
+                    Text("Kiểu chữ")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                     
@@ -587,7 +569,7 @@ struct ConvertToolView: View {
                             )
                         
                         if inputText.isEmpty {
-                            Text("Nhập hoặc dán văn bản tại đây...")
+                            Text("Nhập hoặc dán văn bản")
                                 .font(.body)
                                 .foregroundStyle(.tertiary)
                                 .padding(.horizontal, 10)
@@ -624,7 +606,7 @@ struct ConvertToolView: View {
                         }) {
                             HStack(spacing: 4) {
                                 Image(systemName: showCopiedMessage ? "checkmark.circle.fill" : "doc.on.doc")
-                                Text(showCopiedMessage ? "Đã copy" : "Sao chép")
+                                Text(showCopiedMessage ? "Đã sao chép" : "Sao chép")
                                     .font(.caption)
                             }
                         }
@@ -646,7 +628,7 @@ struct ConvertToolView: View {
                             .opacity(0.9)
                         
                         if convertedContent.isEmpty {
-                            Text("Kết quả chuyển đổi sẽ hiển thị tại đây...")
+                            Text("Kết quả")
                                 .font(.body)
                                 .foregroundStyle(.tertiary)
                                 .padding(.horizontal, 10)
@@ -668,7 +650,7 @@ struct ConvertToolView: View {
             HStack(spacing: 20) {
                 // Dropdown for Case transformation
                 HStack(spacing: 6) {
-                    Text("Chuyển chữ:")
+                    Text("Kiểu chữ")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                     
@@ -695,13 +677,7 @@ struct ConvertToolView: View {
                 Spacer()
                 
                 // Toggle for Live convert
-                Toggle(isOn: $liveConvert) {
-                    HStack(spacing: 4) {
-                        Image(systemName: "bolt.fill")
-                            .foregroundStyle(.yellow)
-                        Text("Chuyển đổi trực tiếp")
-                    }
-                }
+                Toggle("Chuyển trực tiếp", isOn: $liveConvert)
                 .toggleStyle(.switch)
                 .controlSize(.small)
             }
@@ -727,11 +703,7 @@ struct ConvertToolView: View {
                     .lineLimit(1)
                     .frame(maxWidth: 320, alignment: .trailing)
             } else if !isConverting && inputMode == .manual {
-                if inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                    Text("Chưa có nội dung để chuyển đổi")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                } else if sourceCodeTable == targetCodeTable {
+                if !inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, sourceCodeTable == targetCodeTable {
                     Text("Bảng mã nguồn và đích phải khác nhau")
                         .font(.caption)
                         .foregroundStyle(.orange)

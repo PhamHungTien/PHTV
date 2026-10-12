@@ -167,6 +167,11 @@ extension AppState {
 
     // MARK: Clipboard History State
 
+    var skipSensitiveClipboardContent: Bool {
+        get { trackedSubstate(clipboardHistoryState.skipSensitiveClipboardContent) }
+        set { clipboardHistoryState.skipSensitiveClipboardContent = newValue }
+    }
+
     var enableClipboardHistory: Bool {
         get { trackedSubstate(clipboardHistoryState.enableClipboardHistory) }
         set { clipboardHistoryState.enableClipboardHistory = newValue }

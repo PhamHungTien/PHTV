@@ -27,6 +27,11 @@ struct SettingsView: View {
 
     var body: some View {
         settingsSplitView
+            .onChange(of: appState.requestedSettingsTab, initial: true) { _, tab in
+                guard let tab else { return }
+                selectedTab = tab
+                appState.requestedSettingsTab = nil
+            }
             .onChange(of: appState.showIconOnDock) { _, newValue in
                 // When dock icon toggle is changed, update immediately and save
                 let appDelegate = AppDelegate.current()
@@ -85,12 +90,9 @@ struct SettingsView: View {
         NavigationSplitView {
             sidebarView
         } detail: {
-            ZStack {
-                settingsDetailExtensionBackground
-
-                detailView
-                    .environment(appState)
-            }
+            detailView
+                .environment(appState)
+                .navigationTitle(selectedTab.title)
             .frame(
                 minWidth: SettingsLayout.detailMinWidth,
                 minHeight: SettingsLayout.detailMinHeight
@@ -184,19 +186,6 @@ struct SettingsView: View {
             } else if selectedTab == .about {
                 AboutView()
             }
-        }
-        // Avoid forced teardown to reduce peak allocations on tab switch.
-        .transaction { transaction in
-            transaction.animation = nil
-        }
-    }
-
-    @ViewBuilder
-    private var settingsDetailExtensionBackground: some View {
-        if #available(macOS 26.0, *) {
-            Color(NSColor.windowBackgroundColor)
-                .backgroundExtensionEffect()
-                .ignoresSafeArea()
         }
     }
 

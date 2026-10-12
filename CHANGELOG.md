@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Thu gọn mô tả Clipboard và thêm tùy chọn bỏ qua nội dung nhạy cảm, mặc định bật;
+  khi tắt, lưu cả nội dung nhạy cảm/tạm thời được hỗ trợ.
+
+- Dùng sheet onboarding và các nút Liquid Glass native; giảm mô tả trùng lặp.
+- Giảm lớp glass ở nội dung Cài đặt và bỏ nền mở rộng không cần thiết khi
+  thay đổi sidebar; nạp lười các phần thiết lập bộ gõ.
+- Thu gọn phụ âm tùy chỉnh, giữ thêm/xoá/khôi phục và kiểm tra dữ liệu đầu vào.
+- Đồng bộ cửa sổ Clipboard và PHTV Picker với nền glass hệ thống, nút đóng
+  tròn và segmented control native; hỗ trợ Reduce Transparency.
+- Popover ủng hộ có QR lớn hơn, nền dễ quét, nút đóng tròn và liên kết PayPal.
+- Menu ứng dụng và menu icon truy cập các trang cài đặt, Picker, Clipboard,
+  chuyển mã, gõ tắt, báo lỗi và ủng hộ; giữ yêu cầu điều hướng khi Cài đặt
+  chưa mở. Toolbar tách nút ghim và ủng hộ; cập nhật nằm trong menu PHTV
+  và mục Hệ thống.
+- Bỏ thẻ quyền đã sẵn sàng trong Lau bàn phím; chỉ hướng dẫn khi thiếu quyền.
+- Thu gọn chuyển mã, dùng nút và biểu tượng hệ thống thay các lớp viền tự vẽ;
+  bỏ biểu tượng emoji trang trí trong bộ chọn mức độ báo lỗi.
+
+### Fixed
+
+- Sửa lỗi thiếu `try` trong script kiểm tra khởi chạy ứng dụng.
+
 ## [3.6.5] - 2026-10-11
 
 ### Fixed

@@ -10,16 +10,14 @@ import SwiftUI
 import Observation
 
 private enum OnboardingStyle {
-    static let cardCornerRadius: CGFloat = 26
-    static let cardWidth: CGFloat = 780
+    static let cardWidth: CGFloat = 740
     static let cardHeight: CGFloat = 560
-    static let containerWidth: CGFloat = 840
-    static let containerHeight: CGFloat = 620
     static let contentHorizontalPadding: CGFloat = 36
 }
 
 struct OnboardingView: View {
     @Environment(AppState.self) private var appState
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     var onDismiss: () -> Void
     @State private var currentStep: Int
 
@@ -58,7 +56,7 @@ struct OnboardingView: View {
     }
 
     private var stepTransition: AnyTransition {
-        .asymmetric(
+        reduceMotion ? .identity : .asymmetric(
             insertion: .move(edge: .trailing).combined(with: .opacity),
             removal: .move(edge: .leading).combined(with: .opacity)
         )
@@ -107,34 +105,34 @@ struct OnboardingView: View {
                 footer
             }
         }
-        .background(OnboardingCardBackground())
-        .padding(24)
         .frame(width: OnboardingStyle.cardWidth, height: OnboardingStyle.cardHeight)
-        .frame(width: OnboardingStyle.containerWidth, height: OnboardingStyle.containerHeight)
     }
 
     private var header: some View {
         HStack(spacing: 12) {
-            OnboardingAppBadge()
-
-            VStack(alignment: .leading, spacing: 1) {
-                Text("PHTV")
-                    .font(.system(size: 16, weight: .bold, design: .rounded))
-
-                Text("Thiết lập nhanh")
-                    .font(.system(size: 11, weight: .medium, design: .rounded))
-                    .foregroundColor(.secondary)
-            }
+            Text("Thiết lập PHTV")
+                .font(.headline)
 
             Spacer()
 
             VStack(alignment: .trailing, spacing: 5) {
                 Text(stepLabel)
-                    .font(.system(size: 11, weight: .medium, design: .rounded))
+                    .font(.system(size: 11, weight: .medium))
                     .foregroundColor(.secondary)
 
                 OnboardingProgressBar(currentStep: safeStep, totalSteps: totalSteps)
             }
+
+            Button { onDismiss() } label: {
+                Image(systemName: "xmark")
+                    .font(.system(size: 11, weight: .semibold))
+                    .frame(width: 16, height: 16)
+            }
+            .adaptiveBorderedButtonStyle()
+            .buttonBorderShape(.circle)
+            .keyboardShortcut(.cancelAction)
+            .help("Đóng thiết lập nhanh")
+            .accessibilityLabel("Đóng thiết lập nhanh")
         }
         .padding(.horizontal, 18)
         .padding(.top, 14)
@@ -151,7 +149,8 @@ struct OnboardingView: View {
                         goToPreviousStep()
                     }
                     .keyboardShortcut(.leftArrow, modifiers: [])
-                    .buttonStyle(OnboardingSecondaryButtonStyle())
+                    .adaptiveBorderedButtonStyle()
+                    .controlSize(.large)
                 } else {
                     Spacer().frame(width: 80)
                 }
@@ -167,7 +166,8 @@ struct OnboardingView: View {
                             .font(.system(size: 12, weight: .semibold))
                     }
                 }
-                .buttonStyle(OnboardingPrimaryButtonStyle())
+                .adaptiveProminentButtonStyle()
+                .controlSize(.large)
                 .keyboardShortcut(.defaultAction)
             }
             .padding(.horizontal, 18)
@@ -178,7 +178,7 @@ struct OnboardingView: View {
     private func goToPreviousStep() {
         let previousStep = max(currentStep - 1, 0)
         guard previousStep != currentStep else { return }
-        withAnimation(.easeInOut(duration: 0.25)) {
+        withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.2)) {
             currentStep = previousStep
         }
     }
@@ -186,7 +186,7 @@ struct OnboardingView: View {
     private func goToNextStep() {
         let nextStep = min(currentStep + 1, maxStep)
         guard nextStep != currentStep else { return }
-        withAnimation(.easeInOut(duration: 0.25)) {
+        withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.2)) {
             currentStep = nextStep
         }
     }
@@ -197,7 +197,7 @@ struct OnboardingView: View {
         Task { @MainActor in
             try? await Task.sleep(for: .seconds(1.2))
             guard currentStep == Self.permissionStepIndex else { return }
-            withAnimation(.easeInOut(duration: 0.25)) {
+            withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.2)) {
                 currentStep = Self.permissionStepIndex + 1
             }
         }
@@ -205,19 +205,6 @@ struct OnboardingView: View {
 }
 
 // MARK: - Visual Styles
-
-struct OnboardingCardBackground: View {
-    @Environment(\.colorScheme) private var colorScheme
-
-    var body: some View {
-        PHTVRoundedRect(cornerRadius: OnboardingStyle.cardCornerRadius, style: .continuous)
-            .fill(.regularMaterial)
-            .overlay(
-                PHTVRoundedRect(cornerRadius: OnboardingStyle.cardCornerRadius, style: .continuous)
-                    .stroke(Color.primary.opacity(colorScheme == .dark ? 0.15 : 0.1), lineWidth: 0.5)
-            )
-    }
-}
 
 struct OnboardingSurface: View {
     let cornerRadius: CGFloat
@@ -234,70 +221,18 @@ struct OnboardingSurface: View {
     }
 }
 
-struct OnboardingAppBadge: View {
-    @Environment(\.colorScheme) private var colorScheme
-
-    var body: some View {
-        let image = NSApp.applicationIconImage ?? NSImage()
-        Image(nsImage: image)
-            .resizable()
-            .aspectRatio(contentMode: .fit)
-            .frame(width: 36, height: 36)
-            .clipShape(PHTVRoundedRect(cornerRadius: 8, style: .continuous))
-    }
-}
-
 struct OnboardingProgressBar: View {
     let currentStep: Int
     let totalSteps: Int
 
     var body: some View {
-        HStack(spacing: 5) {
-            ForEach(0..<totalSteps, id: \.self) { index in
-                Capsule()
-                    .fill(index <= currentStep ? Color.accentColor : Color.gray.opacity(0.2))
-                    .frame(width: 20, height: 5)
-            }
-        }
-        .animation(.easeInOut(duration: 0.25), value: currentStep)
+        ProgressView(value: Double(currentStep + 1), total: Double(totalSteps))
+            .progressViewStyle(.linear)
+            .frame(width: 140)
+            .accessibilityLabel("Tiến trình thiết lập")
+            .accessibilityValue("Bước \(currentStep + 1) trên \(totalSteps)")
     }
-}
 
-struct OnboardingPrimaryButtonStyle: ButtonStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .font(.system(size: 13, weight: .semibold, design: .rounded))
-            .padding(.horizontal, 16)
-            .padding(.vertical, 9)
-            .foregroundColor(.white)
-            .background(Color.accentColor)
-            .clipShape(Capsule())
-            .opacity(configuration.isPressed ? 0.85 : 1.0)
-            .scaleEffect(configuration.isPressed ? 0.97 : 1.0)
-            .animation(.easeOut(duration: 0.15), value: configuration.isPressed)
-    }
-}
-
-struct OnboardingSecondaryButtonStyle: ButtonStyle {
-    @Environment(\.colorScheme) private var colorScheme
-
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .font(.system(size: 13, weight: .medium, design: .rounded))
-            .padding(.horizontal, 14)
-            .padding(.vertical, 8)
-            .foregroundColor(.secondary)
-            .background(
-                Capsule()
-                    .fill(Color(NSColor.controlBackgroundColor).opacity(colorScheme == .dark ? 0.5 : 0.8))
-            )
-            .overlay(
-                Capsule()
-                    .stroke(Color.primary.opacity(colorScheme == .dark ? 0.15 : 0.1), lineWidth: 0.5)
-            )
-            .scaleEffect(configuration.isPressed ? 0.97 : 1.0)
-            .animation(.easeOut(duration: 0.15), value: configuration.isPressed)
-    }
 }
 
 struct OnboardingStepHeader: View {
@@ -311,10 +246,10 @@ struct OnboardingStepHeader: View {
 
             VStack(alignment: .leading, spacing: 3) {
                 Text(title)
-                    .font(.system(size: 20, weight: .bold, design: .rounded))
+                    .font(.system(size: 20, weight: .bold))
 
                 Text(subtitle)
-                    .font(.system(size: 13, weight: .medium, design: .rounded))
+                    .font(.system(size: 13, weight: .medium))
                     .foregroundColor(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -349,38 +284,6 @@ struct OnboardingIconBadge: View {
 
 // MARK: - Reusable Components
 
-struct OnboardingHighlightCard: View {
-    let icon: String
-    let title: String
-    let subtitle: String
-    @Environment(\.colorScheme) private var colorScheme
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Image(systemName: icon)
-                .font(.system(size: 18, weight: .semibold))
-                .foregroundColor(.accentColor)
-                .frame(width: 28, height: 28)
-
-            Text(title)
-                .font(.system(size: 13, weight: .semibold, design: .rounded))
-
-            Text(subtitle)
-                .font(.system(size: 11, design: .rounded))
-                .foregroundColor(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-        .padding(12)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            OnboardingSurface(
-                cornerRadius: 12,
-                fillColor: Color(nsColor: .controlBackgroundColor),
-                strokeColor: Color.primary.opacity(colorScheme == .dark ? 0.12 : 0.08)
-            )
-        )
-    }
-}
 
 struct OptionCard: View {
     let title: String
@@ -400,10 +303,10 @@ struct OptionCard: View {
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title)
-                        .font(.system(size: 14, weight: .semibold, design: .rounded))
+                        .font(.system(size: 14, weight: .semibold))
 
                     Text(description)
-                        .font(.system(size: 12, design: .rounded))
+                        .font(.system(size: 12))
                         .foregroundColor(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -445,11 +348,11 @@ struct FeatureToggleRow: View {
             // Text content - fixed height for consistency
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(.system(size: 12, weight: .semibold, design: .rounded))
+                    .font(.system(size: 12, weight: .semibold))
                     .lineLimit(1)
 
                 Text(description)
-                    .font(.system(size: 10, design: .rounded))
+                    .font(.system(size: 10))
                     .foregroundColor(.secondary)
                     .lineLimit(2)
                     .fixedSize(horizontal: false, vertical: true)
@@ -486,10 +389,10 @@ struct OnboardingChecklistCard: View {
         VStack(alignment: .leading, spacing: 10) {
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(.system(size: 13, weight: .semibold, design: .rounded))
+                    .font(.system(size: 13, weight: .semibold))
 
                 Text(subtitle)
-                    .font(.system(size: 11, design: .rounded))
+                    .font(.system(size: 11))
                     .foregroundColor(.secondary)
             }
 
@@ -518,7 +421,7 @@ struct OnboardingChecklistItem: View {
                 .font(.system(size: 12))
                 .foregroundColor(.red)
             Text(text)
-                .font(.system(size: 11, design: .rounded))
+                .font(.system(size: 11))
         }
     }
 }
@@ -538,10 +441,10 @@ struct OnboardingStatusCard: View {
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(.system(size: 13, weight: .semibold, design: .rounded))
+                    .font(.system(size: 13, weight: .semibold))
 
                 Text(description)
-                    .font(.system(size: 11, design: .rounded))
+                    .font(.system(size: 11))
                     .foregroundColor(.secondary)
             }
 
@@ -565,7 +468,7 @@ struct OnboardingNumberedRow: View {
     var body: some View {
         HStack(alignment: .top, spacing: 8) {
             Text(number)
-                .font(.system(size: 11, weight: .bold, design: .rounded))
+                .font(.system(size: 11, weight: .bold))
                 .foregroundColor(.accentColor)
                 .frame(width: 16, height: 16)
                 .background(
@@ -574,7 +477,7 @@ struct OnboardingNumberedRow: View {
                 )
 
             Text(text)
-                .font(.system(size: 11, design: .rounded))
+                .font(.system(size: 11))
                 .foregroundColor(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
@@ -596,10 +499,10 @@ struct OnboardingPermissionStateRow: View {
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(.system(size: 12, weight: .semibold, design: .rounded))
+                    .font(.system(size: 12, weight: .semibold))
 
                 Text(detail)
-                    .font(.system(size: 10, design: .rounded))
+                    .font(.system(size: 10))
                     .foregroundColor(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -632,39 +535,14 @@ struct WelcomeStepView: View {
                     .frame(width: 80, height: 80)
 
                 Text("Chào mừng đến với PHTV")
-                    .font(.system(size: 26, weight: .bold, design: .rounded))
+                    .font(.system(size: 26, weight: .bold))
 
-                Text("Thiết lập nhanh trong chưa đầy 1 phút để tối ưu trải nghiệm gõ tiếng Việt mượt mà và ổn định.")
-                    .font(.system(size: 14, weight: .medium, design: .rounded))
+                Text("Chọn kiểu gõ và cấp quyền để bắt đầu.")
+                    .font(.system(size: 14, weight: .medium))
                     .multilineTextAlignment(.center)
                     .foregroundColor(.secondary)
                     .padding(.horizontal, 36)
             }
-
-            HStack(spacing: 10) {
-                OnboardingHighlightCard(
-                    icon: "bolt.fill",
-                    title: "Nhanh & chính xác",
-                    subtitle: "Tối ưu cho macOS"
-                )
-
-                OnboardingHighlightCard(
-                    icon: "sparkles",
-                    title: "Tuỳ biến linh hoạt",
-                    subtitle: "Điều chỉnh theo thói quen"
-                )
-
-                OnboardingHighlightCard(
-                    icon: "shield.fill",
-                    title: "Ổn định lâu dài",
-                    subtitle: "Giảm lỗi khi gõ"
-                )
-            }
-            .padding(.horizontal, 28)
-
-            Text("Bạn có thể thay đổi mọi thiết lập trong Cài đặt bất cứ lúc nào.")
-                .font(.system(size: 11, design: .rounded))
-                .foregroundColor(.secondary)
 
             Spacer()
         }
@@ -739,7 +617,7 @@ struct SystemSettingsStepView: View {
                     }
 
                     Text("Nhấn để phóng to")
-                        .font(.system(size: 12, design: .rounded))
+                        .font(.system(size: 12))
                         .foregroundColor(.secondary)
                 }
                 .frame(maxWidth: .infinity)
@@ -751,7 +629,8 @@ struct SystemSettingsStepView: View {
                     openURL(url)
                 }
             }
-            .buttonStyle(OnboardingPrimaryButtonStyle())
+            .adaptiveProminentButtonStyle()
+            .controlSize(.large)
 
             Spacer()
         }
@@ -800,7 +679,7 @@ struct InputMethodStepView: View {
             .padding(.horizontal, OnboardingStyle.contentHorizontalPadding)
 
             Text("Bạn có thể đổi lại kiểu gõ trong Cài đặt bất cứ lúc nào.")
-                .font(.system(size: 12, design: .rounded))
+                .font(.system(size: 12))
                 .foregroundColor(.secondary)
 
             Spacer()
@@ -874,7 +753,7 @@ struct BasicFeaturesStepView: View {
             }
 
             Text("Bạn có thể điều chỉnh thêm trong Cài đặt sau.")
-                .font(.system(size: 11, design: .rounded))
+                .font(.system(size: 11))
                 .foregroundColor(.secondary)
         }
     }
@@ -913,12 +792,13 @@ struct AccessibilityStepView: View {
                             forceOpenSystemSettings: true
                         )
                     }
-                    .buttonStyle(OnboardingPrimaryButtonStyle())
+                    .adaptiveProminentButtonStyle()
+                    .controlSize(.large)
                 }
 
                 if runtimeHealth.phase == .accessibilityRequired {
                     Text("Bạn có thể tiếp tục và cấp quyền sau — PHTV sẽ nhắc lại khi bộ gõ cần quyền.")
-                        .font(.system(size: 11, design: .rounded))
+                        .font(.system(size: 11))
                         .foregroundColor(.secondary)
                         .multilineTextAlignment(.center)
                 }
@@ -996,7 +876,7 @@ struct AccessibilityStepView: View {
     private func guidancePanel(title: String, rows: [String]) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             Text(title)
-                .font(.system(size: 14, weight: .semibold, design: .rounded))
+                .font(.system(size: 14, weight: .semibold))
 
             ForEach(Array(rows.enumerated()), id: \.offset) { index, row in
                 OnboardingNumberedRow(number: "\(index + 1)", text: row)
@@ -1038,6 +918,7 @@ struct AccessibilityStepView: View {
 }
 
 struct CompletionStepView: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     var onFinish: () -> Void
     @AppStorage(UserDefaultsKey.onboardingCompleted) private var hasCompletedOnboarding = false
     @State private var scale: CGFloat = 0.5
@@ -1059,7 +940,7 @@ struct CompletionStepView: View {
                     .opacity(opacity)
             }
             .task {
-                withAnimation(.spring(response: 0.5, dampingFraction: 0.65)) {
+                withAnimation(reduceMotion ? nil : .spring(response: 0.5, dampingFraction: 0.65)) {
                     scale = 1.0
                     opacity = 1.0
                 }
@@ -1067,10 +948,10 @@ struct CompletionStepView: View {
 
             VStack(spacing: 8) {
                 Text("Hoàn tất thiết lập")
-                    .font(.system(size: 24, weight: .bold, design: .rounded))
+                    .font(.system(size: 24, weight: .bold))
 
                 Text("PHTV đã sẵn sàng. Bạn có thể mở Cài đặt để tinh chỉnh thêm bất cứ lúc nào.")
-                    .font(.system(size: 14, weight: .medium, design: .rounded))
+                    .font(.system(size: 14, weight: .medium))
                     .multilineTextAlignment(.center)
                     .foregroundColor(.secondary)
             }
@@ -1083,10 +964,11 @@ struct CompletionStepView: View {
                 onFinish()
             }) {
                 Text("Bắt đầu sử dụng")
-                    .font(.system(size: 14, weight: .semibold, design: .rounded))
+                    .font(.system(size: 14, weight: .semibold))
                     .frame(width: 180)
             }
-            .buttonStyle(OnboardingPrimaryButtonStyle())
+            .adaptiveProminentButtonStyle()
+            .controlSize(.large)
             .padding(.bottom, 28)
         }
     }
@@ -1108,23 +990,12 @@ struct OnboardingContainer<Content: View>: View {
     }
 
     var body: some View {
-        ZStack {
-            content
-                .blur(radius: showOnboarding ? 6 : 0)
-                .disabled(showOnboarding)
-
-            if showOnboarding {
+        content
+            .sheet(isPresented: $showOnboarding) {
                 OnboardingView(
-                    onDismiss: {
-                        withAnimation {
-                            showOnboarding = false
-                        }
-                    },
+                    onDismiss: { showOnboarding = false },
                     initialStep: initialStep
                 )
-                .transition(.scale(scale: 0.98).combined(with: .opacity))
-                .zIndex(2000)
             }
-        }
     }
 }

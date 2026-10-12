@@ -241,6 +241,8 @@ final class StatusBarMenuManager: NSObject, NSMenuDelegate {
 
         menu.addItem(.separator())
 
+        menu.addItem(submenu("Các mục cài đặt", image: "slider.horizontal.3", build: buildSettingsMenu))
+
         let settingsItem = NSMenuItem(title: "Mở Cài đặt...", action: #selector(openSettings), keyEquivalent: ",")
         settingsItem.keyEquivalentModifierMask = .command
         settingsItem.target = self
@@ -251,6 +253,8 @@ final class StatusBarMenuManager: NSObject, NSMenuDelegate {
 
         let version = PHTVBuildInfo.displayVersion
         menu.addItem(actionItem("Về PHTV v\(version)", image: "info.circle", sel: #selector(openAbout)))
+        menu.addItem(closureAction("Báo lỗi...", image: "ladybug") { self.openSettingsTab(.bugReport) })
+        menu.addItem(actionItem("Ủng hộ PHTV...", image: "heart", sel: #selector(openDonate)))
         menu.addItem(actionItem("Kiểm tra cập nhật", image: "arrow.down.circle", sel: #selector(checkUpdates)))
 
         let quitItem = NSMenuItem(title: "Thoát PHTV", action: #selector(quitApp), keyEquivalent: "q")
@@ -462,6 +466,17 @@ final class StatusBarMenuManager: NSObject, NSMenuDelegate {
     private func buildCongCuMenu() -> NSMenu {
         let m = NSMenu()
 
+        m.addItem(closureAction("Mở PHTV Picker", image: "face.smiling") {
+            EmojiHotkeyBridge.openEmojiPicker()
+        })
+        m.addItem(closureAction("Mở Clipboard", image: "doc.on.clipboard") {
+            ClipboardHistoryManager.shared.show()
+        })
+        m.addItem(closureAction("Quản lý gõ tắt...", image: "text.badge.plus") {
+            self.openSettingsTab(.macro)
+        })
+        m.addItem(.separator())
+
         sectionHeader("Chuyển nhanh Clipboard", in: m)
         m.addItem(closureAction("TCVN3 → Unicode", image: "arrow.right") { self.quickConvert(from: 1, to: 0) })
         m.addItem(closureAction("VNI → Unicode", image: "arrow.right") { self.quickConvert(from: 2, to: 0) })
@@ -477,6 +492,20 @@ final class StatusBarMenuManager: NSObject, NSMenuDelegate {
         }
 
         return m
+    }
+
+    private func buildSettingsMenu() -> NSMenu {
+        let menu = NSMenu()
+        for (index, section) in SettingsTabSection.allCases.enumerated() {
+            if index > 0 { menu.addItem(.separator()) }
+            sectionHeader(section.title, in: menu)
+            for tab in section.tabs {
+                menu.addItem(closureAction(tab.title + "...", image: tab.iconName) {
+                    self.openSettingsTab(tab)
+                })
+            }
+        }
+        return menu
     }
 
     // MARK: - Item Factories
@@ -559,13 +588,16 @@ final class StatusBarMenuManager: NSObject, NSMenuDelegate {
         SettingsWindowOpener.requestOpenWindow()
     }
 
+    private func openSettingsTab(_ tab: SettingsTab) {
+        SettingsWindowOpener.requestOpenWindow(tab: tab)
+    }
+
     @objc private func openAbout() {
-        SettingsWindowOpener.requestOpenWindow()
-        Task { @MainActor in
-            try? await Task.sleep(for: .milliseconds(300))
-            guard !Task.isCancelled else { return }
-            NotificationCenter.default.post(name: NotificationName.showAboutTab, object: nil)
-        }
+        openSettingsTab(.about)
+    }
+
+    @objc private func openDonate() {
+        SettingsWindowOpener.requestDonatePopover()
     }
 
     @objc private func checkUpdates() {
@@ -583,21 +615,11 @@ final class StatusBarMenuManager: NSObject, NSMenuDelegate {
     }
 
     @objc private func openConvertTool() {
-        SettingsWindowOpener.requestOpenWindow()
-        Task { @MainActor in
-            try? await Task.sleep(for: .milliseconds(250))
-            guard !Task.isCancelled else { return }
-            NotificationCenter.default.post(name: NotificationName.showConvertToolSheet, object: nil)
-        }
+        SettingsWindowOpener.requestConvertTool()
     }
 
     @objc private func openKeyboardCleaning() {
-        SettingsWindowOpener.requestOpenWindow()
-        Task { @MainActor in
-            try? await Task.sleep(for: .milliseconds(250))
-            guard !Task.isCancelled else { return }
-            NotificationCenter.default.post(name: NotificationName.showKeyboardCleaningTab, object: nil)
-        }
+        openSettingsTab(.keyboardCleaning)
     }
 
     @objc private func stopKeyboardCleaning() {

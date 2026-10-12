@@ -25,7 +25,7 @@ struct ClipboardHistorySettingsView: View {
                     title: "Mục đã lưu",
                     subtitle: "Nội dung cố định được sắp xếp theo nhóm và không bị xoá cùng lịch sử.",
                     icon: "bookmark.fill",
-                    displaysSubtitle: true
+                    displaysSubtitle: false
                 ) {
                     VStack(alignment: .leading, spacing: 10) {
                         HStack(spacing: 10) {
@@ -39,11 +39,11 @@ struct ClipboardHistorySettingsView: View {
                             Button("Mở Mục đã lưu") {
                                 manager.show(section: .saved)
                             }
-                            .buttonStyle(.borderedProminent)
+                            .adaptiveProminentButtonStyle()
                         }
 
                         Label(
-                            "Dữ liệu được lưu cục bộ nhưng không được mã hoá. Không dùng cho mật khẩu, mã OTP hoặc khoá bí mật.",
+                            "Lưu cục bộ, không mã hoá.",
                             systemImage: "lock.open.trianglebadge.exclamationmark"
                         )
                         .font(.caption)

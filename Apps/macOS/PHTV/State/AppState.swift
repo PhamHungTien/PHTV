@@ -17,6 +17,11 @@ import ServiceManagement
 final class AppState {
     static let shared = AppState()
 
+    // Transient requests survive opening a Settings scene and are consumed by its views.
+    var requestedSettingsTab: SettingsTab?
+    var donatePopoverRequested = false
+    var convertToolRequested = false
+
     // MARK: - Sub-States (ViewModels)
 
     /// Input method and Vietnamese typing features

@@ -53,6 +53,11 @@ struct SystemSettingsView: View {
             .settingsPageFrame()
         }
         .settingsBackground()
+        .onChange(of: appState.convertToolRequested, initial: true) { _, requested in
+            guard requested else { return }
+            showingConvertTool = true
+            appState.convertToolRequested = false
+        }
         .sheet(isPresented: $showingConvertTool) {
             ConvertToolView()
         }

@@ -42,8 +42,12 @@ trong `PrivacyInfo.xcprivacy`.
 Lịch sử Clipboard mặc định tắt. PHTV chỉ theo dõi pasteboard khi người dùng bật
 tính năng này. Clipboard và macro không được tải lên máy chủ của PHTV.
 
-Khi bật lịch sử, PHTV bỏ qua nội dung có marker confidential/transient/generated
+Khi bật lịch sử và giữ bộ lọc mặc định, PHTV bỏ qua nội dung có marker confidential/transient/generated
 và các password manager được nhận diện từ ứng dụng foreground hoặc marker nguồn.
+Tùy chọn **Bỏ qua nội dung nhạy cảm** mặc định bật. Khi người dùng tắt,
+nội dung nhạy cảm, tạm thời và nội dung từ trình quản lý mật khẩu cũng được lưu
+nếu có định dạng được hỗ trợ; các giới hạn dung lượng vẫn áp dụng.
+
 Generation và metadata clipboard được kiểm tra lại trước khi lưu; kết quả capture
 bị hủy/quá hạn bị bỏ, cache tạm được dọn khi worker hoàn tất. Đây không phải bảo đảm
 nhận diện mọi bí mật: nội dung không được ứng dụng nguồn đánh dấu vẫn có thể được

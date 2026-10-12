@@ -91,7 +91,7 @@ enum SettingsWindowHelper {
 
     private static func restoreNativeSettingsChrome(for window: NSWindow) {
         window.styleMask.insert(.fullSizeContentView)
-        window.titleVisibility = .hidden
+        window.titleVisibility = .visible
         window.titlebarAppearsTransparent = true
 
         if #available(macOS 11.0, *) {

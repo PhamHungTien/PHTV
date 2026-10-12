@@ -219,7 +219,7 @@ struct BugReportView: View {
                 HStack(alignment: .top, spacing: 10) {
                     compactPicker(title: "Mức độ", selection: $bugSeverity) {
                         ForEach(BugSeverity.allCases) { severity in
-                            Text("\(severity.badge) \(severity.displayName)").tag(severity)
+                            Text(severity.displayName).tag(severity)
                         }
                     }
 

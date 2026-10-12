@@ -18,7 +18,7 @@ struct TypingSettingsView: View {
 
     var body: some View {
         ScrollView {
-            VStack(spacing: SettingsLayout.sectionSpacing) {
+            LazyVStack(spacing: SettingsLayout.sectionSpacing) {
                 // Status Card (only show when permission is missing)
                 if !appState.isTypingPermissionReady {
                     StatusCard(runtimeHealth: appState.typingRuntimeHealth)

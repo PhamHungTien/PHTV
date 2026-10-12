@@ -22,7 +22,9 @@ struct KeyboardCleaningSettingsView: View {
             LazyVStack(spacing: SettingsLayout.sectionSpacing) {
                 cleaningSection
                 durationSection
-                permissionSection
+                if !appState.systemState.isTypingPermissionReady {
+                    permissionSection
+                }
 
                 Spacer(minLength: SettingsLayout.sectionSpacing)
             }
@@ -85,7 +87,7 @@ struct KeyboardCleaningSettingsView: View {
                     } label: {
                         Label("Bắt đầu", systemImage: "play.fill")
                     }
-                    .buttonStyle(.borderedProminent)
+                    .adaptiveProminentButtonStyle()
                     .disabled(!canStartCleaning)
 
                     Button {
@@ -93,7 +95,7 @@ struct KeyboardCleaningSettingsView: View {
                     } label: {
                         Label("Dừng", systemImage: "stop.fill")
                     }
-                    .buttonStyle(.bordered)
+                    .adaptiveBorderedButtonStyle()
                     .disabled(!snapshot.isActive)
                 }
             }
@@ -144,7 +146,7 @@ struct KeyboardCleaningSettingsView: View {
                     } label: {
                         Label("Cấp quyền nhập liệu", systemImage: "arrow.up.forward.app")
                     }
-                    .buttonStyle(.bordered)
+                    .adaptiveBorderedButtonStyle()
                 }
             }
             .padding(.vertical, 3)

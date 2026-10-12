@@ -84,8 +84,10 @@ enum ClipboardHistoryPrivacyPolicy {
     static func shouldCaptureContent(
         from bundleIdentifier: String?,
         pasteboardTypes: Set<String> = [],
-        declaredSource: String? = nil
+        declaredSource: String? = nil,
+        skipSensitiveContent: Bool = true
     ) -> Bool {
+        guard skipSensitiveContent else { return true }
         guard excludedPasteboardTypes.isDisjoint(with: pasteboardTypes) else { return false }
         return [bundleIdentifier, declaredSource].allSatisfy { source in
             guard let source, !source.isEmpty else { return true }
@@ -98,6 +100,7 @@ struct ClipboardHistoryCaptureRequest: Sendable {
     let itemID: UUID
     let changeCount: Int
     let sourceApp: String?
+    var skipSensitiveContent: Bool = true
 }
 
 struct ClipboardHistoryPasteboardSnapshot: Sendable {
@@ -110,12 +113,12 @@ struct ClipboardHistoryPasteboardSnapshot: Sendable {
 enum ClipboardHistoryPasteboardReader {
     /// Re-read only metadata before committing. A data provider can add types
     /// while fulfilling content, so a stable changeCount alone is insufficient.
-    static func hasEligibleTypes(_ pasteboard: NSPasteboard, sourceApp: String?) -> Bool {
+    static func hasEligibleTypes(_ pasteboard: NSPasteboard, sourceApp: String?, skipSensitiveContent: Bool = true) -> Bool {
         let types = Set(
             ((pasteboard.types ?? []) + (pasteboard.pasteboardItems ?? []).flatMap(\.types))
                 .map(\.rawValue)
         )
-        return ClipboardHistoryPrivacyPolicy.shouldCaptureContent(from: sourceApp, pasteboardTypes: types)
+        return ClipboardHistoryPrivacyPolicy.shouldCaptureContent(from: sourceApp, pasteboardTypes: types, skipSensitiveContent: skipSensitiveContent)
     }
 
     static func read(
@@ -132,12 +135,12 @@ enum ClipboardHistoryPasteboardReader {
                 .map(\.rawValue)
         )
         guard isCurrent(), ClipboardHistoryPrivacyPolicy.shouldCaptureContent(
-            from: request.sourceApp, pasteboardTypes: types
+            from: request.sourceApp, pasteboardTypes: types, skipSensitiveContent: request.skipSensitiveContent
         ) else { return nil }
 
         let declaredSource = pasteboard.string(forType: ClipboardHistoryPrivacyPolicy.sourceType)
         guard isCurrent(), ClipboardHistoryPrivacyPolicy.shouldCaptureContent(
-            from: request.sourceApp, pasteboardTypes: types, declaredSource: declaredSource
+            from: request.sourceApp, pasteboardTypes: types, declaredSource: declaredSource, skipSensitiveContent: request.skipSensitiveContent
         ) else { return nil }
 
         let textContent = pasteboard.string(forType: .string)
@@ -155,7 +158,7 @@ enum ClipboardHistoryPasteboardReader {
         let urls = pasteboard.readObjects(forClasses: [NSURL.self], options: [
             .urlReadingFileURLsOnly: true
         ]) as? [URL]
-        guard isCurrent(), hasEligibleTypes(pasteboard, sourceApp: request.sourceApp),
+        guard isCurrent(), hasEligibleTypes(pasteboard, sourceApp: request.sourceApp, skipSensitiveContent: request.skipSensitiveContent),
               let payload = ClipboardHistoryCaptureSanitizer.sanitizedPayload(
             textContent: textContent,
             imageData: imageData,
@@ -181,6 +184,7 @@ final class ClipboardMonitor {
         var discard: @Sendable (UUID) -> Void
         var store: @MainActor (ClipboardHistoryItem) -> Void
         var didTimeout: @MainActor () -> Void = {}
+        var skipSensitiveContent: @MainActor () -> Bool = { true }
     }
 
     static let shared = ClipboardMonitor(dependencies: Dependencies(
@@ -191,14 +195,15 @@ final class ClipboardMonitor {
                 PHTVTransientTextInsertionService.isPasteboardMutationActive
         },
         canCommit: { request in
-            ClipboardHistoryPasteboardReader.hasEligibleTypes(NSPasteboard.general, sourceApp: request.sourceApp)
+            ClipboardHistoryPasteboardReader.hasEligibleTypes(NSPasteboard.general, sourceApp: request.sourceApp, skipSensitiveContent: request.skipSensitiveContent)
         },
         capture: { request in captureCurrentPasteboard(request: request) },
         discard: { ClipboardHistoryFileCache.removeCache(for: $0) },
         store: { ClipboardHistoryManager.shared.addItem($0) },
         didTimeout: {
             PHTVLogger.shared.warning("[ClipboardHistory] Capture timed out; waiting for its worker before retrying")
-        }
+        },
+        skipSensitiveContent: { AppState.shared.skipSensitiveClipboardContent }
     ))
 
     private var monitoringTask: Task<Void, Never>?
@@ -276,12 +281,13 @@ final class ClipboardMonitor {
         guard !dependencies.isCaptureSuppressed() else { return }
 
         let sourceApp = dependencies.sourceApp()
-        guard ClipboardHistoryPrivacyPolicy.shouldCaptureContent(from: sourceApp) else {
+        guard ClipboardHistoryPrivacyPolicy.shouldCaptureContent(from: sourceApp, skipSensitiveContent: dependencies.skipSensitiveContent()) else {
             return
         }
 
         startCapture(ClipboardHistoryCaptureRequest(
-            itemID: UUID(), changeCount: currentCount, sourceApp: sourceApp
+            itemID: UUID(), changeCount: currentCount, sourceApp: sourceApp,
+            skipSensitiveContent: dependencies.skipSensitiveContent()
         ))
     }
 
@@ -316,6 +322,7 @@ final class ClipboardMonitor {
         invalidateTimedOutCapture(at: now())
         guard activeCapture?.itemID == request.itemID, !captureInvalidated,
               isMonitoring, !Task.isCancelled,
+              request.skipSensitiveContent == dependencies.skipSensitiveContent(),
               now() - captureStartedAt < captureTimeoutSeconds,
               dependencies.changeCount() == request.changeCount,
               !dependencies.isCaptureSuppressed(), dependencies.canCommit(request),

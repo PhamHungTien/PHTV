@@ -264,24 +264,15 @@ enum SettingsVisualEffects {
 
 /// Applies consistent background for settings views
 struct SettingsViewBackground: ViewModifier {
-    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
-
     @ViewBuilder
     func body(content: Content) -> some View {
         if #available(macOS 26.0, *) {
-            if SettingsVisualEffects.enableGlassEffects, !reduceTransparency {
-                GlassEffectContainer(spacing: SettingsLayout.sectionSpacing) {
-                    content
-                        .scrollEdgeEffectStyle(.soft, for: .top)
-                }
-            } else {
-                content
-                    .scrollEdgeEffectStyle(.soft, for: .top)
-            }
+            content.scrollEdgeEffectStyle(.soft, for: .top)
         } else {
             content
         }
     }
+
 }
 
 extension View {
@@ -401,7 +392,6 @@ struct FloatingGlassCard<Content: View>: View {
     let content: Content
 
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
-    @Environment(\.colorScheme) private var colorScheme
 
     init(
         cornerRadius: CGFloat = 16,
@@ -414,24 +404,17 @@ struct FloatingGlassCard<Content: View>: View {
     var body: some View {
         content
             .background {
-                if #available(macOS 26.0, *),
-                   SettingsVisualEffects.enableGlassEffects,
-                   !reduceTransparency {
-                    PHTVRoundedRect(cornerRadius: cornerRadius)
-                        .fill(Color(NSColor.windowBackgroundColor).opacity(colorScheme == .dark ? 0.2 : 0.25))
-                        .settingsGlassEffect(cornerRadius: cornerRadius)
-                } else if SettingsVisualEffects.enableMaterials, !reduceTransparency {
-                    PHTVRoundedRect(cornerRadius: cornerRadius)
-                        .fill(.regularMaterial)
+                if #available(macOS 26.0, *), !reduceTransparency {
+                    Color.clear
+                        .glassEffect(.regular, in: .rect(cornerRadius: cornerRadius))
+                } else if reduceTransparency {
+                    RoundedRectangle(cornerRadius: cornerRadius)
+                        .fill(Color(nsColor: .windowBackgroundColor))
                 } else {
-                    PHTVRoundedRect(cornerRadius: cornerRadius)
-                        .fill(Color(NSColor.windowBackgroundColor).opacity(0.92))
+                    RoundedRectangle(cornerRadius: cornerRadius)
+                        .fill(.regularMaterial)
                 }
             }
-            .overlay(
-                PHTVRoundedRect(cornerRadius: cornerRadius)
-                    .stroke(Color.primary.opacity(colorScheme == .dark ? 0.15 : 0.08), lineWidth: 1)
-            )
     }
 }
 
@@ -443,35 +426,16 @@ struct GlassCloseButton: View {
     var size: CGFloat = 28
     var iconSize: CGFloat = 11
 
-    @State private var isHovering = false
-    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
-
     var body: some View {
         Button(action: action) {
-            ZStack {
-                Circle()
-                    .fill(Color.red.opacity(isHovering ? 0.25 : 0.15))
-                    .overlay(
-                        Circle()
-                            .stroke(Color.red.opacity(isHovering ? 0.35 : 0.2), lineWidth: 1)
-                    )
-                Image(systemName: "xmark")
-                    .font(.system(size: iconSize, weight: .bold))
-                    .foregroundColor(.red)
-                    .scaleEffect(isHovering ? 1.1 : 1.0)
-            }
-            .frame(width: size, height: size)
-            .animation(.easeOut(duration: 0.15), value: isHovering)
+            Image(systemName: "xmark")
+                .font(.system(size: iconSize, weight: .semibold))
+                .frame(width: max(size - 16, 12), height: max(size - 16, 12))
         }
-        .buttonStyle(.plain)
-        .onHover { hovering in
-            isHovering = hovering
-            if hovering {
-                NSCursor.pointingHand.push()
-            } else {
-                NSCursor.pop()
-            }
-        }
+        .adaptiveBorderedButtonStyle()
+        .buttonBorderShape(.circle)
+        .controlSize(.regular)
+        .accessibilityLabel("Đóng")
     }
 }
 
