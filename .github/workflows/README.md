@@ -26,7 +26,7 @@ thay thế CI bắt buộc trên pull request.
 Trigger bằng tag `v*.*.*` hoặc `workflow_dispatch` với một version hợp lệ.
 
 Chạy thủ công mặc định `publish: false`: build/ký/đóng gói để thử nghiệm, không
-tạo GitHub Release hoặc cập nhật appcast/Homebrew. Chọn `publish: true` mới xuất
+tạo GitHub Release hoặc cập nhật appcast. Chọn `publish: true` mới xuất
 bản các bước đó; trigger bằng tag luôn đi theo luồng publish.
 
 Luồng công việc:
@@ -35,8 +35,8 @@ Luồng công việc:
    dictionary và chạy toàn bộ XCTest;
 2. **build** trên self-hosted runner: tạo riêng bản `arm64` và `x86_64`, ký bằng
    Developer ID Application, đóng gói DMG, notarize/staple, ký Sparkle;
-3. **release**: tạo GitHub Release với nội dung render từ đúng mục trong
-   `CHANGELOG.md`;
+3. **release**: tạo draft với nội dung từ `CHANGELOG.md`, tải đủ hai DMG
+   và `SHA256SUMS.txt` rồi mới public;
 4. **publish_appcast**: commit hai feed đã ký về `main`;
 
 PHTV hiện được phân phối qua `Homebrew/homebrew-cask`. Homebrew theo dõi

@@ -39,7 +39,7 @@
 
 Có thể chạy workflow thủ công với version hợp lệ, nhưng commit đang chọn vẫn
 phải chứa changelog tương ứng. `publish` mặc định **false** để tạo bản tester đã
-ký; chọn **true** để xuất bản GitHub Release/appcast/Homebrew. Chỉ push lên
+ký; chọn **true** để xuất bản GitHub Release/appcast. Chỉ push lên
 `main` chưa phải phát hành phiên bản mới. Version/build mặc định trong Xcode
 được workflow đồng bộ khi publish appcast; không cần sửa chúng chỉ để thêm
 changelog chuẩn bị release.
@@ -51,8 +51,8 @@ changelog chuẩn bị release.
 3. **Package**: ký nested code, tạo DMG, notarize, staple và kiểm tra Gatekeeper.
 4. **Sparkle**: ký EdDSA, giữ tối đa 30 phiên bản gần nhất và chèn HTML được
    render từ changelog.
-5. **GitHub Release**: dùng Markdown từ cùng changelog, không dùng generated
-   commit notes làm nội dung chính.
+5. **GitHub Release**: dùng Markdown từ cùng changelog; chỉ public sau khi
+   đã tải đủ hai DMG và `SHA256SUMS.txt`.
 6. **Publish**: commit hai appcast và đồng bộ version/build mặc định của Xcode
    về `main`.
 7. **Homebrew**: PHTV được quản lý trong `Homebrew/homebrew-cask`. Homebrew

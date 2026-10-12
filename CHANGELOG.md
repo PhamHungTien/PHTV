@@ -7,42 +7,49 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.6.6] - 2026-10-12
+
+### Added
+
+- PHTV đã có trên Homebrew chính thức: cài bằng `brew install --cask phtv`.
+  Người dùng tap cũ được chuyển sang `homebrew/cask` khi cập nhật Homebrew.
+- Thêm tùy chọn **Bỏ qua nội dung nhạy cảm** trong Clipboard, mặc định bật.
+  Khi tắt, lịch sử lưu cả nội dung nhạy cảm/tạm thời có định dạng được hỗ trợ.
+
 ### Changed
 
-- Thu gọn menu icon: gom hỗ trợ, bỏ lối mở Clipboard trùng và thêm tùy chọn
-  lọc nhạy cảm; giữ đầy đủ lựa chọn bộ gõ và các trang cài đặt.
-
-- Thu gọn mô tả Clipboard và thêm tùy chọn bỏ qua nội dung nhạy cảm, mặc định bật;
-  khi tắt, lưu cả nội dung nhạy cảm/tạm thời được hỗ trợ.
-
-- Dùng sheet onboarding và các nút Liquid Glass native; giảm mô tả trùng lặp.
-- Giảm lớp glass ở nội dung Cài đặt và bỏ nền mở rộng không cần thiết khi
-  thay đổi sidebar; nạp lười các phần thiết lập bộ gõ.
-- Thu gọn phụ âm tùy chỉnh, giữ thêm/xoá/khôi phục và kiểm tra dữ liệu đầu vào.
-- Đồng bộ cửa sổ Clipboard và PHTV Picker với nền glass hệ thống, nút đóng
-  tròn và segmented control native; hỗ trợ Reduce Transparency.
-- Popover ủng hộ có QR lớn hơn, nền dễ quét, nút đóng tròn và liên kết PayPal.
-- Menu ứng dụng và menu icon truy cập các trang cài đặt, Picker, Clipboard,
-  chuyển mã, gõ tắt, báo lỗi và ủng hộ; giữ yêu cầu điều hướng khi Cài đặt
-  chưa mở. Toolbar tách nút ghim và ủng hộ; cập nhật nằm trong menu PHTV
-  và mục Hệ thống.
-- Bỏ thẻ quyền đã sẵn sàng trong Lau bàn phím; chỉ hướng dẫn khi thiếu quyền.
-- Thu gọn chuyển mã, dùng nút và biểu tượng hệ thống thay các lớp viền tự vẽ;
-  bỏ biểu tượng emoji trang trí trong bộ chọn mức độ báo lỗi.
+- Tinh gọn Cài đặt theo giao diện macOS: onboarding dạng sheet, nút hệ thống,
+  nền Liquid Glass phù hợp và hỗ trợ Reduce Transparency.
+- Giảm lớp nền và công việc dựng giao diện khi ẩn/hiện sidebar; nạp lười
+  các phần thiết lập bộ gõ.
+- Thu gọn phụ âm tùy chỉnh và mô tả Clipboard; giữ đầy đủ thêm, xoá, khôi phục
+  mặc định và kiểm tra dữ liệu đầu vào.
+- Đồng bộ cửa sổ Clipboard, PHTV Picker và chuyển đổi bảng mã; dùng biểu tượng
+  hệ thống, segmented control native và nút đóng tròn.
+- Bổ sung menu ứng dụng và tinh gọn menu icon; truy cập đầy đủ cài đặt, công cụ,
+  gõ tắt, hướng dẫn và báo lỗi. Giữ yêu cầu điều hướng khi Cài đặt chưa mở.
+- Lau bàn phím chỉ hiển thị hướng dẫn cấp quyền khi chưa đủ quyền nhập liệu.
 
 ### Fixed
 
-- Khôi phục chuỗi chữ–số không phải tiếng Việt ngay cả khi tắt chính tả,
-  giữ từ VNI hợp lệ có dấu được đặt giữa từ.
 - Khôi phục từ trước `@`, `#`, `$`, `%`, `^`, `&`, `*`, tránh biến đổi tên
-  trong địa chỉ email; chặn khôi phục sai chính tả khi lịch sử phím không đủ.
-- Bổ sung ma trận kiểm thử chế độ Không phải tiếng Việt qua kiểu gõ/bảng mã,
-  dấu kết thúc, chính tả, phụ âm nhanh, gõ tắt và xoá/gõ lại.
-- Nhập JSON gõ tắt có BOM UTF-8, gồm cả định dạng danh sách cũ; kiểm tra
-  xuất/nhập file cấu hình giữ nguyên lựa chọn lọc nội dung Clipboard.
-- Cố định chiều rộng phần nhãn menu phương pháp gõ và bảng mã để hai nút
-  có cùng kích thước và thẳng hàng, không co theo nội dung.
-- Sửa lỗi thiếu `try` trong script kiểm tra khởi chạy ứng dụng.
+  trong địa chỉ email ở chế độ **Không phải tiếng Việt**.
+- Khôi phục chuỗi chữ–số không phải tiếng Việt khi tắt kiểm tra chính tả;
+  giữ từ VNI hợp lệ có phím dấu đặt giữa từ.
+- Chặn khôi phục sai chính tả khi lịch sử phím không đủ để dựng lại nội dung,
+  tránh xoá vượt phần chữ đang gõ.
+- Nhập JSON gõ tắt có BOM UTF-8, gồm cả định dạng danh sách cũ; xuất/nhập
+  cấu hình giữ đúng lựa chọn lọc nội dung Clipboard.
+- Căn đều chiều rộng và hai mép của menu phương pháp gõ/bảng mã.
+- Sửa script kiểm tra khởi chạy ứng dụng.
+
+### Chất lượng
+
+- Kiểm tra 5.120 tổ hợp kiểu gõ, bảng mã, chính tả, phụ âm tùy chỉnh và
+  dấu kết thúc; bổ sung ca xoá/gõ lại, Tab/Enter, gõ tắt và phụ âm nhanh.
+- Toàn bộ 618 kiểm thử: 616 đạt, 2 bỏ qua, không có lỗi.
+- Workflow phát hành giữ DMG riêng cho Apple Silicon/Intel, ký Developer ID,
+  notarize/staple và appcast Sparkle; không còn cập nhật tap Homebrew cũ.
 
 ## [3.6.5] - 2026-10-11
 

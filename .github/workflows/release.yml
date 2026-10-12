@@ -15,7 +15,7 @@ on:
         required: true
         type: string
       publish:
-        description: 'Create the GitHub release and publish appcasts/Homebrew'
+        description: 'Publish the GitHub release and signed Sparkle appcasts'
         required: true
         default: false
         type: boolean
@@ -51,10 +51,12 @@ jobs:
 
       - name: Determine and validate version
         id: version
+        env:
+          REQUESTED_VERSION: ${{ inputs.version }}
         run: |
           set -euo pipefail
-          if [ -n "${{ github.event.inputs.version }}" ]; then
-            VERSION="${{ github.event.inputs.version }}"
+          if [ -n "$REQUESTED_VERSION" ]; then
+            VERSION="$REQUESTED_VERSION"
           else
             VERSION="${GITHUB_REF_NAME#v}"
           fi
@@ -123,6 +125,7 @@ jobs:
   build:
     name: Build PHTV (${{ matrix.arch }})
     runs-on: self-hosted
+    timeout-minutes: 360
     needs: verify
     strategy:
       fail-fast: false
@@ -155,7 +158,7 @@ jobs:
           # Tools; xcodebuild requires full Xcode. DEVELOPER_DIR overrides the
           # machine default without needing sudo/xcode-select.
           if [ -z "${DEVELOPER_DIR:-}" ] || [ ! -d "${DEVELOPER_DIR:-/nonexistent}" ]; then
-            XCODE_APP=$(ls -d /Applications/Xcode*.app 2>/dev/null | sort -V | tail -1)
+            XCODE_APP=$(find /Applications -maxdepth 1 -type d -name 'Xcode*.app' -print | sort -V | tail -1)
             if [ -z "$XCODE_APP" ]; then
               echo "❌ No Xcode installation found on this runner. Install Xcode or set DEVELOPER_DIR."
               exit 1
@@ -224,6 +227,7 @@ jobs:
           KEYCHAIN_PATH="$RUNNER_TEMP/signing-${{ matrix.arch }}.keychain-db"
           KEYCHAIN_PASSWORD=$(openssl rand -base64 32)
 
+          security list-keychains -d user | sed 's/^[[:space:]]*"//; s/"[[:space:]]*$//' > "$RUNNER_TEMP/keychains-${{ matrix.arch }}.txt"
           security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
           security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
           security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
@@ -241,7 +245,11 @@ jobs:
             -T /usr/bin/security \
             -A
 
-          security list-keychains -d user -s "$KEYCHAIN_PATH" $(security list-keychains -d user | tr -d '"')
+          KEYCHAINS=("$KEYCHAIN_PATH")
+          while IFS= read -r keychain; do
+            KEYCHAINS+=("$keychain")
+          done < "$RUNNER_TEMP/keychains-${{ matrix.arch }}.txt"
+          security list-keychains -d user -s "${KEYCHAINS[@]}"
           security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
 
           echo "🔎 Available code signing identities:"
@@ -317,18 +325,16 @@ jobs:
           # (e.g. Sparkle ships a macos-arm64_x86_64 slice that xcodebuild build
           # does not automatically thin — only archive+export does this for free).
           echo "🪓 Stripping ${{ matrix.excluded_archs }} from fat binaries..."
-          FOUND_FAT=0
           while IFS= read -r -d '' binary; do
             info=$(lipo -info "$binary" 2>/dev/null) || continue
             if echo "$info" | grep -qE "^Architectures in the fat file:"; then
-              FOUND_FAT=1
-              echo "  Thinning: ${binary#$APP_PATH/}"
+              echo "  Thinning: ${binary#"$APP_PATH"/}"
               # Create temporary file to avoid overwriting while lipo is reading
               TEMP_FILE="${binary}.thin"
               if lipo -thin "${{ matrix.arch }}" -output "$TEMP_FILE" "$binary" 2>&1; then
                 mv "$TEMP_FILE" "$binary"
               else
-                echo "    ⚠️  Warning: lipo failed for ${binary#$APP_PATH/}, keeping original"
+                echo "    ⚠️  Warning: lipo failed for ${binary#"$APP_PATH"/}, keeping original"
                 rm -f "$TEMP_FILE"
               fi
             fi
@@ -338,7 +344,7 @@ jobs:
 
           sign_code() {
             local target="$1"
-            echo "  Signing: ${target#$APP_PATH/}"
+            echo "  Signing: ${target#"$APP_PATH"/}"
             codesign --force --sign "${{ steps.certificate.outputs.identity }}" \
               --options runtime \
               --timestamp \
@@ -390,7 +396,7 @@ jobs:
           while IFS= read -r -d '' binary; do
             info=$(lipo -info "$binary" 2>/dev/null) || continue
             if echo "$info" | grep -qE "^Architectures in the fat file:"; then
-              echo "  ⚠️  Still fat: ${binary#$APP_PATH/}"
+              echo "  ⚠️  Still fat: ${binary#"$APP_PATH"/}"
               FAT_REMAINING=1
             fi
           done < <(find "$APP_PATH" -type f -print0)
@@ -403,7 +409,7 @@ jobs:
           codesign -dv --verbose=2 "$APP_PATH" 2>&1
           codesign --verify --deep --strict "$APP_PATH" 2>&1
           while IFS= read -r -d '' autoupdate; do
-            echo "🔍 Verifying Sparkle Autoupdate signature: ${autoupdate#$APP_PATH/}"
+            echo "🔍 Verifying Sparkle Autoupdate signature: ${autoupdate#"$APP_PATH"/}"
             codesign -dv --verbose=4 "$autoupdate" 2>&1
             codesign --verify --strict --verbose=2 "$autoupdate"
           done < <(find "$APP_PATH" -type f -name Autoupdate -print0)
@@ -768,8 +774,14 @@ jobs:
           if [ -n "$KEYCHAIN_PATH" ] && [ -f "$KEYCHAIN_PATH" ]; then
             security delete-keychain "$KEYCHAIN_PATH" || true
           fi
-          security list-keychains -d user -s "$HOME/Library/Keychains/login.keychain-db" || true
-          security default-keychain -s "$HOME/Library/Keychains/login.keychain-db" || true
+          if [ -f "$RUNNER_TEMP/keychains-${{ matrix.arch }}.txt" ]; then
+            KEYCHAINS=()
+            while IFS= read -r keychain; do
+              KEYCHAINS+=("$keychain")
+            done < "$RUNNER_TEMP/keychains-${{ matrix.arch }}.txt"
+            security list-keychains -d user -s "${KEYCHAINS[@]}" || true
+            rm -f "$RUNNER_TEMP/keychains-${{ matrix.arch }}.txt"
+          fi
           rm -f "$RUNNER_TEMP/certificate.p12" "$RUNNER_TEMP/cert_base64.txt" "$RUNNER_TEMP/AppleWWDRCAG3.cer"
 
   release:
@@ -797,18 +809,46 @@ jobs:
         with:
           name: dmg-x86_64
 
+      - name: Generate release checksums
+        env:
+          VERSION: ${{ needs.build.outputs.version }}
+        run: |
+          set -euo pipefail
+          sha256sum "PHTV-$VERSION-arm64.dmg" "PHTV-$VERSION-intel.dmg" > SHA256SUMS.txt
+          sha256sum --check SHA256SUMS.txt
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
         with:
           tag_name: v${{ needs.build.outputs.version }}
           name: PHTV ${{ needs.build.outputs.version }}
+          target_commitish: ${{ github.sha }}
+          draft: true
           body_path: ${{ runner.temp }}/release-notes.md
           prerelease: ${{ contains(needs.build.outputs.version, '-') }}
           files: |
             PHTV-${{ needs.build.outputs.version }}-arm64.dmg
             PHTV-${{ needs.build.outputs.version }}-intel.dmg
+            SHA256SUMS.txt
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish completed release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          VERSION: ${{ needs.build.outputs.version }}
+        run: |
+          set -euo pipefail
+          gh release view "v$VERSION" --json assets --jq '.assets[].name' > assets.txt
+          for name in "PHTV-$VERSION-arm64.dmg" "PHTV-$VERSION-intel.dmg" SHA256SUMS.txt; do
+            grep -Fxq "$name" assets.txt
+          done
+          if [[ "$VERSION" == *-* ]]; then
+            gh release edit "v$VERSION" --draft=false --latest=false
+          else
+            gh release edit "v$VERSION" --draft=false --latest
+          fi
 
   publish_appcast:
     name: Publish Appcasts
