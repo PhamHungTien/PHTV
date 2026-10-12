@@ -29,6 +29,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Cố định chiều rộng phần nhãn menu phương pháp gõ và bảng mã để hai nút
+  có cùng kích thước và thẳng hàng, không co theo nội dung.
 - Sửa lỗi thiếu `try` trong script kiểm tra khởi chạy ứng dụng.
 
 ## [3.6.5] - 2026-10-11

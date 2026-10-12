@@ -33,7 +33,8 @@ struct TypingSettingsView: View {
                     VStack(spacing: 0) {
                         SettingsPickerRow(
                             title: "Phương pháp gõ",
-                            selection: bindable.inputMethod
+                            selection: bindable.inputMethod,
+                            selectedTitle: appState.inputMethod.displayName
                         ) {
                             ForEach(InputMethod.allCases) { method in
                                 Text(method.displayName).tag(method)
@@ -44,7 +45,8 @@ struct TypingSettingsView: View {
 
                         SettingsPickerRow(
                             title: "Bảng mã",
-                            selection: bindable.codeTable
+                            selection: bindable.codeTable,
+                            selectedTitle: appState.codeTable.displayName
                         ) {
                             ForEach(CodeTable.allCases) { table in
                                 Text(table.displayName).tag(table)

@@ -140,6 +140,7 @@ private extension View {
 struct SettingsPickerRow<SelectionValue: Hashable, PickerContent: View>: View {
     let title: String
     let subtitle: String?
+    let selectedTitle: String?
     let controlWidth: CGFloat
     @Binding var selection: SelectionValue
     let pickerContent: PickerContent
@@ -148,11 +149,13 @@ struct SettingsPickerRow<SelectionValue: Hashable, PickerContent: View>: View {
         title: String,
         subtitle: String? = nil,
         selection: Binding<SelectionValue>,
+        selectedTitle: String? = nil,
         controlWidth: CGFloat = SettingsLayout.defaultPickerWidth,
         @ViewBuilder content: () -> PickerContent
     ) {
         self.title = title
         self.subtitle = subtitle
+        self.selectedTitle = selectedTitle
         self.controlWidth = controlWidth
         self._selection = selection
         self.pickerContent = content()
@@ -165,13 +168,30 @@ struct SettingsPickerRow<SelectionValue: Hashable, PickerContent: View>: View {
 
             Spacer(minLength: 12)
 
-            Picker("", selection: $selection) {
-                pickerContent
+            Group {
+                if let selectedTitle {
+                    Menu {
+                        Picker(title, selection: $selection) {
+                            pickerContent
+                        }
+                        .pickerStyle(.inline)
+                    } label: {
+                        Text(selectedTitle)
+                            .lineLimit(1)
+                            .frame(width: max(1, controlWidth - 32), alignment: .leading)
+                    }
+                    .menuStyle(.button)
+                    .accessibilityLabel(title)
+                    .accessibilityValue(selectedTitle)
+                } else {
+                    Picker("", selection: $selection) {
+                        pickerContent
+                    }
+                    .labelsHidden()
+                    .pickerStyle(.menu)
+                }
             }
-            .labelsHidden()
-            .pickerStyle(.menu)
             .controlSize(.small)
-            .frame(maxWidth: .infinity)
             .frame(width: controlWidth)
             .frame(width: max(controlWidth, SettingsLayout.rowControlColumnWidth), alignment: .trailing)
         }
