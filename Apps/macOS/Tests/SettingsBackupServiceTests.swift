@@ -17,6 +17,38 @@ final class SettingsBackupServiceTests: XCTestCase {
     }
 
     @MainActor
+    func testBackupFileRoundTripPreservesBothClipboardPrivacyChoices() throws {
+        for skipSensitive in [true, false] {
+            try fixture { source, defaults, root, _ in
+                defaults.set(skipSensitive, forKey: UserDefaultsKey.skipSensitiveClipboardContent)
+                defaults.set(true, forKey: UserDefaultsKey.enableClipboardHistory)
+                let file = root.appendingPathComponent("Cấu hình PHTV.json")
+                let backup = try source.create()
+                try JSONEncoder().encode(backup).write(to: file, options: .atomic)
+                let decoded = try SettingsBackupService.read(file)
+                try fixture { destination, restored, _, _ in
+                    restored.set(!skipSensitive, forKey: UserDefaultsKey.skipSensitiveClipboardContent)
+                    try destination.apply(decoded)
+                    XCTAssertEqual(restored.bool(forKey: UserDefaultsKey.skipSensitiveClipboardContent), skipSensitive)
+                    XCTAssertTrue(restored.bool(forKey: UserDefaultsKey.enableClipboardHistory))
+                    XCTAssertEqual(try destination.create().settings?[UserDefaultsKey.skipSensitiveClipboardContent]?.value as? Bool,
+                                   skipSensitive)
+                }
+            }
+        }
+    }
+
+    func testMacroJSONWithBOMAcceptsObjectAndLegacyArray() throws {
+        let macros = [MacroItem(shortcut: "vn", expansion: "  Tiếng Việt\n dòng hai ")]
+        let object = try MacroTransferCodec.encode(macros: macros, categories: [])
+        let array = try JSONEncoder().encode(macros)
+        for json in [object, array] {
+            let bytes = Data([0xEF, 0xBB, 0xBF]) + Data(" \n".utf8) + json
+            XCTAssertEqual(try MacroTransferCodec.decode(bytes, json: true).macros, macros)
+        }
+    }
+
+    @MainActor
     func testAllRegisteredPortableDefaultsRoundTripToEmptyDestination() throws {
         try fixture { source, _, _, _ in
             let backup = try source.create()

@@ -20,10 +20,12 @@ enum MacroTransferCodec {
         guard data.count <= 64 * 1024 * 1024 else { throw BackupError.invalid("file gõ tắt vượt 64 MB") }
         let archive: MacroTransferArchive
         if json {
-            if let first = data.first(where: { ![9, 10, 13, 32].contains($0) }), first == 91 {
-                archive = MacroTransferArchive(categories: nil, macros: try JSONDecoder().decode([MacroItem].self, from: data))
+            // Some editors prepend a UTF-8 BOM, including to legacy arrays.
+            let jsonData = data.starts(with: [0xEF, 0xBB, 0xBF]) ? Data(data.dropFirst(3)) : data
+            if let first = jsonData.first(where: { ![9, 10, 13, 32].contains($0) }), first == 91 {
+                archive = MacroTransferArchive(categories: nil, macros: try JSONDecoder().decode([MacroItem].self, from: jsonData))
             } else {
-                archive = try JSONDecoder().decode(MacroTransferArchive.self, from: data)
+                archive = try JSONDecoder().decode(MacroTransferArchive.self, from: jsonData)
             }
             guard archive.version == nil || archive.version == "1.0" else { throw BackupError.invalid("phiên bản gõ tắt") }
         } else {
