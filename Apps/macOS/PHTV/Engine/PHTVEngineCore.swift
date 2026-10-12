@@ -360,6 +360,11 @@ final class PHTVVietnameseEngine {
     }
 
     func checkRestoreIfWrongSpelling(_ handleCode: Int32) -> Bool {
+        // Never delete more composed characters than the retained raw keys can
+        // reconstruct, including after focus changes or interrupted sessions.
+        guard idx > 0, idx <= stateIdx, idx <= typingWord.count,
+              stateIdx <= ENGINE_MAX_BUFF, stateIdx <= keyStates.count,
+              stateIdx <= hData.count else { return false }
         for ii in 0..<min(idx, typingWord.count) {
             if !isConsonant(chr(ii)) &&
                ((typingWord[ii] & MARK_MASK) != 0 || (typingWord[ii] & TONE_MASK) != 0 || (typingWord[ii] & TONEW_MASK) != 0) {
@@ -1905,7 +1910,7 @@ final class PHTVVietnameseEngine {
 
     func isShiftedNumericPunctuationBreak(_ data: UInt16, _ capsStatus: UInt8) -> Bool {
         guard capsStatus == 1 else { return false }
-        return data == KEY_1 || data == KEY_9 || data == KEY_0
+        return isNumberKey(data)
     }
 
     func isAutoRestoreWordBreak(event: VKeyEvent, state: VKeyEventState, data: UInt16, capsStatus: UInt8) -> Bool {
@@ -2308,12 +2313,18 @@ final class PHTVVietnameseEngine {
 
     func evaluateAutoRestoreEnglishDecision() -> (restoreStateIndex: Int, canAutoRestore: Bool, shouldRestore: Bool, customRestoreSlice: [UInt32]?) {
         let englishStateIndex = getEnglishLookupStateLength()
+        let isNonVietnameseMode = autoRestoreEnglishModeValue() == Int32(AutoRestoreEnglishMode.nonVietnamese.rawValue)
+        let canRestoreAlphanumeric = isNonVietnameseMode && stateIdx > 1 && stateIdx <= keyStates.count &&
+            keyStates.prefix(stateIdx).allSatisfy { value in
+                let code = UInt16(value & UInt32(CHAR_MASK))
+                return isEnglishLetterKeyCode(code) || isDigitKeyCode(code)
+            }
         let isPureLetter = englishStateIndex == stateIdx && hasOnlyEnglishLetterKeyStates(stateIdx)
         let isWithNumSuffix = englishStateIndex > 0 && englishStateIndex < stateIdx &&
             hasOnlyEnglishLetterKeyStates(englishStateIndex) &&
             hasOnlyTrailingDigitKeyStates(englishStateIndex)
-        let canAutoRestore = isPureLetter || isWithNumSuffix
-        let restoreStateIndex = isWithNumSuffix ? stateIdx : englishStateIndex
+        let canAutoRestore = isPureLetter || isWithNumSuffix || canRestoreAlphanumeric
+        let restoreStateIndex = (isWithNumSuffix || canRestoreAlphanumeric) ? stateIdx : englishStateIndex
 
         guard phtvRuntimeAutoRestoreEnglishWordEnabled() != 0,
               idx > 0,
@@ -2324,7 +2335,6 @@ final class PHTVVietnameseEngine {
         }
 
         let keySlice = Array(keyStates.prefix(englishStateIndex))
-        let isNonVietnameseMode = autoRestoreEnglishModeValue() == Int32(AutoRestoreEnglishMode.nonVietnamese.rawValue)
         var shouldRestoreEnglish = false
 
         let hasVietnameseDictionaryMatch = hasVietnameseDictionaryMatchForAutoRestore(

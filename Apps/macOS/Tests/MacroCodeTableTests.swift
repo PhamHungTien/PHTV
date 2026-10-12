@@ -56,6 +56,24 @@ final class MacroCodeTableTests: XCTestCase {
         )
     }
 
+    func testNonVietnameseAutoRestoreKeepsMacroExpansionPriority() {
+        let mode = PHTVEngineRuntimeFacade.autoRestoreEnglishWordMode()
+        let enabled = PHTVEngineRuntimeFacade.autoRestoreEnglishWord()
+        let fallback = PHTVEngineRuntimeFacade.restoreIfWrongSpelling()
+        defer {
+            PHTVEngineRuntimeFacade.setAutoRestoreEnglishWordMode(mode)
+            PHTVEngineRuntimeFacade.setAutoRestoreEnglishWord(enabled)
+            PHTVEngineRuntimeFacade.setRestoreIfWrongSpelling(fallback)
+        }
+        PHTVEngineRuntimeFacade.setAutoRestoreEnglishWord(1)
+        PHTVEngineRuntimeFacade.setAutoRestoreEnglishWordMode(Int32(AutoRestoreEnglishMode.nonVietnamese.rawValue))
+        PHTVEngineRuntimeFacade.setRestoreIfWrongSpelling(1)
+        loadMacros([MacroItem(shortcut: "haaland", expansion: "Tên cầu thủ")])
+        let result = macroResult(afterTyping: "haaland")
+        XCTAssertTrue(result.didTrigger)
+        XCTAssertEqual(PHTVEngineDataBridge.macroString(fromMacroData: result.macroData, codeTable: 0), "Tên cầu thủ")
+    }
+
     override func setUp() {
         super.setUp()
         PHTVEngineRuntimeFacade.setCurrentLanguage(1)   // Vietnamese

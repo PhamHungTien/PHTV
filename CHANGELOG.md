@@ -32,6 +32,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Khôi phục chuỗi chữ–số không phải tiếng Việt ngay cả khi tắt chính tả,
+  giữ từ VNI hợp lệ có dấu được đặt giữa từ.
+- Khôi phục từ trước `@`, `#`, `$`, `%`, `^`, `&`, `*`, tránh biến đổi tên
+  trong địa chỉ email; chặn khôi phục sai chính tả khi lịch sử phím không đủ.
+- Bổ sung ma trận kiểm thử chế độ Không phải tiếng Việt qua kiểu gõ/bảng mã,
+  dấu kết thúc, chính tả, phụ âm nhanh, gõ tắt và xoá/gõ lại.
 - Nhập JSON gõ tắt có BOM UTF-8, gồm cả định dạng danh sách cũ; kiểm tra
   xuất/nhập file cấu hình giữ nguyên lựa chọn lọc nội dung Clipboard.
 - Cố định chiều rộng phần nhãn menu phương pháp gõ và bảng mã để hai nút

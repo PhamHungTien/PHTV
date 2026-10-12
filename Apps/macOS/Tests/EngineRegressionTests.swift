@@ -1120,6 +1120,139 @@ final class EngineRegressionTests: XCTestCase {
         runSpaceCase("haaland", expectRestore: false, autoRestoreMode: .englishOnly)
     }
 
+    func testNonVietnameseWrongSpellingFallbackRejectsIncompleteRawHistory() {
+        PHTVEngineRuntimeFacade.setAutoRestoreEnglishWordMode(Int32(AutoRestoreEnglishMode.nonVietnamese.rawValue))
+        PHTVEngineRuntimeFacade.setRestoreIfWrongSpelling(1)
+        let engine = PHTVVietnameseEngine()
+        engine.refreshRuntimeLayoutSnapshot()
+        engine.startNewSession()
+        engine.typingWord[0] = UInt32(KEY_A) | MARK_MASK
+        engine.typingWord[1] = UInt32(KEY_B)
+        engine.idx = 2
+        engine.keyStates[0] = UInt32(KEY_A)
+        engine.stateIdx = 1
+        XCTAssertFalse(engine.checkRestoreIfWrongSpelling(HookCodeState.restoreAndStartNewSession.rawValue))
+        XCTAssertEqual(engine.hBPC, 0)
+        XCTAssertEqual(engine.hNCC, 0)
+        XCTAssertEqual(engine.idx, 2)
+        engine.stateIdx = ENGINE_MAX_BUFF + 1
+        XCTAssertFalse(engine.checkRestoreIfWrongSpelling(HookCodeState.restoreAndStartNewSession.rawValue))
+        XCTAssertEqual(engine.hBPC, 0)
+    }
+
+    func testNonVietnameseModeRestoresMixedLetterDigitIdentifiers() {
+        PHTVEngineRuntimeFacade.setAutoRestoreEnglishWordMode(Int32(AutoRestoreEnglishMode.nonVietnamese.rawValue))
+        PHTVEngineRuntimeFacade.setRestoreIfWrongSpelling(1)
+        for method: Int32 in [0, 1, 2, 3] {
+            withInputType(method) {
+                for spelling: Int32 in [0, 1] {
+                    PHTVEngineRuntimeFacade.setCheckSpelling(spelling)
+                    for raw in ["Haaland2abc", "Erling2abc", "1234Erling"] {
+                        XCTAssertEqual(runtimeRenderedKeySequence(raw.map(runtimeKeyEvent) + [(KEY_SPACE, 0)]), raw + " ",
+                                       "raw=\(raw), method=\(method), spell=\(spelling)")
+                    }
+                }
+            }
+        }
+    }
+
+    func testNonVietnameseModeBackspaceThenRetypePreservesRawHistory() {
+        PHTVEngineRuntimeFacade.setAutoRestoreEnglishWordMode(Int32(AutoRestoreEnglishMode.nonVietnamese.rawValue))
+        PHTVEngineRuntimeFacade.setRestoreIfWrongSpelling(1)
+        engineInitialize()
+        feedWord("haaland")
+        engineHandleEvent(eventKeyboard, stateKeyDown, KEY_DELETE, 0, 0)
+        engineHandleEvent(eventKeyboard, stateKeyDown, KEY_D, 0, 0)
+        engineHandleEvent(eventKeyboard, stateKeyDown, KEY_SPACE, 0, 0)
+        XCTAssertTrue(isRestore(engineHookCode()))
+        XCTAssertEqual(hookOutputWord(), "haaland")
+        XCTAssertEqual(engineHookBackspaceCount(), 6)
+        XCTAssertEqual(engineHookNewCharCount(), 7)
+    }
+
+    func testNonVietnameseModeCommitsOnTabAndReturnWithoutRestoringTwice() {
+        for key in [KEY_TAB, KEY_ENTER, KEY_RETURN] {
+            runWordBreakCase("haaland", expectRestore: true, autoRestoreMode: .nonVietnamese, breakKey: key)
+            engineHandleEvent(eventKeyboard, stateKeyDown, KEY_SPACE, 0, 0)
+            // Counts are only meaningful when the hook requests a replacement.
+            XCTAssertEqual(engineHookCode(), HookCodeState.doNothing.rawValue)
+        }
+    }
+
+    func testNonVietnameseModeRestoresBeforeEmailAndShiftedNumberSymbols() {
+        PHTVEngineRuntimeFacade.setAutoRestoreEnglishWordMode(Int32(AutoRestoreEnglishMode.nonVietnamese.rawValue))
+        PHTVEngineRuntimeFacade.setRestoreIfWrongSpelling(1)
+        for (key, symbol) in [(KEY_2, "@"), (KEY_3, "#"), (KEY_4, "$"), (KEY_5, "%"),
+                              (KEY_6, "^"), (KEY_7, "&"), (KEY_8, "*")] {
+            let events = "Erling".map(runtimeKeyEvent) + [(key, UInt8(1))]
+            XCTAssertEqual(runtimeRenderedKeySequence(events), "Erling" + symbol, symbol)
+        }
+        let address = "erling".map(runtimeKeyEvent) + [(KEY_2, UInt8(1))] +
+            "github".map(runtimeKeyEvent) + [(KEY_DOT, UInt8(0))] + "com".map(runtimeKeyEvent) + [(KEY_SPACE, UInt8(0))]
+        XCTAssertEqual(runtimeRenderedKeySequence(address), "erling@github.com ")
+    }
+
+    func testNonVietnameseModeRetainsQuickConsonantPriority() {
+        runQuickConsonantSpaceCase("fan", customEnglish: ["fan"], quickStart: true, quickEnd: false,
+                                  autoRestoreMode: .nonVietnamese, expectedOutput: "phan", expectedBackspaceCount: 3)
+    }
+
+    func testNonVietnameseModeRestoresNamesAcrossLayoutsOptionsAndPunctuation() {
+        let previousTable = PHTVEngineRuntimeFacade.currentCodeTable()
+        defer { PHTVEngineRuntimeFacade.setCurrentCodeTable(previousTable) }
+        PHTVEngineRuntimeFacade.setAutoRestoreEnglishWordMode(Int32(AutoRestoreEnglishMode.nonVietnamese.rawValue))
+        PHTVEngineRuntimeFacade.setRestoreIfWrongSpelling(1)
+        let boundaries: [(UInt16, UInt8, String)] = [
+            (KEY_SPACE, 0, " "), (KEY_COMMA, 0, ","), (KEY_DOT, 0, "."),
+            (KEY_SLASH, 1, "?"), (KEY_1, 1, "!"), (KEY_9, 1, "("), (KEY_0, 1, ")"),
+            (KEY_2, 1, "@"), (KEY_3, 1, "#"), (KEY_4, 1, "$"), (KEY_5, 1, "%"),
+            (KEY_6, 1, "^"), (KEY_7, 1, "&"), (KEY_8, 1, "*"),
+            (KEY_LEFT_BRACKET, 0, "["), (KEY_RIGHT_BRACKET, 0, "]")
+        ]
+        for method: Int32 in [0, 1, 2, 3] {
+            withInputType(method) {
+                for table in CodeTable.allCases {
+                    PHTVEngineRuntimeFacade.setCurrentCodeTable(Int32(table.toIndex()))
+                    for spelling: Int32 in [0, 1] {
+                        PHTVEngineRuntimeFacade.setCheckSpelling(spelling)
+                        for extended: Int32 in [0, 1] {
+                            PHTVEngineRuntimeFacade.setAllowConsonantZFWJ(extended)
+                            for raw in ["Erling", "Haaland", "qwrty", "terminal1234"] {
+                                for (key, caps, suffix) in boundaries {
+                                    let events = raw.map(runtimeKeyEvent) + [(key, caps)]
+                                    XCTAssertEqual(runtimeRenderedKeySequence(events), raw + suffix,
+                                                   "raw=\(raw), method=\(method), table=\(table), spell=\(spelling), extended=\(extended), boundary=\(suffix)")
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    func testNonVietnameseModePreservesCompletedVietnameseAcrossLayoutsAndSpellingOptions() {
+        PHTVEngineRuntimeFacade.setAutoRestoreEnglishWordMode(Int32(AutoRestoreEnglishMode.nonVietnamese.rawValue))
+        PHTVEngineRuntimeFacade.setRestoreIfWrongSpelling(1)
+        let cases: [(Int32, String, String)] = [
+            (0, "tieengs", "tiếng"), (0, "truowngf", "trường"),
+            (1, "tieng61", "tiếng"), (1, "truong72", "trường"),
+            (1, "tie61ng", "tiếng"), (1, "truo72ng", "trường"),
+            (2, "tieengs", "tiếng"), (3, "tieengs", "tiếng")
+        ]
+        for (method, raw, expected) in cases {
+            withInputType(method) {
+                for spelling: Int32 in [0, 1] {
+                    PHTVEngineRuntimeFacade.setCheckSpelling(spelling)
+                    for (key, suffix) in [(KEY_SPACE, " "), (KEY_COMMA, ","), (KEY_DOT, ".")] {
+                        XCTAssertEqual(runtimeRenderedKeySequence(raw.map(runtimeKeyEvent) + [(key, 0)]), expected + suffix,
+                                       "method=\(method), spell=\(spelling), raw=\(raw)")
+                    }
+                }
+            }
+        }
+    }
+
     func testNonVietnameseModePreservesVietnameseCompositionAtEveryKeystroke() {
         let words = ["dudowjc", "dduowjc", "dduowcj", "duowcjd", "truowfng", "truowngf",
                      "thuwowngr", "nguowif", "nghieeng", "tieesng", "quyeefn"]
