@@ -142,7 +142,7 @@ struct MacroSettingsView: View {
                 ) {
                     VStack(spacing: 0) {
                         // Category toolbar
-                        HStack(spacing: 12) {
+                        SettingsFlowLayout {
                             Button(action: { showingAddCategory = true }) {
                                 Label("Thêm", systemImage: "plus.circle.fill")
                                     .font(.subheadline)
@@ -163,7 +163,6 @@ struct MacroSettingsView: View {
                             .adaptiveBorderedButtonStyle()
                             .disabled(selectedCategoryId == nil || selectedCategoryId == MacroCategory.defaultCategory.id)
 
-                            Spacer()
                         }
                         .padding(.bottom, 12)
 
@@ -220,7 +219,7 @@ struct MacroSettingsView: View {
                 ) {
                     VStack(spacing: 0) {
                         // Toolbar
-                        HStack(spacing: 12) {
+                        SettingsFlowLayout {
                             Button(action: { showingAddMacro = true }) {
                                 Label("Thêm", systemImage: "plus.circle.fill")
                                     .font(.subheadline)
@@ -242,7 +241,6 @@ struct MacroSettingsView: View {
                             .adaptiveBorderedButtonStyle()
                             .disabled(selectedMacro == nil || !appState.useMacro)
 
-                            Spacer()
 
                             Button(action: { exportMacros() }) {
                                 Label("Xuất", systemImage: "square.and.arrow.up")

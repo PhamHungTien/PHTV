@@ -44,7 +44,7 @@ struct PHTVCustomConsonantsEditor: View {
                 }
             }
 
-            HStack(spacing: 8) {
+            SettingsFlowLayout {
                 TextField("Z, DZ", text: $draft)
                     .textFieldStyle(.roundedBorder)
                     .frame(width: 96)
@@ -54,7 +54,6 @@ struct PHTVCustomConsonantsEditor: View {
                     .onSubmit(addEntry)
                 Button(action: addEntry) { Label("Thêm", systemImage: "plus") }
                     .disabled(candidate == nil || validation != nil)
-                Spacer()
                 Button("Mặc định") {
                     entries = PHTVCustomConsonants.defaults
                     draft = ""

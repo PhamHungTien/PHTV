@@ -28,13 +28,14 @@ struct ClipboardHistorySettingsView: View {
                     displaysSubtitle: false
                 ) {
                     VStack(alignment: .leading, spacing: 10) {
-                        HStack(spacing: 10) {
-                            Label("\(manager.savedLibrary.items.count) mục", systemImage: "bookmark")
-                                .foregroundStyle(.secondary)
-                            Label("\(manager.savedLibrary.groups.count) nhóm", systemImage: "folder")
-                                .foregroundStyle(.secondary)
+                        SettingsRowLayout {
+                            HStack(spacing: 10) {
+                                Label("\(manager.savedLibrary.items.count) mục", systemImage: "bookmark")
+                                    .foregroundStyle(.secondary)
+                                Label("\(manager.savedLibrary.groups.count) nhóm", systemImage: "folder")
+                                    .foregroundStyle(.secondary)
 
-                            Spacer()
+                            }
 
                             Button("Mở Mục đã lưu") {
                                 manager.show(section: .saved)

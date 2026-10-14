@@ -42,15 +42,13 @@ struct HotkeyConfigView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             // Hotkey 1 Selection - Compact inline row
-            HStack(alignment: .center, spacing: 16) {
+            SettingsRowLayout {
                 HStack(spacing: 4) {
                     Text("Phím tắt chuyển đổi")
                         .font(.body)
                         .foregroundStyle(.primary)
                 }
                 .layoutPriority(1)
-
-                Spacer(minLength: 12)
 
                 HStack(spacing: 6) {
                     // Clear button
@@ -116,15 +114,13 @@ struct HotkeyConfigView: View {
 
             if hasSecondaryHotkey || showSecondaryHotkey {
                 // Hotkey 2 Selection - Compact inline row
-                HStack(alignment: .center, spacing: 16) {
+                SettingsRowLayout {
                     HStack(spacing: 4) {
                         Text("Phím tắt chuyển đổi phụ")
                             .font(.body)
                             .foregroundStyle(.primary)
                     }
                     .layoutPriority(1)
-
-                    Spacer(minLength: 12)
 
                     HStack(spacing: 6) {
                         // Clear button
@@ -684,15 +680,13 @@ struct EmojiHotkeyConfigView: View {
                 Divider()
 
                 // Key Selection - Compact inline row
-                HStack(alignment: .center, spacing: 16) {
+                SettingsRowLayout {
                     HStack(spacing: 4) {
                         Text("Phím tắt")
                             .font(.body)
                             .foregroundStyle(.primary)
                     }
                     .layoutPriority(1)
-
-                    Spacer(minLength: 12)
 
                     HStack(spacing: 6) {
                         // Clear button

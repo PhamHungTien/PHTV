@@ -578,7 +578,7 @@ struct SettingsButtonRow: View {
                 Text(title)
                     .font(.body)
                     .foregroundStyle(isDestructive ? .red : .primary)
-                    .lineLimit(1)
+                    .fixedSize(horizontal: false, vertical: true)
 
                 Spacer()
 

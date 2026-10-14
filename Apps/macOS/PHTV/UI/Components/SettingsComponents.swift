@@ -85,7 +85,7 @@ struct SettingsCard<Content: View, Trailing: View>: View {
                     Text(title)
                         .font(.headline)
                         .foregroundStyle(.primary)
-                        .lineLimit(1)
+                        .fixedSize(horizontal: false, vertical: true)
 
                     Text(subtitle)
                         .font(.caption)
@@ -107,7 +107,7 @@ struct SettingsCard<Content: View, Trailing: View>: View {
                 Text(title)
                     .font(.headline)
                     .foregroundStyle(.primary)
-                    .lineLimit(1)
+                    .fixedSize(horizontal: false, vertical: true)
 
                 Spacer(minLength: 12)
 
@@ -162,11 +162,9 @@ struct SettingsPickerRow<SelectionValue: Hashable, PickerContent: View>: View {
     }
 
     var body: some View {
-        HStack(alignment: .center, spacing: 16) {
+        SettingsRowLayout {
             rowLabel
                 .layoutPriority(1)
-
-            Spacer(minLength: 12)
 
             Group {
                 if let selectedTitle {
@@ -204,7 +202,7 @@ struct SettingsPickerRow<SelectionValue: Hashable, PickerContent: View>: View {
         Text(title)
             .font(.body)
             .foregroundStyle(.primary)
-            .lineLimit(1)
+            .fixedSize(horizontal: false, vertical: true)
     }
 }
 
@@ -218,11 +216,9 @@ struct SettingsToggleRow: View {
     @Binding var isOn: Bool
 
     var body: some View {
-        HStack(alignment: .center, spacing: 16) {
+        SettingsRowLayout {
             rowLabel
                 .layoutPriority(1)
-
-            Spacer(minLength: 12)
 
             Toggle("", isOn: $isOn)
                 .labelsHidden()
@@ -230,7 +226,6 @@ struct SettingsToggleRow: View {
                 .controlSize(.small)
                 .fixedSize()
                 .frame(width: SettingsLayout.toggleControlWidth, alignment: .trailing)
-                .frame(width: SettingsLayout.rowControlColumnWidth, alignment: .trailing)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.vertical, SettingsLayout.rowVerticalPadding)
@@ -241,7 +236,7 @@ struct SettingsToggleRow: View {
         Text(title)
             .font(.body)
             .foregroundStyle(.primary)
-            .lineLimit(1)
+            .fixedSize(horizontal: false, vertical: true)
     }
 }
 

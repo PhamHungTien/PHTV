@@ -112,28 +112,28 @@ struct TypingSettingsView: View {
 
                         SettingsDivider()
 
-                        HStack(spacing: 12) {
+                        SettingsRowLayout {
                             Text("Tự động khôi phục từ")
                                 .font(.body)
                                 .layoutPriority(1)
 
-                            Spacer(minLength: 12)
-
-                            Picker("Chế độ khôi phục", selection: bindable.autoRestoreEnglishWordMode) {
-                                ForEach(AutoRestoreEnglishMode.allCases) { mode in
-                                    Text(mode.controlTitle).tag(mode)
+                            HStack(spacing: 8) {
+                                Picker("Chế độ khôi phục", selection: bindable.autoRestoreEnglishWordMode) {
+                                    ForEach(AutoRestoreEnglishMode.allCases) { mode in
+                                        Text(mode.controlTitle).tag(mode)
+                                    }
                                 }
-                            }
-                            .labelsHidden()
-                            .controlSize(.small)
-                            .disabled(!appState.autoRestoreEnglishWord)
-
-                            Toggle("Tự động khôi phục từ", isOn: bindable.autoRestoreEnglishWord)
                                 .labelsHidden()
-                                .toggleStyle(.switch)
                                 .controlSize(.small)
-                                .fixedSize()
-                                .frame(width: SettingsLayout.toggleControlWidth, alignment: .trailing)
+                                .disabled(!appState.autoRestoreEnglishWord)
+
+                                Toggle("Tự động khôi phục từ", isOn: bindable.autoRestoreEnglishWord)
+                                    .labelsHidden()
+                                    .toggleStyle(.switch)
+                                    .controlSize(.small)
+                                    .fixedSize()
+                                    .frame(width: SettingsLayout.toggleControlWidth, alignment: .trailing)
+                            }
                         }
                         .padding(.vertical, SettingsLayout.rowVerticalPadding)
 

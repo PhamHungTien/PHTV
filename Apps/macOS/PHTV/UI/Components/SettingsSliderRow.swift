@@ -21,12 +21,11 @@ struct SettingsSliderRow: View {
     var onEditingChanged: ((Bool) -> Void)? = nil
 
     var body: some View {
-        HStack(alignment: .center, spacing: 12) {
+        SettingsRowLayout {
             Text(title)
                 .font(.body)
                 .foregroundStyle(.primary)
-                .lineLimit(1)
-            .frame(maxWidth: .infinity, alignment: .leading)
+                .fixedSize(horizontal: false, vertical: true)
 
             HStack(spacing: 8) {
                 ContinuousSettingsSlider(

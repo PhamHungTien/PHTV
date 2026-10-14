@@ -65,15 +65,13 @@ struct ClipboardHotkeyConfigView: View {
                 Divider()
 
                 // Key Selection - Compact inline row
-                HStack(alignment: .center, spacing: 16) {
+                SettingsRowLayout {
                     HStack(spacing: 4) {
                         Text("Phím tắt")
                             .font(.body)
                             .foregroundStyle(.primary)
                     }
                     .layoutPriority(1)
-
-                    Spacer(minLength: 12)
 
                     HStack(spacing: 6) {
                         // Clear button
@@ -171,13 +169,11 @@ struct ClipboardHotkeyConfigView: View {
 
                 // Retention window
                 VStack(alignment: .leading, spacing: 8) {
-                    HStack {
+                    SettingsRowLayout {
                         Text("Tự động xóa mục cũ hơn")
                             .font(.subheadline)
                             .fontWeight(.semibold)
                             .foregroundStyle(.primary)
-
-                        Spacer()
 
                         Picker(
                             "",
