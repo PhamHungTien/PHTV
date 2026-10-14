@@ -281,9 +281,9 @@ extension View {
         modifier(SettingsViewBackground())
     }
 
-    /// Applies searchable modifier to the sidebar
+    /// Keep search in the toolbar so sidebar transitions do not relocate it.
     func conditionalSearchable(text: Binding<String>, prompt: String) -> some View {
-        self.searchable(text: text, placement: .sidebar, prompt: prompt)
+        self.searchable(text: text, placement: .toolbar, prompt: prompt)
     }
 
     /// Uses the macOS 26 native search-toolbar behavior when available.

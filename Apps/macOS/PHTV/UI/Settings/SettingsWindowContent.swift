@@ -109,7 +109,7 @@ struct SettingsWindowContent: View {
 
     @ToolbarContentBuilder
     private var settingsToolbarContent: some ToolbarContent {
-        ToolbarItem(placement: .navigation) {
+        ToolbarItem(id: "settings-pin", placement: .primaryAction) {
             Toggle(isOn: Binding(
                 get: { appState.settingsWindowAlwaysOnTop },
                 set: { appState.settingsWindowAlwaysOnTop = $0 }
@@ -117,9 +117,11 @@ struct SettingsWindowContent: View {
                 Label("Ghim cửa sổ", systemImage: "pin")
             }
             .toggleStyle(.button)
+            .labelStyle(.iconOnly)
+            .fixedSize()
             .help("Giữ cửa sổ Cài đặt ở phía trước")
         }
-        ToolbarItem(placement: .primaryAction) {
+        ToolbarItem(id: "settings-support", placement: .primaryAction) {
             donateToolbarButton
         }
     }
@@ -131,6 +133,7 @@ struct SettingsWindowContent: View {
             Label("Ủng hộ PHTV", systemImage: "heart")
         }
         .labelStyle(.iconOnly)
+        .fixedSize()
         .popover(isPresented: $showDonatePopover, arrowEdge: .bottom) {
             DonateQRPopoverView()
         }
