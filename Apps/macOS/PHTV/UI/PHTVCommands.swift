@@ -3,6 +3,7 @@ import SwiftUI
 /// App menus use the responder chain for standard editing and window commands.
 @MainActor
 struct PHTVCommands: Commands {
+    @Environment(\.openWindow) private var openWindow
     @Bindable private var appState = AppState.shared
 
     var body: some Commands {
@@ -24,6 +25,12 @@ struct PHTVCommands: Commands {
         }
 
         CommandGroup(after: .sidebar) {
+            #if DEBUG
+            Button("So sánh Cài đặt native...") {
+                openWindow(id: "settings-native-comparison")
+            }
+            Divider()
+            #endif
             Menu("Các mục cài đặt") {
                 ForEach(SettingsTabSection.allCases) { section in
                     Section(section.title) {

@@ -61,5 +61,13 @@ struct PHTVApp: App {
         .commands {
             PHTVCommands()
         }
+        #if DEBUG
+        Window("Cài đặt — so sánh native", id: "settings-native-comparison") {
+            NativeSettingsComparisonView()
+                .environment(AppState.shared)
+        }
+        .defaultSize(width: 900, height: 620)
+        #endif
+
     }
 }
