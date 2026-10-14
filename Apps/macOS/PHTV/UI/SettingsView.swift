@@ -94,7 +94,8 @@ struct SettingsView: View {
         }
         .conditionalSearchable(text: $searchText, prompt: "Tìm nhanh cài đặt…")
         .settingsSearchToolbarBehavior()
-        .navigationSplitViewStyle(.balanced)
+        // Keep detail layout stable while the system reveals or hides the sidebar.
+        .navigationSplitViewStyle(.prominentDetail)
     }
 
     @ViewBuilder
