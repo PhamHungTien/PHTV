@@ -46,3 +46,20 @@ final class DragHandleView: NSView {
         window?.performDrag(with: event)
     }
 }
+
+/// Only the grip receives drag events, so adjacent buttons keep their native hit targets.
+struct PanelDragGrip: View {
+    let panelName: String
+
+    var body: some View {
+        Image(systemName: "line.3.horizontal")
+            .font(.system(size: 12, weight: .medium))
+            .foregroundStyle(.secondary)
+            .frame(width: 28, height: 28)
+            .background(.quaternary, in: Circle())
+            .overlay { WindowDragHandle() }
+            .help("Kéo để di chuyển")
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("Di chuyển cửa sổ \(panelName)")
+    }
+}

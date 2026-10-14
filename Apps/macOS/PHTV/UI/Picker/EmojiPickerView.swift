@@ -32,9 +32,44 @@ struct EmojiPickerView: View {
         VStack(spacing: 0) {
             // Header with close button and drag handle
             headerView
-                .contentShape(Rectangle())
-                .background(WindowDragHandle())
 
+
+
+            Divider()
+                .opacity(0.5)
+
+            // Content area - show different tabs based on selectedCategory
+            if selectedCategory == -2 {
+                // All Content tab with search (Emojis, GIFs, Stickers)
+                UnifiedContentView(onEmojiSelected: onEmojiSelected, onClose: onClose)
+                    .frame(maxHeight: .infinity)
+            } else if selectedCategory == -3 {
+                // Emoji tab - show all emoji categories
+                EmojiCategoriesView(onEmojiSelected: onEmojiSelected)
+                    .frame(maxHeight: .infinity)
+            } else if selectedCategory == -4 {
+                // GIF tab
+                GIFOnlyView(onClose: onClose)
+                    .frame(maxHeight: .infinity)
+            } else if selectedCategory == -5 {
+                // Sticker tab
+                StickerOnlyView(onClose: onClose)
+                    .frame(maxHeight: .infinity)
+            }
+        }
+        .frame(width: 380, height: 480)
+        .environment(KlipyAPIClient.shared)
+        .background {
+            pickerBackground
+        }
+    }
+
+    // MARK: - Header View
+
+    @ViewBuilder
+    private var headerView: some View {
+        HStack(spacing: 8) {
+            PanelDragGrip(panelName: "PHTV Picker")
 
             Picker("Nội dung PHTV Picker", selection: Binding(
                 get: { selectedCategory },
@@ -47,56 +82,8 @@ struct EmojiPickerView: View {
             }
             .pickerStyle(.segmented)
             .labelsHidden()
-            .controlSize(.regular)
-            .padding(.horizontal, 12)
-            .padding(.bottom, 10)
+            .controlSize(.small)
 
-            Divider()
-                .opacity(0.5)
-
-            // Content area - show different tabs based on selectedCategory
-            if selectedCategory == -2 {
-                // All Content tab with search (Emojis, GIFs, Stickers)
-                UnifiedContentView(onEmojiSelected: onEmojiSelected, onClose: onClose)
-                    .frame(height: 320)
-            } else if selectedCategory == -3 {
-                // Emoji tab - show all emoji categories
-                EmojiCategoriesView(onEmojiSelected: onEmojiSelected)
-                    .frame(height: 320)
-            } else if selectedCategory == -4 {
-                // GIF tab
-                GIFOnlyView(onClose: onClose)
-                    .frame(height: 320)
-            } else if selectedCategory == -5 {
-                // Sticker tab
-                StickerOnlyView(onClose: onClose)
-                    .frame(height: 320)
-            }
-        }
-        .frame(width: 380)
-        .environment(KlipyAPIClient.shared)
-        .background {
-            pickerBackground
-        }
-    }
-
-    // MARK: - Header View
-
-    @ViewBuilder
-    private var headerView: some View {
-        HStack(spacing: 8) {
-            // Drag handle icon (left side)
-            Image(systemName: "line.3.horizontal")
-                .font(.system(size: 12, weight: .medium))
-                .foregroundStyle(.secondary)
-                .frame(width: 24, height: 24)
-                .help("Kéo để di chuyển")
-
-            Text("PHTV Picker")
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundColor(.primary)
-
-            Spacer()
 
             // Close button
             GlassCloseButton {
@@ -105,7 +92,7 @@ struct EmojiPickerView: View {
             .help("Đóng (ESC)")
         }
         .padding(.horizontal, 16)
-        .padding(.top, 12)
+        .padding(.top, 10)
         .padding(.bottom, 10)
     }
 

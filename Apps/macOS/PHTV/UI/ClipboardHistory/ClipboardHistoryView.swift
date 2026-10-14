@@ -227,21 +227,7 @@ struct ClipboardHistoryView: View {
 
     @ViewBuilder
     private var dragHandle: some View {
-        ZStack {
-            Circle()
-                .fill(Color.primary.opacity(colorScheme == .dark ? 0.1 : 0.08))
-
-            Image(systemName: "line.3.horizontal")
-                .font(.system(size: 12, weight: .medium))
-                .foregroundStyle(.secondary.opacity(0.65))
-        }
-        .frame(width: 28, height: 28)
-        .overlay {
-            WindowDragHandle()
-                .help("Kéo để di chuyển")
-        }
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Di chuyển cửa sổ Clipboard")
+        PanelDragGrip(panelName: "Clipboard")
     }
 
     @ViewBuilder
