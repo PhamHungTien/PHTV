@@ -132,7 +132,7 @@ final class InputMethodState {
 
     @ObservationIgnored var onChange: (() -> Void)?
     @ObservationIgnored var isLoadingSettings = false
-    @ObservationIgnored private var runtimeSettingsCommitTask: Task<Void, Never>?
+    @ObservationIgnored private var runtimeSettingsNotificationTask: Task<Void, Never>?
 
     private static let autoRestoreEnglishLegacyKeys: [String] = [
         "RestoreIfInvalidWord"
@@ -182,7 +182,9 @@ final class InputMethodState {
 
     private func handleRuntimeSettingDidChange<Value: Equatable>(oldValue: Value, newValue: Value) {
         handleObservedChange(oldValue: oldValue, newValue: newValue) {
-            self.scheduleRuntimeSettingsCommit()
+            // Persist discrete input preferences before any runtime/defaults reload can run.
+            self.saveSettings()
+            self.scheduleRuntimeSettingsNotification()
         }
     }
 
@@ -195,12 +197,12 @@ final class InputMethodState {
         )
     }
 
-    private func scheduleRuntimeSettingsCommit() {
-        runtimeSettingsCommitTask?.cancel()
-        runtimeSettingsCommitTask = Task { @MainActor [weak self] in
+    private func scheduleRuntimeSettingsNotification() {
+        runtimeSettingsNotificationTask?.cancel()
+        runtimeSettingsNotificationTask = Task { @MainActor [weak self] in
             await Task.yield()
             guard let self = self, !Task.isCancelled, !self.isLoadingSettings else { return }
-            self.saveSettings()
+            self.runtimeSettingsNotificationTask = nil
             NotificationCenter.default.post(
                 name: NotificationName.phtvSettingsChanged,
                 object: nil

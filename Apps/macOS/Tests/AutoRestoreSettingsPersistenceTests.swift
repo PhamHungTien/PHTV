@@ -79,7 +79,7 @@ final class AutoRestoreSettingsPersistenceTests: XCTestCase {
         XCTAssertTrue(defaults.bool(forKey: UserDefaultsKey.restoreIfWrongSpelling))
     }
 
-    func testSaveSettingsPreservesNonVietnameseModeWithoutWaitingForDebounce() async {
+    func testSaveSettingsPreservesNonVietnameseModeAndFlushesUIChanges() async {
         let defaults = UserDefaults.standard
         defaults.set(false, forKey: UserDefaultsKey.quickTelex)
         defaults.set(18.0, forKey: UserDefaultsKey.menuBarIconSize)
@@ -104,7 +104,8 @@ final class AutoRestoreSettingsPersistenceTests: XCTestCase {
             return (inputState, uiState)
         }
 
-        XCTAssertFalse(defaults.bool(forKey: UserDefaultsKey.quickTelex))
+        // Input toggles persist immediately; continuous UI preferences remain deferred.
+        XCTAssertTrue(defaults.bool(forKey: UserDefaultsKey.quickTelex))
         XCTAssertEqual(defaults.double(forKey: UserDefaultsKey.menuBarIconSize), 18.0)
         XCTAssertEqual(
             defaults.integer(forKey: UserDefaultsKey.autoRestoreEnglishWordMode),
@@ -205,25 +206,20 @@ final class AutoRestoreSettingsPersistenceTests: XCTestCase {
     }
 
     func testConsonantToggleSurvivesImmediateRuntimeReload() async {
-        let defaults = UserDefaults.standard
-        defaults.set(false, forKey: UserDefaultsKey.allowConsonantZFWJ)
-
         await MainActor.run {
+            let defaults = UserDefaults.standard
+            defaults.set(false, forKey: UserDefaultsKey.allowConsonantZFWJ)
             let appState = AppState.shared
             appState.loadSettings()
-            appState.allowConsonantZFWJ = true
+
+            for enabled in [true, false, true] {
+                appState.allowConsonantZFWJ = enabled
+                // Reload in the same actor turn, before a deferred commit can run.
+                appState.refreshFromRuntime()
+                XCTAssertEqual(appState.allowConsonantZFWJ, enabled)
+                XCTAssertEqual(defaults.bool(forKey: UserDefaultsKey.allowConsonantZFWJ), enabled)
+            }
         }
-
-        try? await Task.sleep(nanoseconds: 50_000_000)
-
-        let persistedValue = await MainActor.run { () -> Bool in
-            let appState = AppState.shared
-            appState.refreshFromRuntime()
-            return appState.allowConsonantZFWJ
-        }
-
-        XCTAssertTrue(persistedValue)
-        XCTAssertTrue(defaults.bool(forKey: UserDefaultsKey.allowConsonantZFWJ))
     }
 
     func testFirstConsonantTogglePostsSettingsChangedNotification() async throws {

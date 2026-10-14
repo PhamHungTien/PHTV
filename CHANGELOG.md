@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [3.6.7] - 2026-10-14
 
+- Sửa lỗi tùy chọn bộ gõ có thể bị hoàn tác khi nạp lại trạng thái.
 - Sửa giật khi ẩn/hiện sidebar; tối ưu bố cục Cài đặt khi thu nhỏ cửa sổ.
 - Thanh trượt kéo mượt hơn; tinh gọn onboarding và trang Thông tin.
 - Sửa nút kéo PHTV Picker và nền góc popup Picker/Clipboard.
