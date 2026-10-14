@@ -207,6 +207,12 @@ struct SettingsItem: Identifiable {
 
         // ═══════════════════════════════════════════
         // MARK: - Thông tin (About)
+        SettingsItem(
+            title: "Fanpage", iconName: "link", tab: .about,
+            keywords: ["facebook", "PHTVInput", "liên hệ", "contact"]),
+        SettingsItem(
+            title: "Email", iconName: "envelope", tab: .about,
+            keywords: ["mail", "contact@phamhungtien.com", "liên hệ"]),
         // ═══════════════════════════════════════════
         SettingsItem(
             title: "Thông tin ứng dụng", iconName: "info.circle", tab: .about,

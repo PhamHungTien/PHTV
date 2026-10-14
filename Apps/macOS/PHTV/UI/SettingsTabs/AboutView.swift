@@ -31,7 +31,7 @@ struct AboutView: View {
                                 .font(.title2)
                                 .fontWeight(.semibold)
 
-                            Text("Precision Hybrid Typing Vietnamese")
+                            Text("Bộ gõ tiếng Việt cho macOS")
                                 .font(.subheadline)
                                 .foregroundStyle(.secondary)
 
@@ -53,9 +53,17 @@ struct AboutView: View {
                     VStack(spacing: 0) {
                         AboutInfoRow(title: "Phát triển bởi", value: "Phạm Hùng Tiến")
                         SettingsDivider()
-                        AboutInfoRow(title: "Năm phát hành", value: "2025")
+                        AboutContactRow(
+                            title: "Fanpage",
+                            label: "PHTV",
+                            destination: URL(string: "https://www.facebook.com/PHTVInput")!
+                        )
                         SettingsDivider()
-                        AboutInfoRow(title: "Công nghệ sử dụng", value: "Swift & SwiftUI")
+                        AboutContactRow(
+                            title: "Email",
+                            label: "contact@phamhungtien.com",
+                            destination: URL(string: "mailto:contact@phamhungtien.com")!
+                        )
                     }
                 }
 
@@ -103,22 +111,37 @@ private struct AboutInfoRow: View {
     let value: String
 
     var body: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 16) {
+        SettingsRowLayout {
             Text(title)
                 .font(.body)
                 .foregroundStyle(.primary)
-                .lineLimit(1)
+                .fixedSize(horizontal: false, vertical: true)
                 .layoutPriority(1)
-
-            Spacer(minLength: 12)
 
             Text(value)
                 .font(.body)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.trailing)
                 .textSelection(.enabled)
-                .lineLimit(2)
-                .frame(width: SettingsLayout.rowControlColumnWidth, alignment: .trailing)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(.vertical, SettingsLayout.rowVerticalPadding)
+    }
+}
+
+private struct AboutContactRow: View {
+    let title: String
+    let label: String
+    let destination: URL
+
+    var body: some View {
+        SettingsRowLayout {
+            Text(title)
+                .fixedSize(horizontal: false, vertical: true)
+            Link(label, destination: destination)
+                .multilineTextAlignment(.trailing)
+                .fixedSize(horizontal: false, vertical: true)
+                .help(destination.absoluteString)
         }
         .padding(.vertical, SettingsLayout.rowVerticalPadding)
     }
