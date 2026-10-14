@@ -7,6 +7,26 @@
         <language>vi</language>
         <!-- Most recent version first -->
         <item>
+            <title>3.6.7</title>
+            <pubDate>Thu, 15 Oct 2026 00:12:07 +0700</pubDate>
+            <sparkle:version>334</sparkle:version>
+            <sparkle:shortVersionString>3.6.7</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[
+                <h2>PHTV 3.6.7</h2>
+                <ul>
+                <li>Sửa lỗi tùy chọn bộ gõ có thể bị hoàn tác khi nạp lại trạng thái.</li>
+                <li>Sửa giật khi ẩn/hiện sidebar; tối ưu bố cục Cài đặt khi thu nhỏ cửa sổ.</li>
+                <li>Thanh trượt kéo mượt hơn; tinh gọn onboarding và trang Thông tin.</li>
+                <li>Sửa nút kéo PHTV Picker và nền góc popup Picker/Clipboard.</li>
+                <li>Cải thiện tìm kiếm Cài đặt, hỗ trợ tiếng Việt không dấu và nhiều từ khóa.</li>
+                <li>Mặc định bật khởi động cùng hệ thống cho người dùng mới.</li>
+                <li>Bổ sung liên kết Facebook, Fanpage và Email trong phần giới thiệu.</li>
+                </ul>
+            ]]></description>
+            <enclosure url="https://github.com/PhamHungTien/PHTV/releases/download/v3.6.7/PHTV-3.6.7-arm64.dmg" length="9975706" type="application/octet-stream" sparkle:edSignature="NCDdHbXntQOtZbhzQeh7GjYKwl2s82SOiOaHYlM3ZidnRfayw4lbhFn5rKJMTZj2UvCgEheNSbKLEh9QI9xqCQ=="/>
+        </item>
+        <item>
             <title>3.6.6</title>
             <pubDate>Mon, 12 Oct 2026 07:52:39 +0700</pubDate>
             <sparkle:version>333</sparkle:version>
@@ -938,14 +958,6 @@
                 <p>Không cần thiết lập lại hoặc cấp thêm quyền. Danh sách ứng dụng cũ vẫn được giữ nguyên và tự xuất hiện dưới tên mới <strong>“Luôn dùng tiếng Anh”</strong>.</p>
             ]]></description>
             <enclosure url="https://github.com/PhamHungTien/PHTV/releases/download/v3.3.9/PHTV-3.3.9-arm64.dmg" length="8994791" type="application/octet-stream" sparkle:edSignature="dZusccwvFE9x3wIRhHZvOQWdv587xS7TNcHbrh9XbFiVK01dEqUGyRxbBhjH6fnD8N4zbte1fBZJCs5aFmhCDQ=="/>
-        </item>
-        <item>
-            <title>3.3.8</title>
-            <pubDate>Fri, 17 Jul 2026 09:22:44 +0700</pubDate>
-            <sparkle:version>304</sparkle:version>
-            <sparkle:shortVersionString>3.3.8</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <enclosure url="https://github.com/PhamHungTien/PHTV/releases/download/v3.3.8/PHTV-3.3.8-arm64.dmg" length="8931761" type="application/octet-stream" sparkle:edSignature="t3bZpd9SVT28aDHTODPaCi+OQU6DPXNKzeAGJpe3kK/dLasZUqSkWz50oHdM02Gr2lMQefIe/aCWQcHsfOelBQ=="/>
         </item>
         <item>
             <title>2.8.9</title>
