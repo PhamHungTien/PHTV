@@ -340,88 +340,27 @@ final class PHTVAccessibilityService: NSObject {
 
     @objc(replaceFocusedTextViaAX:insertText:verify:)
     class func replaceFocusedTextViaAX(_ backspaceCount: Int, insertText: String?, verify: Bool) -> Bool {
-        let clampedBackspace = max(0, backspaceCount)
         let textToInsert = insertText ?? ""
-
         let systemWide = AXUIElementCreateSystemWide()
-        guard let focusedElement = elementAttribute(systemWide, kAXFocusedUIElementAttribute) else {
-            return false
-        }
+        guard let focusedElement = elementAttribute(systemWide, kAXFocusedUIElementAttribute) else { return false }
 
-        // Read current value
         var valueRef: CFTypeRef?
-        guard AXUIElementCopyAttributeValue(focusedElement, kAXValueAttribute as CFString, &valueRef) == .success else {
-            return false
-        }
-        let valueStr: String
-        if let valueRef,
-           CFGetTypeID(valueRef) == CFStringGetTypeID(),
-           let casted = valueRef as? String {
-            valueStr = casted
-        } else {
-            valueStr = ""
-        }
-        let valueNSString = valueStr as NSString
-        let valueLength = valueNSString.length
+        guard AXUIElementCopyAttributeValue(focusedElement, kAXValueAttribute as CFString, &valueRef) == .success,
+              let valueRef, CFGetTypeID(valueRef) == CFStringGetTypeID(),
+              let valueStr = valueRef as? String else { return false }
 
-        // Read caret position and selected text range
-        var caretLocation = valueLength
-        var selectedLength = 0
+        // Never guess an end-of-field caret if the selected range is unavailable.
+        // In that case let the existing keyboard fallback operate at the real caret.
         var rangeRef: CFTypeRef?
-        if AXUIElementCopyAttributeValue(focusedElement, kAXSelectedTextRangeAttribute as CFString, &rangeRef) == .success,
-           let rangeRef,
-           CFGetTypeID(rangeRef) == AXValueGetTypeID() {
-            var sel = CFRange()
-            let axRange = unsafeDowncast(rangeRef, to: AXValue.self)
-            if AXValueGetValue(axRange, .cfRange, &sel) {
-                caretLocation = sel.location
-                selectedLength = sel.length
-            }
-        }
-
-        // Clamp
-        if caretLocation < 0 {
-            caretLocation = 0
-        }
-        if caretLocation > valueLength {
-            caretLocation = valueLength
-        }
-        selectedLength = max(0, min(selectedLength, valueLength - caretLocation))
-
-        // Calculate replacement position
-        var start = caretLocation
-        var len = 0
-        let selectionAtEnd = selectedLength > 0 && (caretLocation + selectedLength == valueLength)
-
-        if selectedLength > 0 && !selectionAtEnd {
-            // User has highlighted text in-place: replace selected range only.
-            start = caretLocation
-            len = selectedLength
-        } else {
-            // No selection or Spotlight autocomplete suffix selection.
-            let deleteStart = calculateDeleteStartForAX(
-                valueStr,
-                caretLocation: caretLocation,
-                backspaceCount: clampedBackspace
-            )
-            if selectionAtEnd {
-                start = deleteStart
-                len = (caretLocation - deleteStart) + selectedLength
-            } else {
-                start = deleteStart
-                len = caretLocation - deleteStart
-            }
-        }
-
-        // Clamp length to valid range
-        if start + len > valueLength {
-            len = valueLength - start
-        }
-        if len < 0 {
-            len = 0
-        }
-
-        let newValue = valueNSString.replacingCharacters(in: NSRange(location: start, length: len), with: textToInsert)
+        guard AXUIElementCopyAttributeValue(focusedElement, kAXSelectedTextRangeAttribute as CFString, &rangeRef) == .success,
+              let rangeRef, CFGetTypeID(rangeRef) == AXValueGetTypeID() else { return false }
+        var selection = CFRange()
+        guard AXValueGetValue(unsafeDowncast(rangeRef, to: AXValue.self), .cfRange, &selection),
+              let plan = AXTextReplacementPlan.make(
+                value: valueStr, selection: NSRange(location: selection.location, length: selection.length),
+                backspaceCount: backspaceCount, insertion: textToInsert) else { return false }
+        let newValue = plan.value
+        let selectionAtEnd = plan.includesTrailingSelection
 
         // Write new value
         let writeError = AXUIElementSetAttributeValue(focusedElement, kAXValueAttribute as CFString, newValue as CFTypeRef)
@@ -430,8 +369,7 @@ final class PHTVAccessibilityService: NSObject {
         }
 
         // Set caret position
-        let newCaret = start + (textToInsert as NSString).length
-        var newSel = CFRange(location: newCaret, length: 0)
+        var newSel = CFRange(location: plan.caret, length: 0)
         if let newRange = AXValueCreate(.cfRange, &newSel) {
             _ = AXUIElementSetAttributeValue(focusedElement, kAXSelectedTextRangeAttribute as CFString, newRange)
         }
