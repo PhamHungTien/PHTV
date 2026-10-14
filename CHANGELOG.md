@@ -7,6 +7,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.6.7] - 2026-10-14
+
+### Changed
+
+- Chuyển Cài đặt sang cửa sổ do macOS quản lý; đồng bộ toolbar và hành vi
+  ghim cửa sổ, giữ các nút ổn định khi ẩn/hiện sidebar.
+- Thanh trượt kéo liên tục, bỏ các dấu chia bên dưới; giữ bước giá trị phù
+  hợp với từng thiết lập.
+- Tinh gọn onboarding bằng các biểu mẫu và nút hệ thống; giữ đầy đủ sáu bước,
+  hiển thị trạng thái hoàn tất theo quyền nhập liệu thực tế.
+- Bật **Mở cùng hệ thống** mặc định ở lần chạy đầu tiên; giữ lựa chọn hiện
+  có của người dùng đã cài ứng dụng.
+- Mở rộng tìm kiếm Cài đặt lên 104 mục; hỗ trợ tiếng Việt không dấu, chữ hoa
+  và truy vấn nhiều từ.
+- Thu gọn thanh đầu PHTV Picker; đặt nút kéo ở góc trái, nút đóng ở góc phải
+  và nhóm chọn nội dung ở giữa.
+
+### Fixed
+
+- Sửa vòng lặp thay đổi kích thước gây giật, chớp khi ẩn/hiện sidebar Cài đặt;
+  tránh làm các nút toolbar nhảy vào menu tràn.
+- Đặt kích thước tối thiểu của cửa sổ Cài đặt là 780 × 550 để hạn chế mất
+  nội dung khi thu nhỏ, áp dụng tại cửa sổ thay vì ép bố cục SwiftUI.
+- Loại bỏ phần nền vuông tối ở các góc popup Clipboard và PHTV Picker.
+- Dùng chung vùng kéo cửa sổ cho hai popup, sửa nút kéo PHTV Picker bị nội
+  dung giao diện chặn thao tác.
+- Chỉ thay thế văn bản qua Accessibility khi đọc được vị trí con trỏ hợp lệ;
+  tránh mặc định ghi vào cuối ô khi không đọc được vùng chọn.
+
+### Chất lượng
+
+- Toàn bộ 632 kiểm thử: 630 đạt, 2 bỏ qua, không có lỗi; bổ sung kiểm thử
+  tìm kiếm, khởi động cùng hệ thống và thay thế văn bản Unicode/vùng chọn.
+- Debug build thành công. Phần gõ và chỉnh sửa trực tiếp trong Spotlight
+  chưa được xác nhận lại trên giao diện thực tế.
+
 ## [3.6.6] - 2026-10-12
 
 ### Added
@@ -1915,7 +1951,8 @@ Phạm Hùng Tiến
 - Macro (gõ tắt)
 - Hoàn toàn offline
 
-[Unreleased]: https://github.com/PhamHungTien/PHTV/compare/v3.6.6...HEAD
+[Unreleased]: https://github.com/PhamHungTien/PHTV/compare/v3.6.7...HEAD
+[3.6.7]: https://github.com/PhamHungTien/PHTV/compare/v3.6.6...v3.6.7
 [3.6.6]: https://github.com/PhamHungTien/PHTV/compare/v3.6.5...v3.6.6
 [3.6.5]: https://github.com/PhamHungTien/PHTV/compare/v3.6.4...v3.6.5
 [3.6.4]: https://github.com/PhamHungTien/PHTV/compare/v3.6.3...v3.6.4
