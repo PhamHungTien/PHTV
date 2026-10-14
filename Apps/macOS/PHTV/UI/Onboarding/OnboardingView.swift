@@ -19,6 +19,7 @@ struct OnboardingView: View {
     @Environment(AppState.self) private var appState
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     var onDismiss: () -> Void
+    @AppStorage(UserDefaultsKey.onboardingCompleted) private var hasCompletedOnboarding = false
     @State private var currentStep: Int
 
     /// Index of the "Quyền truy cập" step — permission guidance can open the
@@ -56,10 +57,7 @@ struct OnboardingView: View {
     }
 
     private var stepTransition: AnyTransition {
-        reduceMotion ? .identity : .asymmetric(
-            insertion: .move(edge: .trailing).combined(with: .opacity),
-            removal: .move(edge: .leading).combined(with: .opacity)
-        )
+        reduceMotion ? .identity : .opacity
     }
 
     var body: some View {
@@ -88,9 +86,7 @@ struct OnboardingView: View {
                     })
                     .transition(stepTransition)
                 case 5:
-                    CompletionStepView(onFinish: {
-                        onDismiss()
-                    })
+                    CompletionStepView()
                     .transition(stepTransition)
                 default:
                     EmptyView()
@@ -101,9 +97,7 @@ struct OnboardingView: View {
             .padding(.top, 8)
             .padding(.bottom, 12)
 
-            if safeStep < maxStep {
-                footer
-            }
+            footer
         }
         .frame(width: OnboardingStyle.cardWidth, height: OnboardingStyle.cardHeight)
     }
@@ -148,26 +142,25 @@ struct OnboardingView: View {
                     Button("Quay lại") {
                         goToPreviousStep()
                     }
-                    .keyboardShortcut(.leftArrow, modifiers: [])
+                    .keyboardShortcut("[", modifiers: .command)
                     .adaptiveBorderedButtonStyle()
-                    .controlSize(.large)
+                    .controlSize(.regular)
                 } else {
                     Spacer().frame(width: 80)
                 }
 
                 Spacer()
 
-                Button(action: {
-                    goToNextStep()
-                }) {
-                    HStack(spacing: 6) {
-                        Text(safeStep == 0 ? "Bắt đầu" : "Tiếp tục")
-                        Image(systemName: "arrow.right")
-                            .font(.system(size: 12, weight: .semibold))
+                Button(safeStep == maxStep ? "Bắt đầu sử dụng" : (safeStep == 0 ? "Bắt đầu" : "Tiếp tục")) {
+                    if safeStep == maxStep {
+                        hasCompletedOnboarding = true
+                        onDismiss()
+                    } else {
+                        goToNextStep()
                     }
                 }
-                .adaptiveProminentButtonStyle()
-                .controlSize(.large)
+                .buttonStyle(.borderedProminent)
+                .controlSize(.regular)
                 .keyboardShortcut(.defaultAction)
             }
             .padding(.horizontal, 18)
@@ -284,100 +277,6 @@ struct OnboardingIconBadge: View {
 
 // MARK: - Reusable Components
 
-
-struct OptionCard: View {
-    let title: String
-    let description: String
-    let icon: String
-    let isSelected: Bool
-    let action: () -> Void
-    @Environment(\.colorScheme) private var colorScheme
-
-    var body: some View {
-        Button(action: action) {
-            HStack(alignment: .center, spacing: 12) {
-                Image(systemName: icon)
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundColor(.accentColor)
-                    .frame(width: 28, height: 28)
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(title)
-                        .font(.system(size: 14, weight: .semibold))
-
-                    Text(description)
-                        .font(.system(size: 12))
-                        .foregroundColor(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-
-                Spacer()
-
-                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                    .font(.system(size: 18))
-                    .foregroundColor(isSelected ? .accentColor : Color.gray.opacity(0.3))
-            }
-            .padding(14)
-            .background(
-                OnboardingSurface(
-                    cornerRadius: 12,
-                    fillColor: Color(nsColor: .controlBackgroundColor),
-                    strokeColor: isSelected ? Color.accentColor.opacity(0.5) : Color.primary.opacity(colorScheme == .dark ? 0.12 : 0.08)
-                )
-            )
-        }
-        .buttonStyle(.plain)
-    }
-}
-
-struct FeatureToggleRow: View {
-    let icon: String
-    let title: String
-    let description: String
-    @Binding var isOn: Bool
-    @Environment(\.colorScheme) private var colorScheme
-
-    var body: some View {
-        HStack(alignment: .center, spacing: 10) {
-            // Icon - centered vertically
-            Image(systemName: icon)
-                .font(.system(size: 16, weight: .semibold))
-                .foregroundColor(.accentColor)
-                .frame(width: 26, height: 26)
-
-            // Text content - fixed height for consistency
-            VStack(alignment: .leading, spacing: 2) {
-                Text(title)
-                    .font(.system(size: 12, weight: .semibold))
-                    .lineLimit(1)
-
-                Text(description)
-                    .font(.system(size: 10))
-                    .foregroundColor(.secondary)
-                    .lineLimit(2)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            .frame(height: 36, alignment: .leading)
-
-            Spacer(minLength: 4)
-
-            // Toggle - centered vertically
-            Toggle("", isOn: $isOn)
-                .toggleStyle(.switch)
-                .controlSize(.small)
-        }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 8)
-        .frame(height: 58)
-        .background(
-            OnboardingSurface(
-                cornerRadius: 10,
-                fillColor: Color(nsColor: .controlBackgroundColor),
-                strokeColor: Color.primary.opacity(colorScheme == .dark ? 0.12 : 0.08)
-            )
-        )
-    }
-}
 
 struct OnboardingChecklistCard: View {
     let title: String
@@ -557,7 +456,7 @@ struct SystemSettingsStepView: View {
         VStack(spacing: 18) {
             OnboardingStepHeader(
                 title: "Cấu hình hệ thống",
-                subtitle: "Tắt một vài tính năng tự động để tránh xung đột khi gõ",
+                subtitle: "Điều chỉnh các mục này nếu bạn gặp xung đột khi gõ",
                 icon: "gearshape.2.fill"
             )
 
@@ -637,128 +536,6 @@ struct SystemSettingsStepView: View {
     }
 }
 
-struct InputMethodStepView: View {
-    @Environment(AppState.self) private var appState
-
-    var body: some View {
-        VStack(spacing: 18) {
-            OnboardingStepHeader(
-                title: "Chọn kiểu gõ",
-                subtitle: "Hãy chọn kiểu gõ bạn quen thuộc nhất",
-                icon: "keyboard.fill"
-            )
-
-            VStack(spacing: 12) {
-                OptionCard(
-                    title: "Telex",
-                    description: "S, F, R, X, J để bỏ dấu. Phổ biến nhất.",
-                    icon: "keyboard",
-                    isSelected: appState.inputMethod == .telex
-                ) {
-                    appState.inputMethod = .telex
-                }
-
-                OptionCard(
-                    title: "VNI",
-                    description: "Sử dụng phím số 1, 2, 3... để bỏ dấu.",
-                    icon: "textformat.123",
-                    isSelected: appState.inputMethod == .vni
-                ) {
-                    appState.inputMethod = .vni
-                }
-
-                OptionCard(
-                    title: "Simple Telex",
-                    description: "Giản lược, giảm lỗi gõ nhầm trong tiếng Anh.",
-                    icon: "wand.and.stars",
-                    isSelected: appState.inputMethod == .simpleTelex1
-                ) {
-                    appState.inputMethod = .simpleTelex1
-                }
-            }
-            .padding(.horizontal, OnboardingStyle.contentHorizontalPadding)
-
-            Text("Bạn có thể đổi lại kiểu gõ trong Cài đặt bất cứ lúc nào.")
-                .font(.system(size: 12))
-                .foregroundColor(.secondary)
-
-            Spacer()
-        }
-    }
-}
-
-struct BasicFeaturesStepView: View {
-    @Environment(AppState.self) private var appState
-    private var bindable: Bindable<AppState> { Bindable(appState) }
-
-    private let columns = [
-        GridItem(.flexible(), spacing: 12),
-        GridItem(.flexible(), spacing: 12)
-    ]
-
-    var body: some View {
-        VStack(spacing: 18) {
-            OnboardingStepHeader(
-                title: "Tính năng cơ bản",
-                subtitle: "Bật nhanh các tính năng thường dùng",
-                icon: "sparkles"
-            )
-
-            ScrollView(.vertical, showsIndicators: false) {
-                LazyVGrid(columns: columns, spacing: 12) {
-                    FeatureToggleRow(
-                        icon: "bolt.fill",
-                        title: "Gõ tắt (Macro)",
-                        description: "Tăng tốc nhập liệu với bảng gõ tắt.",
-                        isOn: bindable.useMacro
-                    )
-
-                    FeatureToggleRow(
-                        icon: "arrow.2.squarepath",
-                        title: "Chuyển chế độ thông minh",
-                        description: "Tự nhớ kiểu gõ theo từng ứng dụng.",
-                        isOn: bindable.useSmartSwitchKey
-                    )
-
-                    FeatureToggleRow(
-                        icon: "textformat.abc",
-                        title: "Chính tả mới",
-                        description: "Đặt dấu oà, uý thay vì òa, úy.",
-                        isOn: bindable.useModernOrthography
-                    )
-
-                    FeatureToggleRow(
-                        icon: "textformat.size.larger",
-                        title: "Viết hoa chữ cái đầu",
-                        description: "Tự viết hoa sau dấu chấm câu.",
-                        isOn: bindable.upperCaseFirstChar
-                    )
-
-                    FeatureToggleRow(
-                        icon: "hare.fill",
-                        title: "Gõ nhanh (Quick Telex)",
-                        description: "Rút gọn tổ hợp phím khi gõ Telex.",
-                        isOn: bindable.quickTelex
-                    )
-
-                    FeatureToggleRow(
-                        icon: "character.bubble.fill",
-                        title: "Tự động khôi phục từ",
-                        description: "Khôi phục lại từ bị biến đổi ngoài ý muốn; có thể chọn phạm vi trong Cài đặt.",
-                        isOn: bindable.autoRestoreEnglishWord
-                    )
-                }
-                .padding(.horizontal, OnboardingStyle.contentHorizontalPadding)
-                .padding(.bottom, 12)
-            }
-
-            Text("Bạn có thể điều chỉnh thêm trong Cài đặt sau.")
-                .font(.system(size: 11))
-                .foregroundColor(.secondary)
-        }
-    }
-}
-
 struct AccessibilityStepView: View {
     @Environment(AppState.self) private var appState
     /// Called once when Accessibility and the active tap become ready while
@@ -797,7 +574,7 @@ struct AccessibilityStepView: View {
                 }
 
                 if runtimeHealth.phase == .accessibilityRequired {
-                    Text("Bạn có thể tiếp tục và cấp quyền sau — PHTV sẽ nhắc lại khi bộ gõ cần quyền.")
+                    Text("Bạn có thể tiếp tục và cấp quyền sau trong Cài đặt.")
                         .font(.system(size: 11))
                         .foregroundColor(.secondary)
                         .multilineTextAlignment(.center)
@@ -835,7 +612,7 @@ struct AccessibilityStepView: View {
                 rows: [
                     "Nhấn nút bên dưới để PHTV làm mới mục quyền cũ rồi mở Cài đặt Hệ thống.",
                     "Trong Quyền riêng tư & Bảo mật > \(permissionName), bật PHTV.",
-                    "Sau khi macOS nhận quyền, PHTV sẽ tự khởi tạo event tap."
+                    "Sau khi macOS nhận quyền, PHTV sẽ tự khởi tạo bộ gõ."
                 ]
             )
         case .relaunchPending:
@@ -858,7 +635,7 @@ struct AccessibilityStepView: View {
             OnboardingStatusCard(
                 icon: "clock.badge.exclamationmark.fill",
                 title: "Đang hoàn tất khởi tạo",
-                description: "Quyền đã được cấp, nhưng PHTV vẫn đang chờ event tap hoạt động.",
+                description: "Quyền đã được cấp, nhưng PHTV vẫn đang chờ bộ gõ hoạt động.",
                 tint: .yellow
             )
 
@@ -913,63 +690,6 @@ struct AccessibilityStepView: View {
         } else if sawMissingPermission {
             sawMissingPermission = false
             onPermissionsReady?()
-        }
-    }
-}
-
-struct CompletionStepView: View {
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    var onFinish: () -> Void
-    @AppStorage(UserDefaultsKey.onboardingCompleted) private var hasCompletedOnboarding = false
-    @State private var scale: CGFloat = 0.5
-    @State private var opacity: Double = 0.0
-
-    var body: some View {
-        VStack(spacing: 20) {
-            Spacer(minLength: 8)
-
-            ZStack {
-                Circle()
-                    .fill(Color.accentColor.opacity(0.1))
-                    .frame(width: 160, height: 160)
-
-                Image(systemName: "checkmark.seal.fill")
-                    .font(.system(size: 72))
-                    .foregroundColor(.accentColor)
-                    .scaleEffect(scale)
-                    .opacity(opacity)
-            }
-            .task {
-                withAnimation(reduceMotion ? nil : .spring(response: 0.5, dampingFraction: 0.65)) {
-                    scale = 1.0
-                    opacity = 1.0
-                }
-            }
-
-            VStack(spacing: 8) {
-                Text("Hoàn tất thiết lập")
-                    .font(.system(size: 24, weight: .bold))
-
-                Text("PHTV đã sẵn sàng. Bạn có thể mở Cài đặt để tinh chỉnh thêm bất cứ lúc nào.")
-                    .font(.system(size: 14, weight: .medium))
-                    .multilineTextAlignment(.center)
-                    .foregroundColor(.secondary)
-            }
-            .padding(.horizontal, 36)
-
-            Spacer()
-
-            Button(action: {
-                hasCompletedOnboarding = true
-                onFinish()
-            }) {
-                Text("Bắt đầu sử dụng")
-                    .font(.system(size: 14, weight: .semibold))
-                    .frame(width: 180)
-            }
-            .adaptiveProminentButtonStyle()
-            .controlSize(.large)
-            .padding(.bottom, 28)
         }
     }
 }
