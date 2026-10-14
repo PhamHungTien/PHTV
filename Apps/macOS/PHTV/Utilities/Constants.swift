@@ -550,7 +550,7 @@ enum Defaults {
     static let emojiHotkeyKeyCode = KeyCode.eKey
 
     // MARK: - System
-    static let runOnStartup = false
+    static let runOnStartup = true
     static let performLayoutCompat = false
     static let showIconOnDock = false
     static let settingsWindowAlwaysOnTop = false
@@ -816,7 +816,7 @@ final class SettingsBootstrap: NSObject {
             UserDefaultsKey.emojiHotkeyModifiers: Int(Defaults.emojiHotkeyModifiers),
             UserDefaultsKey.emojiHotkeyKeyCode: Int(Defaults.emojiHotkeyKeyCode),
             UserDefaultsKey.runOnStartup: Defaults.runOnStartup,
-            UserDefaultsKey.runOnStartupLegacy: 0,
+            UserDefaultsKey.runOnStartupLegacy: Defaults.runOnStartup ? 1 : 0,
             UserDefaultsKey.updateCheckInterval: Defaults.updateCheckInterval,
             UserDefaultsKey.automaticUpdateChecks: Defaults.automaticUpdateChecks,
             UserDefaultsKey.includeSystemInfo: Defaults.includeSystemInfo,

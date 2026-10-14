@@ -11,6 +11,12 @@ import AppKit
 import Foundation
 import ServiceManagement
 
+enum LoginItemStartupPolicy {
+    static func shouldRegister(isFirstLaunch: Bool, status: SMAppService.Status) -> Bool {
+        isFirstLaunch && Defaults.runOnStartup && status == .notRegistered
+    }
+}
+
 @MainActor @objc extension AppDelegate {
     private func isRunOnStartupEffectivelyEnabled(_ status: SMAppService.Status) -> Bool {
         switch status {
@@ -25,8 +31,12 @@ import ServiceManagement
 
     @objc(syncRunOnStartupStatusWithFirstLaunch:)
     func syncRunOnStartupStatus(withFirstLaunch isFirstLaunch: Bool) {
-        _ = isFirstLaunch
-        refreshRunOnStartupStatus(context: "startup-sync")
+        // Apply the default once. Later launches must respect the user's OS setting.
+        if LoginItemStartupPolicy.shouldRegister(isFirstLaunch: isFirstLaunch, status: SMAppService.mainApp.status) {
+            setRunOnStartup(true)
+        } else {
+            refreshRunOnStartupStatus(context: "startup-sync")
+        }
     }
 
     @objc(setRunOnStartup:)
