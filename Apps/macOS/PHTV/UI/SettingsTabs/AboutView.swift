@@ -51,7 +51,11 @@ struct AboutView: View {
                     icon: "info.circle"
                 ) {
                     VStack(spacing: 0) {
-                        AboutInfoRow(title: "Phát triển bởi", value: "Phạm Hùng Tiến")
+                        AboutContactRow(
+                            title: "Phát triển bởi",
+                            label: "Phạm Hùng Tiến",
+                            destination: URL(string: "https://www.facebook.com/phamhungtien1404")!
+                        )
                         SettingsDivider()
                         AboutContactRow(
                             title: "Fanpage",
@@ -103,29 +107,6 @@ struct AboutView: View {
             .settingsPageFrame()
         }
         .settingsBackground()
-    }
-}
-
-private struct AboutInfoRow: View {
-    let title: String
-    let value: String
-
-    var body: some View {
-        SettingsRowLayout {
-            Text(title)
-                .font(.body)
-                .foregroundStyle(.primary)
-                .fixedSize(horizontal: false, vertical: true)
-                .layoutPriority(1)
-
-            Text(value)
-                .font(.body)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.trailing)
-                .textSelection(.enabled)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-        .padding(.vertical, SettingsLayout.rowVerticalPadding)
     }
 }
 
