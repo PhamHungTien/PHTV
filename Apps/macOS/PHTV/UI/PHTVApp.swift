@@ -48,26 +48,19 @@ struct PHTVApp: App {
     var body: some Scene {
         // Menu bar icon and menu are managed by StatusBarMenuManager (NSStatusItem + NSMenu).
         // This gives native submenu hover behavior that SwiftUI MenuBarExtra lacks.
-        Settings {
+        Window("Cài đặt PHTV", id: "settings-main") {
             SettingsWindowContent()
                 .environment(AppState.shared)
                 .frame(
                     minWidth: SettingsLayout.windowMinSize.width,
-                    idealWidth: SettingsLayout.windowIdealSize.width,
-                    minHeight: SettingsLayout.windowMinSize.height,
-                    idealHeight: SettingsLayout.windowIdealSize.height
+                    minHeight: SettingsLayout.windowMinSize.height
                 )
         }
+        .defaultSize(width: SettingsLayout.windowIdealSize.width, height: SettingsLayout.windowIdealSize.height)
         .commands {
             PHTVCommands()
         }
-        #if DEBUG
-        Window("Cài đặt — so sánh native", id: "settings-native-comparison") {
-            NativeSettingsComparisonView()
-                .environment(AppState.shared)
-        }
-        .defaultSize(width: 900, height: 620)
-        #endif
+
 
     }
 }

@@ -67,38 +67,11 @@ enum SettingsWindowHelper {
         }
     }
 
-    static func configureSettingsSceneWindow(_ window: NSWindow, alwaysOnTop: Bool) {
-        if window.identifier?.rawValue.hasPrefix("settings") != true && window.identifier?.rawValue != "com_apple_SwiftUI_Settings_window" {
-            window.identifier = NSUserInterfaceItemIdentifier("settings-swiftui-scene")
-        }
-        window.title = "Cài đặt PHTV"
-        let minimumSize = NSSize(
-            width: SettingsLayout.windowMinSize.width,
-            height: SettingsLayout.windowMinSize.height
-        )
-        window.minSize = minimumSize
-        window.contentMinSize = minimumSize
-        applyWindowConfiguration(to: window, alwaysOnTop: alwaysOnTop)
-    }
-
     static func applyWindowConfiguration(to window: NSWindow, alwaysOnTop: Bool) {
         window.level = alwaysOnTop ? .floating : .normal
         window.hidesOnDeactivate = false
         window.isMovableByWindowBackground = false
         window.collectionBehavior = [.managed, .participatesInCycle, .moveToActiveSpace, .fullScreenAuxiliary]
-        restoreNativeSettingsChrome(for: window)
-    }
-
-    private static func restoreNativeSettingsChrome(for window: NSWindow) {
-        if !window.styleMask.contains(.fullSizeContentView) {
-            window.styleMask.insert(.fullSizeContentView)
-        }
-        if window.titleVisibility != .visible { window.titleVisibility = .visible }
-        if !window.titlebarAppearsTransparent { window.titlebarAppearsTransparent = true }
-
-        if #available(macOS 11.0, *) {
-            if window.toolbarStyle != .unified { window.toolbarStyle = .unified }
-        }
     }
 
     static func releaseSettingsWindow() {

@@ -65,7 +65,6 @@ struct SettingsWindowContent: View {
         .task {
             await observeShowOnboardingNotifications()
         }
-        .background(SettingsWindowConfigurator(alwaysOnTop: appState.settingsWindowAlwaysOnTop))
         .onDisappear {
             appState.flushPendingSettingsForWindowClose()
             onboardingTask?.cancel()
@@ -335,44 +334,5 @@ struct SettingsWindowContent: View {
         } else {
             window.makeKeyAndOrderFront(nil)
         }
-    }
-}
-
-private struct SettingsWindowConfigurator: NSViewRepresentable {
-    let alwaysOnTop: Bool
-
-    func makeNSView(context: Context) -> SettingsWindowConfigurationView {
-        let view = SettingsWindowConfigurationView()
-        view.alwaysOnTop = alwaysOnTop
-        view.configureCurrentWindow()
-        return view
-    }
-
-    func updateNSView(_ nsView: SettingsWindowConfigurationView, context: Context) {
-        nsView.alwaysOnTop = alwaysOnTop
-        nsView.configureCurrentWindow()
-    }
-}
-
-private final class SettingsWindowConfigurationView: NSView {
-    var alwaysOnTop = false
-    private weak var configuredWindow: NSWindow?
-    private var configuredAlwaysOnTop: Bool?
-
-    override func viewDidMoveToWindow() {
-        super.viewDidMoveToWindow()
-        configureCurrentWindow()
-    }
-
-    func configureCurrentWindow() {
-        guard let window else {
-            configuredWindow = nil
-            configuredAlwaysOnTop = nil
-            return
-        }
-        guard configuredWindow !== window || configuredAlwaysOnTop != alwaysOnTop else { return }
-        SettingsWindowHelper.configureSettingsSceneWindow(window, alwaysOnTop: alwaysOnTop)
-        configuredWindow = window
-        configuredAlwaysOnTop = alwaysOnTop
     }
 }

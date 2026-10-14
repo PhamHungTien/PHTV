@@ -14,7 +14,7 @@ struct PHTVCommands: Commands {
         }
 
         CommandGroup(replacing: .appSettings) {
-            SettingsLink { Text("Cài đặt PHTV...") }
+            Button("Cài đặt PHTV...") { openWindow(id: "settings-main") }
                 .keyboardShortcut(",", modifiers: .command)
         }
 
@@ -25,12 +25,6 @@ struct PHTVCommands: Commands {
         }
 
         CommandGroup(after: .sidebar) {
-            #if DEBUG
-            Button("So sánh Cài đặt native...") {
-                openWindow(id: "settings-native-comparison")
-            }
-            Divider()
-            #endif
             Menu("Các mục cài đặt") {
                 ForEach(SettingsTabSection.allCases) { section in
                     Section(section.title) {
