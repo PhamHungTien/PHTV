@@ -68,10 +68,9 @@ enum SettingsWindowHelper {
     }
 
     static func applyWindowConfiguration(to window: NSWindow, alwaysOnTop: Bool) {
-        window.level = alwaysOnTop ? .floating : .normal
-        window.hidesOnDeactivate = false
-        window.isMovableByWindowBackground = false
-        window.collectionBehavior = [.managed, .participatesInCycle, .moveToActiveSpace, .fullScreenAuxiliary]
+        let level: NSWindow.Level = alwaysOnTop ? .floating : .normal
+        if window.level != level { window.level = level }
+        if window.hidesOnDeactivate { window.hidesOnDeactivate = false }
     }
 
     static func releaseSettingsWindow() {

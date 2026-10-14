@@ -109,81 +109,40 @@ struct SettingsWindowContent: View {
 
     @ToolbarContentBuilder
     private var settingsToolbarContent: some ToolbarContent {
-        if #available(macOS 26.0, *) {
-            ToolbarItem(placement: .navigation) {
-                pinToolbarButton
+        ToolbarItem(placement: .navigation) {
+            Toggle(isOn: Binding(
+                get: { appState.settingsWindowAlwaysOnTop },
+                set: { appState.settingsWindowAlwaysOnTop = $0 }
+            )) {
+                Label("Ghim cửa sổ", systemImage: "pin")
             }
-            .sharedBackgroundVisibility(.hidden)
-
-            ToolbarItem(placement: .primaryAction) {
-                donateToolbarButton
-            }
-            .sharedBackgroundVisibility(.hidden)
-        } else {
-            ToolbarItem(placement: .navigation) {
-                pinToolbarButton
-            }
-            ToolbarItem(placement: .primaryAction) {
-                donateToolbarButton
-            }
+            .toggleStyle(.button)
+            .help("Giữ cửa sổ Cài đặt ở phía trước")
         }
-    }
-
-    private var pinToolbarButton: some View {
-        Button {
-            appState.settingsWindowAlwaysOnTop.toggle()
-        } label: {
-            Image(systemName: appState.settingsWindowAlwaysOnTop ? "pin.fill" : "pin")
+        ToolbarItem(placement: .primaryAction) {
+            donateToolbarButton
         }
-        .adaptiveBorderedButtonStyle()
-        .buttonBorderShape(.circle)
-        .help(appState.settingsWindowAlwaysOnTop ? "Bỏ ghim cửa sổ Cài đặt" : "Ghim cửa sổ Cài đặt")
     }
 
     private var donateToolbarButton: some View {
         Button {
             showDonatePopover.toggle()
         } label: {
-            Image(systemName: "heart")
+            Label("Ủng hộ PHTV", systemImage: "heart")
         }
-        .adaptiveBorderedButtonStyle()
-        .buttonBorderShape(.circle)
+        .labelStyle(.iconOnly)
         .popover(isPresented: $showDonatePopover, arrowEdge: .bottom) {
             DonateQRPopoverView()
         }
         .help("Ủng hộ phát triển")
     }
 
-    /// Setup observer to ensure settings window stays visible when app loses focus
-    /// This is critical for accessory mode (no dock icon) where windows can hide unexpectedly
+    /// Observe close only; native window focus and floating level need no reassertion.
     @MainActor
     private func setupWindowObservers() {
         removeWindowObservers()
 
         windowObserverTasks = [
-            // App deactivation/activation can cause accessory windows to sink or hide.
-            makeWindowObserverTask(name: NSApplication.didResignActiveNotification) { _ in
-                applySettingsWindowBehavior(forceFront: false)
-            },
-            makeWindowObserverTask(name: NSApplication.didBecomeActiveNotification) { _ in
-                applySettingsWindowBehavior(forceFront: false)
-            },
-            // If settings window loses key/main while "always on top" is enabled,
-            // re-assert its level and order to prevent sinking.
-            makeWindowObserverTask(name: NSWindow.didResignKeyNotification) { notification in
-                guard resolveSettingsWindow(from: notification) != nil else { return }
-                if appState.settingsWindowAlwaysOnTop, !isClosingSettingsWindow {
-                    // Re-apply window level only. Do not force front here, otherwise
-                    // clicking close can immediately reopen the settings window.
-                    applySettingsWindowBehavior(forceFront: false)
-                }
-            },
-            makeWindowObserverTask(name: NSWindow.didResignMainNotification) { notification in
-                guard resolveSettingsWindow(from: notification) != nil else { return }
-                if appState.settingsWindowAlwaysOnTop, !isClosingSettingsWindow {
-                    applySettingsWindowBehavior(forceFront: false)
-                }
-            },
             makeWindowObserverTask(name: NSWindow.willCloseNotification) { notification in
                 let window = notification.object as? NSWindow
                 guard isSettingsWindow(window) else { return }
@@ -191,15 +150,6 @@ struct SettingsWindowContent: View {
                 appState.flushPendingSettingsForWindowClose()
                 windowLifecycleToken = UUID()
                 appState.systemState.stopLoginItemStatusMonitoring()
-            },
-            makeWindowObserverTask(name: NSWindow.didChangeOcclusionStateNotification) { notification in
-                guard let window = resolveSettingsWindow(from: notification),
-                      !isClosingSettingsWindow,
-                      appState.settingsWindowAlwaysOnTop,
-                      !window.isMiniaturized else { return }
-                // Re-assert the floating level only; forcing front here can create
-                // a focus tug-of-war with system UI and continuously invalidate layout.
-                window.level = .floating
             }
         ]
     }
@@ -230,13 +180,6 @@ struct SettingsWindowContent: View {
                 handler(notification)
             }
         }
-    }
-
-    @MainActor
-    private func resolveSettingsWindow(from notification: Notification) -> NSWindow? {
-        let windowID = (notification.object as? NSWindow).map(ObjectIdentifier.init)
-        guard let windowID else { return nil }
-        return NSApp.windows.first(where: { ObjectIdentifier($0) == windowID && isSettingsWindow($0) })
     }
 
     @MainActor
