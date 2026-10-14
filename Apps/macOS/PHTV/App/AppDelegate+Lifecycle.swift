@@ -164,6 +164,14 @@ func phtvIsRunningUnderXCTest() -> Bool {
         // One-shot cleanup of previous-version leftovers after an update.
         PHTVUpdateMaintenanceService.runAfterUpdateIfNeeded()
 
+        if isFirstLaunch {
+            loadDefaultConfig()
+            defaults.set(1, forKey: phtvDefaultsKeyNonFirstTime)
+            NSLog("[AppDelegate] First launch: loaded default config and marked NonFirstTime")
+        }
+
+        syncRunOnStartupStatus(withFirstLaunch: isFirstLaunch)
+
         if !axTrustedAtLaunch {
             runHotkeyHealthCheck(reason: "launch-missing-typing-permission")
             publishTypingPermissionState(eventTapReady: false)
@@ -196,7 +204,9 @@ func phtvIsRunningUnderXCTest() -> Bool {
                 self.syncCurrentFrontmostAppContext(reason: "launch", forceExcludedRecheck: true)
 
                 let showUI = UserDefaults.standard.integer(forKey: phtvDefaultsKeyShowUIOnStartup)
-                if showUI == 1 {
+                if SettingsRelaunchPolicy.shouldShowSettingsOnStartup(
+                    arguments: ProcessInfo.processInfo.arguments, preference: showUI == 1
+                ) {
                     NotificationCenter.default.post(name: phtvNotificationShowSettings, object: nil)
                 }
             }
@@ -206,13 +216,7 @@ func phtvIsRunningUnderXCTest() -> Bool {
             self.setQuickConvertString()
         }
 
-        if isFirstLaunch {
-            loadDefaultConfig()
-            defaults.set(1, forKey: phtvDefaultsKeyNonFirstTime)
-            NSLog("[AppDelegate] First launch: loaded default config and marked NonFirstTime")
-        }
 
-        syncRunOnStartupStatus(withFirstLaunch: isFirstLaunch)
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {

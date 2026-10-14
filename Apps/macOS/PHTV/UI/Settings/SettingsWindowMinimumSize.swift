@@ -43,6 +43,7 @@ struct SettingsWindowMinimumSize: NSViewRepresentable {
 
         func configureWindow() {
             guard let window else { return }
+            window.isRestorable = false
             let minimum = SettingsLayout.windowMinSize
             if window.contentMinSize != minimum { window.contentMinSize = minimum }
         }

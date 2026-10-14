@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [3.6.7] - 2026-10-14
 
+- Đóng Cài đặt sẽ khởi động lại PHTV ở chế độ nền, không mở lại cửa sổ.
 - Sửa lỗi tùy chọn bộ gõ có thể bị hoàn tác khi nạp lại trạng thái.
 - Sửa giật khi ẩn/hiện sidebar; tối ưu bố cục Cài đặt khi thu nhỏ cửa sổ.
 - Thanh trượt kéo mượt hơn; tinh gọn onboarding và trang Thông tin.

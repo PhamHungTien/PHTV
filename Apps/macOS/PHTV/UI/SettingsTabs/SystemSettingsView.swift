@@ -160,15 +160,7 @@ struct SystemSettingsView: View {
                     isOn: bindable.runOnStartup
                 )
 
-                SettingsDivider()
 
-                SettingsToggleRow(
-                    icon: "arrow.clockwise",
-                    iconColor: .accentColor,
-                    title: "Tự động khởi động lại khi đóng Cài đặt",
-                    subtitle: "Giải phóng RAM bằng cách khởi động lại ứng dụng mỗi khi đóng cửa sổ Cài đặt",
-                    isOn: bindable.autoRestartOnSettingsClose
-                )
             }
         }
     }

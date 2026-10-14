@@ -247,7 +247,6 @@ struct SettingsItem: Identifiable {
         SettingsItem(title: "Lịch sử Clipboard", iconName: SettingsTab.clipboardHistory.iconName, tab: .clipboardHistory, keywords: []),
         SettingsItem(title: "Khởi động", iconName: SettingsTab.system.iconName, tab: .system, keywords: []),
         SettingsItem(title: "Mở cùng hệ thống", iconName: SettingsTab.system.iconName, tab: .system, keywords: []),
-        SettingsItem(title: "Tự động khởi động lại khi đóng Cài đặt", iconName: SettingsTab.system.iconName, tab: .system, keywords: []),
         SettingsItem(title: "Giao diện", iconName: SettingsTab.system.iconName, tab: .system, keywords: []),
         SettingsItem(title: "Cài đặt luôn ở trên", iconName: SettingsTab.system.iconName, tab: .system, keywords: []),
         SettingsItem(title: "Thanh menu", iconName: SettingsTab.system.iconName, tab: .system, keywords: []),

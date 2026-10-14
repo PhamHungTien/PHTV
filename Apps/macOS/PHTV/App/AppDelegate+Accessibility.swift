@@ -77,7 +77,9 @@ func phtvDeferredRelaunchProcessArguments(
         sleep \(phtvDeferredRelaunchPollIntervalSeconds)
     done
     sleep \(phtvDeferredRelaunchPollIntervalSeconds)
-    if [ "$#" -gt 0 ]; then
+    if [ "${1:-}" = "--phtv-background" ]; then
+        exec /usr/bin/open -g -j -n "$bundle_path" --args "$@"
+    elif [ "$#" -gt 0 ]; then
         exec /usr/bin/open -n "$bundle_path" --args "$@"
     else
         exec /usr/bin/open -n "$bundle_path"
@@ -453,7 +455,9 @@ private nonisolated func phtvAttemptTCCRepairInBackground() async -> (fixed: Boo
         isRelaunchingAfterPermissionGrant = false
 
         let showUI = UserDefaults.standard.integer(forKey: phtvDefaultsKeyShowUIOnStartup)
-        if showUI == 1 {
+        if SettingsRelaunchPolicy.shouldShowSettingsOnStartup(
+            arguments: ProcessInfo.processInfo.arguments, preference: showUI == 1
+        ) {
             onControlPanelSelected()
         }
     }

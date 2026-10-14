@@ -81,7 +81,8 @@ struct SettingsWindowContent: View {
                 let hasVisibleSettingsWindow = NSApp.windows.contains { window in
                     window.identifier?.rawValue.hasPrefix("settings") == true && window.isVisible
                 }
-                let isActualClose = isClosingSettingsWindow || !hasVisibleSettingsWindow
+                let isBackgroundLaunch = ProcessInfo.processInfo.arguments.contains(SettingsRelaunchPolicy.backgroundArgument)
+                let isActualClose = isClosingSettingsWindow || (!hasVisibleSettingsWindow && !isBackgroundLaunch)
                 guard isActualClose else { return }
 
                 finalizeSettingsWindowClose()
@@ -214,21 +215,24 @@ struct SettingsWindowContent: View {
 
         isClosingSettingsWindow = false
 
-        if appState.autoRestartOnSettingsClose {
-            performAutoRestart()
-        }
+        performAutoRestart()
     }
 
     @MainActor
     private func performAutoRestart() {
-        // Spawn a detached shell that waits for this process to exit, then relaunches.
-        // NSWorkspace.openApplication while still running routes to the existing instance
-        // instead of starting a new one, so we must terminate first.
-        let appPath = Bundle.main.bundlePath
         let task = Process()
-        task.launchPath = "/bin/sh"
-        task.arguments = ["-c", "sleep 0.5 && open -a \"\(appPath)\""]
-        try? task.run()
+        task.executableURL = URL(fileURLWithPath: "/bin/sh")
+        task.arguments = phtvDeferredRelaunchProcessArguments(
+            parentPID: ProcessInfo.processInfo.processIdentifier,
+            bundlePath: Bundle.main.bundlePath,
+            launchArguments: [SettingsRelaunchPolicy.backgroundArgument]
+        )
+        do {
+            try task.run()
+        } catch {
+            NSLog("[Settings] Failed to schedule background relaunch: %@", error.localizedDescription)
+            return
+        }
         NSApp.terminate(nil)
     }
 
