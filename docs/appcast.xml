@@ -7,6 +7,22 @@
         <language>vi</language>
         <!-- Most recent version first -->
         <item>
+            <title>3.6.8</title>
+            <pubDate>Thu, 15 Oct 2026 00:42:34 +0700</pubDate>
+            <sparkle:version>335</sparkle:version>
+            <sparkle:shortVersionString>3.6.8</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[
+                <h2>PHTV 3.6.8</h2>
+                <ul>
+                <li>Đóng Cài đặt sẽ lưu cấu hình và khởi động lại PHTV ở nền, không mở lại cửa sổ.</li>
+                <li>Bỏ tùy chọn tự khởi động lại khi đóng Cài đặt; áp dụng tự động.</li>
+                <li>Sửa đăng ký khởi động cùng hệ thống ở lần đầu chưa cấp quyền nhập liệu.</li>
+                </ul>
+            ]]></description>
+            <enclosure url="https://github.com/PhamHungTien/PHTV/releases/download/v3.6.8/PHTV-3.6.8-arm64.dmg" length="9974884" type="application/octet-stream" sparkle:edSignature="IIVwfrQoDxN/Vax62tiBFUZzZeqfTeWvQpr1JfP5sl4yJoDcYL2g4i1n2VtCIlFXi630OZYkkpRv+0qA5rviAA=="/>
+        </item>
+        <item>
             <title>3.6.7</title>
             <pubDate>Thu, 15 Oct 2026 00:12:07 +0700</pubDate>
             <sparkle:version>334</sparkle:version>
@@ -936,28 +952,6 @@
                 <p>Không cần thiết lập lại hoặc cấp thêm quyền. Các quy tắc ứng dụng đã lưu tiếp tục dùng chế độ <strong>“Tự chuyển”</strong>; bạn có thể đổi từng ứng dụng sang <strong>“Khóa tiếng Anh”</strong> trong Cài đặt &gt; Ứng dụng.</p>
             ]]></description>
             <enclosure url="https://github.com/PhamHungTien/PHTV/releases/download/v3.4.0/PHTV-3.4.0-arm64.dmg" length="9010263" type="application/octet-stream" sparkle:edSignature="DLdRci251rEYIfm24NEFtOsfXsMAlNLIauY/pEJ9RCVvgraRn8KAZ4iQAjorHTAYt9GlL1VWj+odp/kqgQitAA=="/>
-        </item>
-        <item>
-            <title>3.3.9</title>
-            <pubDate>Sun, 19 Jul 2026 20:37:40 +0700</pubDate>
-            <sparkle:version>305</sparkle:version>
-            <sparkle:shortVersionString>3.3.9</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[
-                <h2>PHTV 3.3.9</h2>
-                <p>Bản cập nhật này giúp PHTV hoạt động ổn định hơn trong <strong>Zalo</strong> và <strong>Google Sheets</strong>, đồng thời làm rõ các quy tắc chuyển chế độ theo ứng dụng.</p>
-                <h3>Điểm nổi bật</h3>
-                <ul>
-                    <li><strong>Text Replacements trong Zalo</strong>: Các mục thay thế văn bản nhập từ macOS nay hoạt động nhất quán trong Zalo Chat, Zalo Web và trình duyệt.</li>
-                    <li><strong>Macro dài trong Zalo</strong>: Nội dung Unicode dài, ký tự tổ hợp và emoji được chèn đầy đủ hơn; clipboard được khôi phục an toàn sau khi chèn.</li>
-                    <li><strong>Google Sheets</strong>: Sửa lỗi autocomplete khiến gõ <code>dd</code> để tạo <code>đ</code> đôi khi cho kết quả <code>dđ</code>.</li>
-                    <li><strong>Quy tắc ứng dụng dễ hiểu hơn</strong>: “Loại trừ ứng dụng” được đổi tên thành <strong>“Luôn dùng tiếng Anh”</strong> và được phân biệt rõ với <strong>“Ghi nhớ chế độ theo ứng dụng”</strong>.</li>
-                    <li><strong>Biểu tượng menu bar chính xác hơn</strong>: Trạng thái được hiển thị và khôi phục đúng khi chuyển qua lại giữa PHTV và bộ gõ không dùng bảng chữ cái Latin.</li>
-                </ul>
-                <h3>Sau khi cập nhật</h3>
-                <p>Không cần thiết lập lại hoặc cấp thêm quyền. Danh sách ứng dụng cũ vẫn được giữ nguyên và tự xuất hiện dưới tên mới <strong>“Luôn dùng tiếng Anh”</strong>.</p>
-            ]]></description>
-            <enclosure url="https://github.com/PhamHungTien/PHTV/releases/download/v3.3.9/PHTV-3.3.9-arm64.dmg" length="8994791" type="application/octet-stream" sparkle:edSignature="dZusccwvFE9x3wIRhHZvOQWdv587xS7TNcHbrh9XbFiVK01dEqUGyRxbBhjH6fnD8N4zbte1fBZJCs5aFmhCDQ=="/>
         </item>
         <item>
             <title>2.8.9</title>
