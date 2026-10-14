@@ -83,6 +83,7 @@ struct EmojiPickerView: View {
             .pickerStyle(.segmented)
             .labelsHidden()
             .controlSize(.small)
+            .frame(maxWidth: .infinity)
 
 
             // Close button
