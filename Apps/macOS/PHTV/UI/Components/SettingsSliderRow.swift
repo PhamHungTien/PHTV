@@ -29,21 +29,11 @@ struct SettingsSliderRow: View {
             .frame(maxWidth: .infinity, alignment: .leading)
 
             HStack(spacing: 8) {
-                Slider(
-                    value: Binding(
-                        get: { self.value },
-                        set: { newValue in
-                            if step > 0 {
-                                self.value = round(newValue / step) * step
-                            } else {
-                                self.value = newValue
-                            }
-                        }
-                    ),
-                    in: minValue...maxValue,
-                    onEditingChanged: { editing in
-                        onEditingChanged?(editing)
-                    }
+                ContinuousSettingsSlider(
+                    value: $value,
+                    range: minValue...maxValue,
+                    step: step,
+                    onEditingChanged: onEditingChanged
                 )
                 .controlSize(.small)
                 .tint(iconColor)

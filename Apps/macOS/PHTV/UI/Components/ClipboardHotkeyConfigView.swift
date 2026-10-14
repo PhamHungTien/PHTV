@@ -136,12 +136,12 @@ struct ClipboardHotkeyConfigView: View {
                             .frame(width: 30, alignment: .trailing)
                     }
 
-                    Slider(
+                    ContinuousSettingsSlider(
                         value: Binding(
                             get: { Double(appState.clipboardHistoryMaxItems) },
                             set: { appState.clipboardHistoryMaxItems = Int($0) }
                         ),
-                        in: 10...100,
+                        range: 10...100,
                         step: 10
                     )
 
