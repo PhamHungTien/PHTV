@@ -15,13 +15,7 @@ struct SettingsView: View {
     @State private var searchText: String = ""
 
     private var filteredSettings: [SettingsItem] {
-        if searchText.isEmpty {
-            return []
-        }
-        return SettingsItem.allItems.filter { item in
-            item.title.localizedCaseInsensitiveContains(searchText)
-                || item.keywords.contains { $0.localizedCaseInsensitiveContains(searchText) }
-        }
+        SettingsItem.search(searchText)
     }
 
     var body: some View {
@@ -98,7 +92,7 @@ struct SettingsView: View {
     @ViewBuilder
     private var sidebarView: some View {
         let list = List(selection: $selectedTab) {
-            if searchText.isEmpty {
+            if searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 // Normal tab list grouped by section
                 ForEach(SettingsTabSection.allCases) { section in
                     Section(section.title) {

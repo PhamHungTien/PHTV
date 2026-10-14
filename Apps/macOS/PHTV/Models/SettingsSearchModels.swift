@@ -11,7 +11,7 @@ import Foundation
 // MARK: - Settings Search Item
 
 struct SettingsItem: Identifiable {
-    let id = UUID()
+    var id: String { "\(tab.id):\(title)" }
     let title: String
     let iconName: String
     let tab: SettingsTab
@@ -34,7 +34,7 @@ struct SettingsItem: Identifiable {
             title: "Kiểm tra chính tả", iconName: "textformat.abc.dottedunderline", tab: .typing,
             keywords: ["spell check", "chính tả", "kiểm tra", "đúng", "sai", "correction"]),
         SettingsItem(
-            title: "Phím khôi phục ký tự gốc", iconName: "arrow.uturn.backward.circle.fill", tab: .typing,
+            title: "Phím khôi phục ký tự gốc", iconName: "arrow.uturn.backward.circle.fill", tab: .hotkeys,
             keywords: ["restore key", "esc", "escape", "option", "control", "khôi phục", "ký tự gốc"]),
         SettingsItem(
             title: "Viết hoa ký tự đầu", iconName: "textformat.abc", tab: .typing,
@@ -214,7 +214,80 @@ struct SettingsItem: Identifiable {
         SettingsItem(
             title: "Ủng hộ phát triển", iconName: "heart.fill", tab: .about,
             keywords: ["donate", "ủng hộ", "support", "qr", "mã", "phát triển"]),
+        // Additional entries mirror labels exposed by the current settings pages.
+        SettingsItem(title: "Thiết lập bộ gõ", iconName: SettingsTab.typing.iconName, tab: .typing, keywords: []),
+        SettingsItem(title: "Tối ưu gõ", iconName: SettingsTab.typing.iconName, tab: .typing, keywords: []),
+        SettingsItem(title: "Chính tả mới (oà, uý)", iconName: SettingsTab.typing.iconName, tab: .typing, keywords: []),
+        SettingsItem(title: "Viết hoa đầu câu", iconName: SettingsTab.typing.iconName, tab: .typing, keywords: []),
+        SettingsItem(title: "Thêm dấu chấm khi gõ 2 lần phím cách", iconName: SettingsTab.typing.iconName, tab: .typing, keywords: []),
+        SettingsItem(title: "Gõ nhanh Telex", iconName: SettingsTab.typing.iconName, tab: .typing, keywords: []),
+        SettingsItem(title: "Phụ âm nhanh", iconName: SettingsTab.typing.iconName, tab: .typing, keywords: []),
+        SettingsItem(title: "Phụ âm tùy chỉnh", iconName: SettingsTab.typing.iconName, tab: .typing, keywords: []),
+        SettingsItem(title: "Chế độ Việt/Anh", iconName: SettingsTab.apps.iconName, tab: .apps, keywords: []),
+        SettingsItem(title: "Bật cho mọi ứng dụng", iconName: SettingsTab.apps.iconName, tab: .apps, keywords: []),
+        SettingsItem(title: "Tương thích nâng cao", iconName: SettingsTab.apps.iconName, tab: .apps, keywords: []),
+        SettingsItem(title: "Bố cục bàn phím đặc biệt", iconName: SettingsTab.apps.iconName, tab: .apps, keywords: []),
+        SettingsItem(title: "Chuyển chế độ gõ", iconName: SettingsTab.hotkeys.iconName, tab: .hotkeys, keywords: []),
+        SettingsItem(title: "Khôi phục ký tự", iconName: SettingsTab.hotkeys.iconName, tab: .hotkeys, keywords: []),
+        SettingsItem(title: "Hoàn tác về ký tự gốc", iconName: SettingsTab.hotkeys.iconName, tab: .hotkeys, keywords: []),
+        SettingsItem(title: "Tạm dừng gõ tiếng Việt", iconName: SettingsTab.hotkeys.iconName, tab: .hotkeys, keywords: []),
+        SettingsItem(title: "Thiết lập gõ tắt", iconName: SettingsTab.macro.iconName, tab: .macro, keywords: []),
+        SettingsItem(title: "Tự động viết hoa", iconName: SettingsTab.macro.iconName, tab: .macro, keywords: []),
+        SettingsItem(title: "Dùng Text Replacements của macOS", iconName: SettingsTab.macro.iconName, tab: .macro, keywords: []),
+        SettingsItem(title: "Danh mục", iconName: SettingsTab.macro.iconName, tab: .macro, keywords: []),
+        SettingsItem(title: "Danh sách gõ tắt", iconName: SettingsTab.macro.iconName, tab: .macro, keywords: []),
+        SettingsItem(title: "Loại trừ ứng dụng", iconName: SettingsTab.macro.iconName, tab: .macro, keywords: []),
+        SettingsItem(title: "Quyền riêng tư GIF & Sticker", iconName: SettingsTab.phtvPicker.iconName, tab: .phtvPicker, keywords: []),
+        SettingsItem(title: "Lịch sử Clipboard", iconName: SettingsTab.clipboardHistory.iconName, tab: .clipboardHistory, keywords: []),
+        SettingsItem(title: "Khởi động", iconName: SettingsTab.system.iconName, tab: .system, keywords: []),
+        SettingsItem(title: "Mở cùng hệ thống", iconName: SettingsTab.system.iconName, tab: .system, keywords: []),
+        SettingsItem(title: "Tự động khởi động lại khi đóng Cài đặt", iconName: SettingsTab.system.iconName, tab: .system, keywords: []),
+        SettingsItem(title: "Giao diện", iconName: SettingsTab.system.iconName, tab: .system, keywords: []),
+        SettingsItem(title: "Cài đặt luôn ở trên", iconName: SettingsTab.system.iconName, tab: .system, keywords: []),
+        SettingsItem(title: "Thanh menu", iconName: SettingsTab.system.iconName, tab: .system, keywords: []),
+        SettingsItem(title: "Hiển thị biểu tượng chữ V", iconName: SettingsTab.system.iconName, tab: .system, keywords: []),
+        SettingsItem(title: "Kích thước icon", iconName: SettingsTab.system.iconName, tab: .system, keywords: []),
+        SettingsItem(title: "Dock", iconName: SettingsTab.system.iconName, tab: .system, keywords: []),
+        SettingsItem(title: "Hiện icon trên Dock", iconName: SettingsTab.system.iconName, tab: .system, keywords: []),
+        SettingsItem(title: "Cập nhật", iconName: SettingsTab.system.iconName, tab: .system, keywords: []),
+        SettingsItem(title: "Tự động tải và cài đặt", iconName: SettingsTab.system.iconName, tab: .system, keywords: []),
+        SettingsItem(title: "Kiểm tra ngay", iconName: SettingsTab.system.iconName, tab: .system, keywords: []),
+        SettingsItem(title: "Tiện ích", iconName: SettingsTab.system.iconName, tab: .system, keywords: []),
+        SettingsItem(title: "Dữ liệu & sao lưu", iconName: SettingsTab.system.iconName, tab: .system, keywords: []),
+        SettingsItem(title: "Xem lại hướng dẫn", iconName: SettingsTab.system.iconName, tab: .system, keywords: []),
+        SettingsItem(title: "Xuất cấu hình", iconName: SettingsTab.system.iconName, tab: .system, keywords: []),
+        SettingsItem(title: "Nhập cấu hình", iconName: SettingsTab.system.iconName, tab: .system, keywords: []),
+        SettingsItem(title: "Khôi phục mặc định", iconName: SettingsTab.system.iconName, tab: .system, keywords: []),
+        SettingsItem(title: "Gỡ cài đặt PHTV", iconName: SettingsTab.system.iconName, tab: .system, keywords: []),
+        SettingsItem(title: "Thời gian", iconName: SettingsTab.keyboardCleaning.iconName, tab: .keyboardCleaning, keywords: []),
+        SettingsItem(title: "Thời lượng", iconName: SettingsTab.keyboardCleaning.iconName, tab: .keyboardCleaning, keywords: []),
+        SettingsItem(title: "Bật lịch sử Clipboard", iconName: SettingsTab.clipboardHistory.iconName, tab: .clipboardHistory, keywords: []),
+        SettingsItem(title: "Bỏ qua nội dung nhạy cảm", iconName: SettingsTab.clipboardHistory.iconName, tab: .clipboardHistory, keywords: []),
+        SettingsItem(title: "Phát âm thanh khi chuyển chế độ", iconName: SettingsTab.hotkeys.iconName, tab: .hotkeys, keywords: []),
+        SettingsItem(title: "Âm lượng beep", iconName: SettingsTab.hotkeys.iconName, tab: .hotkeys, keywords: []),
+        SettingsItem(title: "Bật tính năng tạm dừng", iconName: SettingsTab.hotkeys.iconName, tab: .hotkeys, keywords: []),
+        SettingsItem(title: "Bật phím tắt PHTV Picker", iconName: SettingsTab.hotkeys.iconName, tab: .hotkeys, keywords: []),
+        SettingsItem(title: "Tự động xóa mục cũ hơn", iconName: SettingsTab.clipboardHistory.iconName, tab: .clipboardHistory, keywords: []),
+
     ]
+
+    private static let searchIndex: [(item: SettingsItem, text: String)] = allItems.map { item in
+        (item, normalized(([item.title, item.tab.title] + item.keywords).joined(separator: " ")))
+    }
+
+    static func search(_ query: String) -> [SettingsItem] {
+        let terms = normalized(query).split(whereSeparator: { $0.isWhitespace })
+        guard !terms.isEmpty else { return [] }
+        return searchIndex.compactMap { entry in
+            terms.allSatisfy { entry.text.contains($0) } ? entry.item : nil
+        }
+    }
+
+    private static func normalized(_ value: String) -> String {
+        value.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: Locale(identifier: "vi_VN"))
+            .replacingOccurrences(of: "đ", with: "d")
+    }
+
 }
 
 // MARK: - Settings Tabs
