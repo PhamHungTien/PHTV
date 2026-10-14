@@ -23,6 +23,7 @@ struct SettingsWindowContent: View {
 
     var body: some View {
         settingsWindowContent
+            .background(SettingsWindowMinimumSize())
             .toolbar { settingsToolbarContent }
     }
 
