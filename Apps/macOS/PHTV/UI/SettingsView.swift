@@ -12,7 +12,6 @@ import SwiftUI
 struct SettingsView: View {
     @Environment(AppState.self) private var appState
     @State private var selectedTab: SettingsTab = .typing
-    @State private var lastTab: SettingsTab = .typing
     @State private var searchText: String = ""
 
     private var filteredSettings: [SettingsItem] {
@@ -37,13 +36,6 @@ struct SettingsView: View {
                 let appDelegate = AppDelegate.current()
                 NSLog("[SettingsView] onChange - showIconOnDock changed to %@", newValue ? "true" : "false")
                 appDelegate?.showIcon(newValue)  // This one saves to UserDefaults
-            }
-            .onChange(of: selectedTab) { _, newValue in
-                // Release cached app icons when leaving icon-heavy tabs.
-                if lastTab == .apps || lastTab == .typing {
-                    AppIconCache.shared.clear()
-                }
-                lastTab = newValue
             }
             .task {
                 await observeTabSelectionNotification(named: NotificationName.showAboutTab, tab: .about)
@@ -93,6 +85,8 @@ struct SettingsView: View {
             detailView
                 .environment(appState)
                 .navigationTitle(selectedTab.title)
+                // Tab selection replaces content immediately; the system owns sidebar animation.
+                .animation(nil, value: selectedTab)
             .frame(
                 minWidth: SettingsLayout.detailMinWidth,
                 minHeight: SettingsLayout.detailMinHeight
@@ -135,10 +129,8 @@ struct SettingsView: View {
                 } else {
                     ForEach(filteredSettings) { item in
                         SearchResultRow(item: item) {
-                            withAnimation(.phtvMorph) {
-                                selectedTab = item.tab
-                                searchText = ""
-                            }
+                            selectedTab = item.tab
+                            searchText = ""
                         }
                     }
                 }
@@ -152,13 +144,7 @@ struct SettingsView: View {
         )
         .animation(nil, value: selectedTab)
 
-        if #available(macOS 26.0, *) {
-            list
-        } else {
-            list
-                .scrollContentBackground(.hidden)
-                .background(sidebarBackground)
-        }
+        list
     }
 
     @ViewBuilder
@@ -189,24 +175,7 @@ struct SettingsView: View {
         }
     }
 
-    @ViewBuilder
-    private var sidebarBackground: some View {
-        ZStack {
-            LinearGradient(
-                colors: [
-                    Color(NSColor.windowBackgroundColor).opacity(0.98),
-                    Color(NSColor.controlBackgroundColor).opacity(0.96)
-                ],
-                startPoint: .top,
-                endPoint: .bottom
-            )
 
-            Rectangle()
-                .fill(.thinMaterial)
-                .opacity(0.55)
-        }
-        .ignoresSafeArea()
-    }
 }
 
 // MARK: - Sidebar Row

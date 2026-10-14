@@ -356,6 +356,8 @@ private struct SettingsWindowConfigurator: NSViewRepresentable {
 
 private final class SettingsWindowConfigurationView: NSView {
     var alwaysOnTop = false
+    private weak var configuredWindow: NSWindow?
+    private var configuredAlwaysOnTop: Bool?
 
     override func viewDidMoveToWindow() {
         super.viewDidMoveToWindow()
@@ -363,7 +365,14 @@ private final class SettingsWindowConfigurationView: NSView {
     }
 
     func configureCurrentWindow() {
-        guard let window else { return }
+        guard let window else {
+            configuredWindow = nil
+            configuredAlwaysOnTop = nil
+            return
+        }
+        guard configuredWindow !== window || configuredAlwaysOnTop != alwaysOnTop else { return }
         SettingsWindowHelper.configureSettingsSceneWindow(window, alwaysOnTop: alwaysOnTop)
+        configuredWindow = window
+        configuredAlwaysOnTop = alwaysOnTop
     }
 }
