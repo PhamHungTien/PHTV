@@ -28,13 +28,10 @@ struct SettingsWindowContent: View {
 
     private var settingsWindowContent: some View {
         OnboardingContainer(showOnboarding: $showOnboarding, initialStep: onboardingInitialStep) {
-            ZStack(alignment: .top) {
-                SettingsView()
-
-                // Update banner overlay
-                UpdateBannerView()
-                    .zIndex(1000)
-            }
+            SettingsView()
+                .overlay(alignment: .top) {
+                    UpdateBannerView()
+                }
         }
         .onChange(of: appState.donatePopoverRequested, initial: true) { _, requested in
             guard requested else { return }

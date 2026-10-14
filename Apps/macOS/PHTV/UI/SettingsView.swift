@@ -87,15 +87,12 @@ struct SettingsView: View {
                 .navigationTitle(selectedTab.title)
                 // Tab selection replaces content immediately; the system owns sidebar animation.
                 .animation(nil, value: selectedTab)
-            .frame(
-                minWidth: SettingsLayout.detailMinWidth,
-                minHeight: SettingsLayout.detailMinHeight
-            )
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .conditionalSearchable(text: $searchText, prompt: "Tìm nhanh cài đặt…")
         .settingsSearchToolbarBehavior()
-        // Keep detail layout stable while the system reveals or hides the sidebar.
-        .navigationSplitViewStyle(.prominentDetail)
+        // Let the split view resize its columns inside the freely resizable window.
+        .navigationSplitViewStyle(.balanced)
     }
 
     @ViewBuilder

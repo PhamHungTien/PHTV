@@ -51,10 +51,6 @@ struct PHTVApp: App {
         Window("Cài đặt PHTV", id: "settings-main") {
             SettingsWindowContent()
                 .environment(AppState.shared)
-                .frame(
-                    minWidth: SettingsLayout.windowMinSize.width,
-                    minHeight: SettingsLayout.windowMinSize.height
-                )
         }
         .defaultSize(width: SettingsLayout.windowIdealSize.width, height: SettingsLayout.windowIdealSize.height)
         .commands {
