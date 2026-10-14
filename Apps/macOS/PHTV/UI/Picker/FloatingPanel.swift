@@ -208,6 +208,12 @@ final class FloatingPanelSession<Content: View> {
     }
 }
 
+/// The panel must remain transparent outside its rounded SwiftUI surface.
+/// NSHostingView otherwise advertises an opaque rectangular backing to AppKit.
+private final class TransparentPanelHostingView<Content: View>: NSHostingView<Content> {
+    override var isOpaque: Bool { false }
+}
+
 class FloatingPanel<Content: View>: NSPanel, NSWindowDelegate {
 
     init(view: Content, contentRect: NSRect) {
@@ -236,7 +242,15 @@ class FloatingPanel<Content: View>: NSPanel, NSWindowDelegate {
         self.maxSize = contentRect.size
 
         // Set content view
-        self.contentView = NSHostingView(rootView: view)
+        let hostingView = TransparentPanelHostingView(rootView: view)
+        hostingView.wantsLayer = true
+        hostingView.layer?.backgroundColor = NSColor.clear.cgColor
+        // Match the shared 16 pt glass surface used by Picker and Clipboard.
+        // Clip child backgrounds too, not only the rounded glass behind them.
+        hostingView.layer?.cornerRadius = 16
+        hostingView.layer?.cornerCurve = .continuous
+        hostingView.layer?.masksToBounds = true
+        self.contentView = hostingView
 
         // Set delegate to handle close button
         self.delegate = self
