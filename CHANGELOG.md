@@ -7,9 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.6.8] - 2026-10-15
+
+- Đóng Cài đặt sẽ lưu cấu hình và khởi động lại PHTV ở nền, không mở lại cửa sổ.
+- Bỏ tùy chọn tự khởi động lại khi đóng Cài đặt; áp dụng tự động.
+- Sửa đăng ký khởi động cùng hệ thống ở lần đầu chưa cấp quyền nhập liệu.
+
 ## [3.6.7] - 2026-10-14
 
-- Đóng Cài đặt sẽ khởi động lại PHTV ở chế độ nền, không mở lại cửa sổ.
 - Sửa lỗi tùy chọn bộ gõ có thể bị hoàn tác khi nạp lại trạng thái.
 - Sửa giật khi ẩn/hiện sidebar; tối ưu bố cục Cài đặt khi thu nhỏ cửa sổ.
 - Thanh trượt kéo mượt hơn; tinh gọn onboarding và trang Thông tin.
@@ -1926,7 +1931,8 @@ Phạm Hùng Tiến
 - Macro (gõ tắt)
 - Hoàn toàn offline
 
-[Unreleased]: https://github.com/PhamHungTien/PHTV/compare/v3.6.7...HEAD
+[Unreleased]: https://github.com/PhamHungTien/PHTV/compare/v3.6.8...HEAD
+[3.6.8]: https://github.com/PhamHungTien/PHTV/compare/v3.6.7...v3.6.8
 [3.6.7]: https://github.com/PhamHungTien/PHTV/compare/v3.6.6...v3.6.7
 [3.6.6]: https://github.com/PhamHungTien/PHTV/compare/v3.6.5...v3.6.6
 [3.6.5]: https://github.com/PhamHungTien/PHTV/compare/v3.6.4...v3.6.5
