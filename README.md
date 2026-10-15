@@ -46,6 +46,12 @@ open /Applications/PHTV.app
 3. Nhấn **Control + Shift** để chuyển đổi Việt/Anh (có thể tùy chỉnh trong Settings).
 4. Bắt đầu gõ.
 
+## Video hướng dẫn
+
+Xem [video hướng dẫn PHTV trên YouTube](https://www.youtube.com/watch?v=VaE4dZncBRs).
+
+[![Xem video hướng dẫn PHTV trên YouTube](https://img.youtube.com/vi/VaE4dZncBRs/hqdefault.jpg)](https://www.youtube.com/watch?v=VaE4dZncBRs)
+
 ## Quyền & Riêng tư
 
 PHTV chỉ cần đúng một quyền của macOS để hoạt động:
