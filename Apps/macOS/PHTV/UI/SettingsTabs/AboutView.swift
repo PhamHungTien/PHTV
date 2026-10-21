@@ -10,6 +10,10 @@ import SwiftUI
 
 struct AboutView: View {
     @State private var showDonateQR = false
+    private var copyrightYear: String {
+        String(Calendar.current.component(.year, from: Date()))
+    }
+
     private var versionString: String {
         PHTVBuildInfo.displayVersion
     }
@@ -93,7 +97,7 @@ struct AboutView: View {
 
                 // Footer
                 VStack(spacing: 6) {
-                    Text("Copyright © 2025 Phạm Hùng Tiến")
+                    Text("© \(copyrightYear) Phạm Hùng Tiến")
                         .font(.caption)
                         .foregroundStyle(.secondary)
 
