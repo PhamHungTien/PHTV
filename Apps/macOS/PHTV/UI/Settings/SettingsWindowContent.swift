@@ -157,6 +157,9 @@ struct SettingsWindowContent: View {
             .fixedSize()
             .help("Giữ cửa sổ Cài đặt ở phía trước")
         }
+        if #available(macOS 26.0, *) {
+            ToolbarSpacer(.fixed, placement: .primaryAction)
+        }
         ToolbarItem(id: "settings-support", placement: .primaryAction) {
             donateToolbarButton
         }
