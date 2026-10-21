@@ -219,7 +219,7 @@ struct SettingsItem: Identifiable {
             keywords: ["about", "version", "phiên bản", "info", "thông tin", "phtv"]),
         SettingsItem(
             title: "Ủng hộ phát triển", iconName: "heart.fill", tab: .about,
-            keywords: ["donate", "ủng hộ", "support", "qr", "mã", "phát triển"]),
+            keywords: ["donate", "ủng hộ", "support", "qr", "mã", "phát triển", "youtube", "đăng ký", "theo dõi", "video", "hướng dẫn"]),
         // Additional entries mirror labels exposed by the current settings pages.
         SettingsItem(title: "Thiết lập bộ gõ", iconName: SettingsTab.typing.iconName, tab: .typing, keywords: []),
         SettingsItem(title: "Tối ưu gõ", iconName: SettingsTab.typing.iconName, tab: .typing, keywords: []),

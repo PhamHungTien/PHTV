@@ -20,11 +20,29 @@ struct SettingsWindowContent: View {
     @State private var onboardingTask: Task<Void, Never>?
     @State private var windowLifecycleToken = UUID()
     @State private var showDonatePopover = false
+    @State private var showYouTubeSupportPrompt = false
+    @AppStorage(YouTubeSupportPromptPolicy.lastPresentedVersionKey) private var youtubePromptVersion = ""
+    @Environment(\.openURL) private var openURL
 
     var body: some View {
         settingsWindowContent
             .background(SettingsWindowMinimumSize())
             .toolbar { settingsToolbarContent }
+            .alert("Cùng PHTV phát triển", isPresented: $showYouTubeSupportPrompt) {
+                Button("Xem hướng dẫn") { openURL(PHTVCommunityLinks.tutorial) }
+                Button("Đăng ký kênh YouTube") { openURL(PHTVCommunityLinks.youtube) }
+                Button("Bỏ qua", role: .cancel) { }
+            } message: {
+                Text("Xin lỗi nếu lời nhắn này làm phiền bạn. Nếu PHTV hữu ích, bạn có thể đăng ký kênh YouTube của Phạm Hùng Tiến để ủng hộ. Kênh có video hướng dẫn sử dụng PHTV dành cho bạn.")
+            }
+            .onReceive(NotificationCenter.default.publisher(for: NSWindow.didBecomeKeyNotification)) { notification in
+                guard let window = notification.object as? NSWindow, isSettingsWindow(window) else { return }
+                presentYouTubeSupportPromptIfNeeded()
+            }
+            .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+                presentYouTubeSupportPromptIfNeeded()
+            }
+            .onAppear { presentYouTubeSupportPromptIfNeeded() }
     }
 
     private var settingsWindowContent: some View {
@@ -92,6 +110,25 @@ struct SettingsWindowContent: View {
             // Update window level when user toggles the setting
             updateSettingsWindowLevel()
         }
+    }
+
+    @MainActor
+    private func presentYouTubeSupportPromptIfNeeded() {
+        guard !phtvIsRunningUnderXCTest(), NSApp.isActive,
+              NSApp.windows.contains(where: { isSettingsWindow($0) && $0.isVisible && $0.isKeyWindow }) else { return }
+        let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? ""
+        // New installations finish onboarding first and receive the invitation after a later update.
+        guard hasCompletedOnboarding else {
+            youtubePromptVersion = version
+            return
+        }
+        guard !showOnboarding, !showDonatePopover, !showYouTubeSupportPrompt else { return }
+        guard YouTubeSupportPromptPolicy.shouldPresent(
+            version: version, lastPresentedVersion: youtubePromptVersion,
+            onboardingCompleted: hasCompletedOnboarding
+        ) else { return }
+        youtubePromptVersion = version
+        showYouTubeSupportPrompt = true
     }
 
     @MainActor

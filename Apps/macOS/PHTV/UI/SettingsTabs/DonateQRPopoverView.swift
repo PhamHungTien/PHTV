@@ -27,6 +27,14 @@ struct DonateQRPopoverView: View {
                 .accessibilityLabel("Đóng mã QR ủng hộ")
             }
 
+            Link(destination: PHTVCommunityLinks.youtube) {
+                Label("Đăng ký kênh YouTube", systemImage: "play.rectangle")
+                    .frame(maxWidth: .infinity)
+            }
+            .adaptiveBorderedButtonStyle()
+            .controlSize(.large)
+            .help("Theo dõi kênh YouTube của Phạm Hùng Tiến để ủng hộ PHTV")
+
             qrCode
 
             Text("Quét bằng ngân hàng hoặc MoMo")
