@@ -145,7 +145,7 @@ struct SettingsWindowContent: View {
 
     @ToolbarContentBuilder
     private var settingsToolbarContent: some ToolbarContent {
-        ToolbarItem(id: "settings-pin", placement: .primaryAction) {
+        ToolbarItem(id: "settings-pin", placement: .automatic) {
             Toggle(isOn: Binding(
                 get: { appState.settingsWindowAlwaysOnTop },
                 set: { appState.settingsWindowAlwaysOnTop = $0 }
@@ -153,16 +153,20 @@ struct SettingsWindowContent: View {
                 Label("Ghim cửa sổ", systemImage: "pin")
             }
             .toggleStyle(.button)
+            .separateToolbarButtonStyle()
             .labelStyle(.iconOnly)
             .fixedSize()
             .help("Giữ cửa sổ Cài đặt ở phía trước")
         }
+        .separateToolbarBackground()
         if #available(macOS 26.0, *) {
-            ToolbarSpacer(.fixed, placement: .primaryAction)
+            ToolbarSpacer(.fixed, placement: .automatic)
         }
-        ToolbarItem(id: "settings-support", placement: .primaryAction) {
+        ToolbarItem(id: "settings-support", placement: .automatic) {
             donateToolbarButton
+                .separateToolbarButtonStyle()
         }
+        .separateToolbarBackground()
     }
 
     private var donateToolbarButton: some View {
@@ -321,6 +325,28 @@ struct SettingsWindowContent: View {
             window.orderFrontRegardless()
         } else {
             window.makeKeyAndOrderFront(nil)
+        }
+    }
+}
+
+private extension ToolbarContent {
+    @ToolbarContentBuilder
+    func separateToolbarBackground() -> some ToolbarContent {
+        if #available(macOS 26.0, *) {
+            self.sharedBackgroundVisibility(.hidden)
+        } else {
+            self
+        }
+    }
+}
+
+private extension View {
+    @ViewBuilder
+    func separateToolbarButtonStyle() -> some View {
+        if #available(macOS 26.0, *) {
+            self.buttonStyle(.glass).buttonBorderShape(.circle)
+        } else {
+            self
         }
     }
 }
