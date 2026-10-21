@@ -13,6 +13,8 @@ struct MacroEditorView: View {
     @Environment(AppState.self) private var appState
     @State private var macroName: String
     @State private var macroCode: String
+    @FocusState private var isContentFocused: Bool
+    @Environment(\.colorSchemeContrast) private var colorSchemeContrast
     @State private var errorMessage = ""
     @State private var showError = false
     @State private var selectedCategoryId: UUID?
@@ -126,7 +128,19 @@ struct MacroEditorView: View {
                         TextEditor(text: $macroCode)
                             .frame(minHeight: snippetType == .static ? 100 : 60)
                             .font(.system(.body, design: .monospaced))
+                            .scrollContentBackground(.hidden)
                             .roundedTextArea()
+                            .clipShape(RoundedRectangle(cornerRadius: 6))
+                            .focused($isContentFocused)
+                            .overlay {
+                                RoundedRectangle(cornerRadius: 6)
+                                    .strokeBorder(
+                                        isContentFocused ? Color.accentColor : Color.primary.opacity(colorSchemeContrast == .increased ? 0.6 : 0.25),
+                                        lineWidth: isContentFocused ? 2 : 1
+                                    )
+                                    .allowsHitTesting(false)
+                            }
+                            .accessibilityLabel(snippetType == .static ? "Nội dung gõ tắt" : "Định dạng gõ tắt")
 
                         if snippetType != .static {
                             Text("Gợi ý: \(snippetType.placeholder)")
