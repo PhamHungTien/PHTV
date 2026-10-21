@@ -7,6 +7,24 @@
         <language>vi</language>
         <!-- Intel (x86_64) feed — Most recent version first -->
         <item>
+            <title>3.6.9</title>
+            <pubDate>Wed, 21 Oct 2026 15:30:22 +0700</pubDate>
+            <sparkle:version>336</sparkle:version>
+            <sparkle:shortVersionString>3.6.9</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[
+                <h2>PHTV 3.6.9</h2>
+                <ul>
+                <li>Cải thiện giao diện Gõ tắt: viền ô nhập rõ hơn, căn lại số lượng và tối ưu bố cục co giãn.</li>
+                <li>Làm rõ mục loại trừ gõ tắt khỏi ứng dụng, lược bỏ mô tả thừa.</li>
+                <li>Tách riêng các nút toolbar; đồng bộ ô chọn tần suất cập nhật với các menu cài đặt.</li>
+                <li>Thêm video hướng dẫn và lời mời theo dõi YouTube, chỉ hiện một lần mỗi phiên bản khi mở Cài đặt.</li>
+                <li>Cập nhật năm bản quyền trong phần Thông tin theo năm hiện tại.</li>
+                </ul>
+            ]]></description>
+            <enclosure url="https://github.com/PhamHungTien/PHTV/releases/download/v3.6.9/PHTV-3.6.9-intel.dmg" length="10307675" type="application/octet-stream" sparkle:edSignature="qRBu+Rpz9+KA4pK1VJhj+xm/cZFbEST2XhoeTCKEg34y70qnCx+V7PPtW3LTJnlIfP+qrrRnTIFMXy2Gy2JkCQ=="/>
+        </item>
+        <item>
             <title>3.6.8</title>
             <pubDate>Thu, 15 Oct 2026 00:45:28 +0700</pubDate>
             <sparkle:version>335</sparkle:version>
@@ -930,28 +948,6 @@
                 <p>Không cần thiết lập lại hoặc cấp thêm quyền. Thiết lập, macro và quy tắc theo ứng dụng hiện có được giữ nguyên.</p>
             ]]></description>
             <enclosure url="https://github.com/PhamHungTien/PHTV/releases/download/v3.4.1/PHTV-3.4.1-intel.dmg" length="9277332" type="application/octet-stream" sparkle:edSignature="1uhAxrD2E4kMOIgAF+zCHn2kcP42XSb1MUws878ryrD1K9V6wgnjlcFoJuLI327mpkxkspRk2uSH7DsP1wFdDw=="/>
-        </item>
-        <item>
-            <title>3.4.0</title>
-            <pubDate>Sun, 19 Jul 2026 23:50:38 +0700</pubDate>
-            <sparkle:version>306</sparkle:version>
-            <sparkle:shortVersionString>3.4.0</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[
-                <h2>PHTV 3.4.0</h2>
-                <p>Bản cập nhật này bổ sung quy tắc tiếng Anh linh hoạt cho từng ứng dụng, đồng thời thiết kế lại phần Cài đặt &gt; Ứng dụng theo hướng gọn, rõ và native hơn trên macOS.</p>
-                <h3>Điểm nổi bật</h3>
-                <ul>
-                    <li><strong>Hai cách dùng tiếng Anh theo ứng dụng</strong>: Chọn <strong>“Tự chuyển”</strong> để vào ứng dụng bằng tiếng Anh nhưng vẫn có thể bật lại tiếng Việt, hoặc <strong>“Khóa tiếng Anh”</strong> để luôn giữ tiếng Anh cho đến khi rời ứng dụng.</li>
-                    <li><strong>Khóa tiếng Anh đồng bộ</strong>: Khi khóa đang có hiệu lực, mọi yêu cầu bật tiếng Việt đều được giữ ở tiếng Anh và biểu tượng menu bar luôn hiển thị <strong>E</strong>.</li>
-                    <li><strong>Biểu tượng nguồn nhập chính xác hơn</strong>: Với bàn phím Trung, Nhật, Hàn hoặc nguồn nhập không Latin, PHTV ưu tiên biểu tượng do macOS cung cấp; nếu không có icon phù hợp, PHTV dùng <strong>E</strong> làm dự phòng.</li>
-                    <li><strong>Cài đặt ứng dụng gọn và dễ hiểu hơn</strong>: Gộp thiết lập gửi từng phím toàn cục và theo ứng dụng, rút gọn trạng thái trống, thống nhất menu thêm ứng dụng và bổ sung thao tác chuột phải.</li>
-                    <li><strong>Trải nghiệm native hơn</strong>: Hiệu ứng chuyển trạng thái nhẹ, hỗ trợ Reduce Motion, và tự tìm đúng tên cùng icon khi thêm ứng dụng bằng Bundle ID.</li>
-                </ul>
-                <h3>Sau khi cập nhật</h3>
-                <p>Không cần thiết lập lại hoặc cấp thêm quyền. Các quy tắc ứng dụng đã lưu tiếp tục dùng chế độ <strong>“Tự chuyển”</strong>; bạn có thể đổi từng ứng dụng sang <strong>“Khóa tiếng Anh”</strong> trong Cài đặt &gt; Ứng dụng.</p>
-            ]]></description>
-            <enclosure url="https://github.com/PhamHungTien/PHTV/releases/download/v3.4.0/PHTV-3.4.0-intel.dmg" length="9277172" type="application/octet-stream" sparkle:edSignature="U71bVjVbnMbqQXAbncCbNUMz12zI82sN8m6CmDhFWSF9eogDQJYObRWvIsK4SlDfVxJKiCjp/9Sjea9P3+unCg=="/>
         </item>
         <item>
             <title>2.8.9</title>
