@@ -26,13 +26,18 @@ struct SettingsFlowLayout: Layout {
     }
 
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
-        arrangement(subviews: subviews, width: max(0, proposal.width ?? .greatestFiniteMagnitude)).1
+        let size = arrangement(subviews: subviews, width: max(0, proposal.width ?? .greatestFiniteMagnitude)).1
+        return CGSize(width: proposal.width ?? size.width, height: size.height)
     }
 
     func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
         let frames = arrangement(subviews: subviews, width: bounds.width).0
         for (index, frame) in frames.enumerated() {
-            subviews[index].place(at: CGPoint(x: bounds.minX + frame.minX, y: bounds.minY + frame.minY), proposal: ProposedViewSize(frame.size))
+            let rowHeight = frames.filter { $0.minY == frame.minY }.map(\.height).max() ?? frame.height
+            subviews[index].place(
+                at: CGPoint(x: bounds.minX + frame.minX, y: bounds.minY + frame.minY + (rowHeight - frame.height) / 2),
+                proposal: ProposedViewSize(frame.size)
+            )
         }
     }
 }

@@ -28,12 +28,23 @@ enum SettingsLayout {
     static let windowIdealSize = CGSize(width: 900, height: 620)
 }
 
+private struct SettingsContentMaxWidthKey: EnvironmentKey {
+    static let defaultValue: CGFloat = SettingsLayout.contentMaxWidth
+}
+
+extension EnvironmentValues {
+    var settingsContentMaxWidth: CGFloat {
+        get { self[SettingsContentMaxWidthKey.self] }
+        set { self[SettingsContentMaxWidthKey.self] = newValue }
+    }
+}
+
 // MARK: - Settings Page
 
 extension View {
-    func settingsPageFrame() -> some View {
+    func settingsPageFrame(maxWidth: CGFloat = SettingsLayout.contentMaxWidth) -> some View {
         self
-            .frame(maxWidth: SettingsLayout.contentMaxWidth, alignment: .top)
+            .frame(maxWidth: maxWidth, alignment: .top)
             .frame(maxWidth: .infinity, alignment: .top)
             .padding(SettingsLayout.contentPadding)
     }
@@ -42,6 +53,7 @@ extension View {
 // MARK: - Settings Card
 
 struct SettingsCard<Content: View, Trailing: View>: View {
+    @Environment(\.settingsContentMaxWidth) private var contentMaxWidth
     let title: String
     let subtitle: String?
     let displaysSubtitle: Bool
@@ -74,7 +86,7 @@ struct SettingsCard<Content: View, Trailing: View>: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .settingsCardSurface()
         }
-        .frame(maxWidth: SettingsLayout.contentMaxWidth, alignment: .leading)
+        .frame(maxWidth: contentMaxWidth, alignment: .leading)
     }
 
     @ViewBuilder

@@ -215,7 +215,13 @@ struct MacroSettingsView: View {
                 SettingsCard(
                     title: "Danh sách gõ tắt",
                     subtitle: "Quản lý và tìm nhanh theo danh mục",
-                    icon: "list.bullet.rectangle"
+                    icon: "list.bullet.rectangle",
+                    trailing: {
+                        Text("\(filteredMacros.count) mục")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .monospacedDigit()
+                    }
                 ) {
                     VStack(spacing: 0) {
                         // Toolbar
@@ -256,13 +262,7 @@ struct MacroSettingsView: View {
                             .adaptiveBorderedButtonStyle()
                             .disabled(!appState.useMacro)
 
-                            Text("\(filteredMacros.count)")
-                                .font(.subheadline)
-                                .fontWeight(.semibold)
-                                .foregroundStyle(.secondary)
-                                .monospacedDigit()
-                                .animation(.spring(response: 0.3, dampingFraction: 0.7), value: filteredMacros.count)
-                                
+
                         }
                         .padding(.bottom, 12)
 
@@ -293,8 +293,9 @@ struct MacroSettingsView: View {
 
                 Spacer(minLength: SettingsLayout.sectionSpacing)
             }
-            .settingsPageFrame()
+            .settingsPageFrame(maxWidth: 960)
         }
+        .environment(\.settingsContentMaxWidth, 960)
         .settingsBackground()
         .alert("Không thể xử lý file", isPresented: $showFileTransferError) {
             Button("OK", role: .cancel) {}
@@ -801,9 +802,9 @@ struct MacroRowView: View {
             Text(macro.expansion)
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
-                .lineLimit(1)
-
-            Spacer()
+                .lineLimit(2)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .help(macro.expansion)
 
             // Edit button
             if isHovering || isSelected {
@@ -868,10 +869,8 @@ private struct MacroExcludedAppsSettingsCard: View {
 
     var body: some View {
         SettingsCard(
-            title: "Loại trừ ứng dụng",
-            subtitle: "Không mở rộng gõ tắt trong các ứng dụng đã chọn, ở cả chế độ Việt và Anh",
+            title: "Loại trừ gõ tắt khỏi ứng dụng",
             icon: "text.badge.minus",
-            displaysSubtitle: true,
             trailing: {
                 AppSelectionAddMenu { pickerDestination = $0 }
             }

@@ -242,7 +242,7 @@ struct SettingsItem: Identifiable {
         SettingsItem(title: "Dùng Text Replacements của macOS", iconName: SettingsTab.macro.iconName, tab: .macro, keywords: []),
         SettingsItem(title: "Danh mục", iconName: SettingsTab.macro.iconName, tab: .macro, keywords: []),
         SettingsItem(title: "Danh sách gõ tắt", iconName: SettingsTab.macro.iconName, tab: .macro, keywords: []),
-        SettingsItem(title: "Loại trừ ứng dụng", iconName: SettingsTab.macro.iconName, tab: .macro, keywords: []),
+        SettingsItem(title: "Loại trừ gõ tắt khỏi ứng dụng", iconName: SettingsTab.macro.iconName, tab: .macro, keywords: []),
         SettingsItem(title: "Quyền riêng tư GIF & Sticker", iconName: SettingsTab.phtvPicker.iconName, tab: .phtvPicker, keywords: []),
         SettingsItem(title: "Lịch sử Clipboard", iconName: SettingsTab.clipboardHistory.iconName, tab: .clipboardHistory, keywords: []),
         SettingsItem(title: "Khởi động", iconName: SettingsTab.system.iconName, tab: .system, keywords: []),
