@@ -244,7 +244,7 @@ struct SystemSettingsView: View {
                     title: "Tần suất kiểm tra cập nhật",
                     subtitle: "Tự động kiểm tra bản cập nhật mới",
                     selection: bindable.updateCheckFrequency,
-                    controlWidth: 150
+                    selectedTitle: appState.updateCheckFrequency.displayName
                 ) {
                     ForEach(UpdateCheckFrequency.allCases) { freq in
                         Text(freq.displayName).tag(freq)
