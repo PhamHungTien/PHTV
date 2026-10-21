@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.6.9] - 2026-10-21
+
+- Cải thiện giao diện Gõ tắt: viền ô nhập rõ hơn, căn lại số lượng và tối ưu bố cục co giãn.
+- Làm rõ mục loại trừ gõ tắt khỏi ứng dụng, lược bỏ mô tả thừa.
+- Tách riêng các nút toolbar; đồng bộ ô chọn tần suất cập nhật với các menu cài đặt.
+- Thêm video hướng dẫn và lời mời theo dõi YouTube, chỉ hiện một lần mỗi phiên bản khi mở Cài đặt.
+- Cập nhật năm bản quyền trong phần Thông tin theo năm hiện tại.
+
 ## [3.6.8] - 2026-10-15
 
 - Đóng Cài đặt sẽ lưu cấu hình và khởi động lại PHTV ở nền, không mở lại cửa sổ.
@@ -1931,7 +1939,8 @@ Phạm Hùng Tiến
 - Macro (gõ tắt)
 - Hoàn toàn offline
 
-[Unreleased]: https://github.com/PhamHungTien/PHTV/compare/v3.6.8...HEAD
+[Unreleased]: https://github.com/PhamHungTien/PHTV/compare/v3.6.9...HEAD
+[3.6.9]: https://github.com/PhamHungTien/PHTV/compare/v3.6.8...v3.6.9
 [3.6.8]: https://github.com/PhamHungTien/PHTV/compare/v3.6.7...v3.6.8
 [3.6.7]: https://github.com/PhamHungTien/PHTV/compare/v3.6.6...v3.6.7
 [3.6.6]: https://github.com/PhamHungTien/PHTV/compare/v3.6.5...v3.6.6
