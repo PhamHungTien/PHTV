@@ -7,6 +7,20 @@
         <language>vi</language>
         <!-- Most recent version first -->
         <item>
+            <title>3.7.1</title>
+            <pubDate>Thu, 22 Oct 2026 13:32:36 +0700</pubDate>
+            <sparkle:version>338</sparkle:version>
+            <sparkle:shortVersionString>3.7.1</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[
+                <h2>PHTV 3.7.1</h2>
+                <ul>
+                <li>Sửa lỗi cửa sổ Cài đặt tự hiện khi khởi chạy PHTV nếu bật “Cài đặt luôn ở trên”.</li>
+                </ul>
+            ]]></description>
+            <enclosure url="https://github.com/PhamHungTien/PHTV/releases/download/v3.7.1/PHTV-3.7.1-arm64.dmg" length="10959314" type="application/octet-stream" sparkle:edSignature="+CAj+jz5jCA1k5PaRpQUAK/IW1WQTaEgcXpKqyPIZwGHUVjKu8D4dpT0TGJkgGjrCGypLclXG4agP7y0xuVBBQ=="/>
+        </item>
+        <item>
             <title>3.7.0</title>
             <pubDate>Thu, 22 Oct 2026 13:06:08 +0700</pubDate>
             <sparkle:version>337</sparkle:version>
@@ -892,58 +906,6 @@
                 </ul>
             ]]></description>
             <enclosure url="https://github.com/PhamHungTien/PHTV/releases/download/v3.4.3/PHTV-3.4.3-arm64.dmg" length="9026407" type="application/octet-stream" sparkle:edSignature="G7zBuNVsRjjYXTtBNkrwfGK58rrPjzMkRx4EPmjCGzi7mIgHA9HRPyRw+9S3Z8z+uJ/BgEN2Tud9Dzdttp5pCw=="/>
-        </item>
-        <item>
-            <title>3.4.2</title>
-            <pubDate>Wed, 22 Jul 2026 02:02:04 +0700</pubDate>
-            <sparkle:version>308</sparkle:version>
-            <sparkle:shortVersionString>3.4.2</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[
-                <h2>PHTV 3.4.2</h2>
-                <h3>Tổng quan</h3>
-                <p>PHTV 3.4.2 tập trung vào độ ổn định của các cửa sổ nổi và khả năng tương thích khi nhập liệu. Lịch sử Clipboard không còn dễ crash khi mở nhanh bằng <code>Control + V</code>; Notion trên Firefox và các IDE JetBrains được nhận diện chính xác hơn; đồng thời các từ tiếng Anh có phím Telex <code>w</code>, như <code>window</code>, không còn bị tự chuyển sai thành tiếng Việt.</p>
-                <h3>Fixed and Improved</h3>
-                <ul>
-                <li><strong>Ổn định Lịch sử Clipboard và PHTV Picker (#212)</strong>
-                <ul>
-                <li>Chặn việc một lần nhấn phím tắt bị nhận đồng thời từ nhiều nguồn sự kiện, tránh cửa sổ vừa mở đã đóng hoặc tạo chồng nhiều phiên.</li>
-                <li>Đồng bộ vòng đời cửa sổ, trạng thái focus và thao tác đóng giữa Lịch sử Clipboard với PHTV Picker, giảm nguy cơ crash khi mở/đóng hoặc chuyển nhanh giữa hai cửa sổ.</li>
-                <li>Khôi phục focus về ứng dụng trước đó một cách nhất quán sau khi đóng.</li>
-                </ul>
-                </li>
-                <li><strong>Gõ tiếng Việt trong code block Notion trên Firefox (#84)</strong>
-                <ul>
-                <li>Dò đúng trang Notion từ cây Accessibility của Firefox thay vì phụ thuộc vào tiêu đề cửa sổ.</li>
-                <li>Kết hợp URL, thuộc tính ngữ nghĩa và font monospace để nhận diện code block, đồng thời tránh nhận nhầm những tên thông thường có chứa chữ “code”.</li>
-                </ul>
-                </li>
-                <li><strong>Loại bỏ ký tự điều khiển thừa trong JetBrains IDE (#84)</strong>
-                <ul>
-                <li>Không còn coi toàn bộ trình soạn thảo JetBrains là Terminal/CLI, khắc phục hiện tượng xuất hiện thao tác <code>INSERT</code>, <code>DELETE</code> hoặc ký tự điều khiển thừa.</li>
-                <li>Terminal tích hợp trong JetBrains và các ứng dụng Terminal độc lập vẫn giữ nguyên chế độ CLI chuyên dụng.</li>
-                </ul>
-                </li>
-                <li><strong>Không tự đổi sai từ tiếng Anh có phím <code>w</code> (#180)</strong>
-                <ul>
-                <li>Các từ như <code>window</code>, <code>windows</code>, <code>willow</code>, <code>workflow</code> và <code>windowed</code> được giữ đúng ngay trong lúc gõ bằng Telex hoặc Simple Telex.</li>
-                <li>Tiếp tục ưu tiên các từ tiếng Việt hợp lệ như <code>thương</code>, <code>trường</code>, <code>đường</code> và <code>tiếng</code>, tránh sửa quá rộng gây sai tiếng Việt.</li>
-                <li>Hỗ trợ viết hoa, Quick Telex, Backspace, các bảng mã và tùy chọn gõ hiện có.</li>
-                </ul>
-                </li>
-                </ul>
-                <h3>Chất lượng</h3>
-                <ul>
-                <li>Bổ sung kiểm thử hồi quy cho phím tắt cửa sổ nổi, vòng đời panel, Firefox Accessibility, JetBrains, Terminal tích hợp và các tổ hợp Telex <code>w</code>.</li>
-                <li>Toàn bộ test suite đạt <strong>420/420 tests</strong> trên macOS 27 beta; Debug, Release và Analyze đều thành công.</li>
-                </ul>
-                <h3>Ghi chú nâng cấp</h3>
-                <ul>
-                <li>Không cần thiết lập lại hoặc cấp thêm quyền sau khi cập nhật.</li>
-                <li>Thiết lập, macro, lịch sử Clipboard và quy tắc theo ứng dụng được giữ nguyên.</li>
-                </ul>
-            ]]></description>
-            <enclosure url="https://github.com/PhamHungTien/PHTV/releases/download/v3.4.2/PHTV-3.4.2-arm64.dmg" length="9023739" type="application/octet-stream" sparkle:edSignature="tR1qJpIzYHg2XqIa5ePIjuqIgns49r/WJKN4FN5uiMFcAkXC2jBnOk8GqiFm87ApKMNvMA9jzduLTEmb1TORDA=="/>
         </item>
         <item>
             <title>2.8.9</title>
