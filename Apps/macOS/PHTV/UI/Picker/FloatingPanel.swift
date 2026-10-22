@@ -133,7 +133,7 @@ final class FloatingPanelSession<Content: View> {
             queue: .main
         ) { [weak self, weak observedPanel] _ in
             Task { @MainActor in
-                guard let self, let observedPanel else { return }
+                guard let self, let observedPanel, !observedPanel.isKeyWindow else { return }
                 self.finishDismissal(of: observedPanel, closeIfVisible: true)
             }
         }
@@ -226,6 +226,11 @@ class FloatingPanel<Content: View>: NSPanel, NSWindowDelegate {
 
         // Panel behavior
         self.isFloatingPanel = true
+        // Accessory (menu-bar-only) apps may remain inactive while this
+        // nonactivating panel owns keyboard focus. Never let NSPanel hide it
+        // solely because its application is inactive.
+        self.hidesOnDeactivate = false
+        self.becomesKeyOnlyIfNeeded = false
         self.level = .floating
         self.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
 

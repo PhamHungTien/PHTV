@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Sửa popup Clipboard/PHTV Picker bị ẩn khi PHTV chạy không có biểu tượng Dock; giữ focus ổn định khi mở bằng phím tắt.
+
 - Sửa lỗi mất biểu tượng menubar khi đóng Cài đặt: giữ bộ gõ chạy liên tục, không tự khởi động lại.
 - Làm rõ lệnh “Thoát hoàn toàn PHTV” (⌘Q), tách biệt với đóng cửa sổ (⌘W).
 
