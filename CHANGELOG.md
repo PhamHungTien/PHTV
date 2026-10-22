@@ -7,10 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-- Sửa popup Clipboard/PHTV Picker bị ẩn khi PHTV chạy không có biểu tượng Dock; giữ focus ổn định khi mở bằng phím tắt.
+## [3.7.0] - 2026-10-22
 
-- Sửa lỗi mất biểu tượng menubar khi đóng Cài đặt: giữ bộ gõ chạy liên tục, không tự khởi động lại.
-- Làm rõ lệnh “Thoát hoàn toàn PHTV” (⌘Q), tách biệt với đóng cửa sổ (⌘W).
+- Sửa lỗi Clipboard/PHTV Picker bị ẩn khi mở bằng phím tắt lúc biểu tượng Dock đang tắt.
+- Đóng Cài đặt vẫn giữ bộ gõ và biểu tượng thanh menu hoạt động, không khởi động lại ứng dụng.
+- Làm rõ lệnh “Thoát hoàn toàn PHTV” (⌘Q), phân biệt với đóng cửa sổ (⌘W).
+- Đồng bộ các bộ chọn và khoảng cách trong Cài đặt, gồm thời gian lưu Clipboard và thời lượng lau bàn phím.
 
 ## [3.6.9] - 2026-10-21
 
@@ -1944,7 +1946,8 @@ Phạm Hùng Tiến
 - Macro (gõ tắt)
 - Hoàn toàn offline
 
-[Unreleased]: https://github.com/PhamHungTien/PHTV/compare/v3.6.9...HEAD
+[Unreleased]: https://github.com/PhamHungTien/PHTV/compare/v3.7.0...HEAD
+[3.7.0]: https://github.com/PhamHungTien/PHTV/compare/v3.6.9...v3.7.0
 [3.6.9]: https://github.com/PhamHungTien/PHTV/compare/v3.6.8...v3.6.9
 [3.6.8]: https://github.com/PhamHungTien/PHTV/compare/v3.6.7...v3.6.8
 [3.6.7]: https://github.com/PhamHungTien/PHTV/compare/v3.6.6...v3.6.7
