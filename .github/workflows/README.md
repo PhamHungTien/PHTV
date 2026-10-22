@@ -29,9 +29,12 @@ Chạy thủ công mặc định `publish: false`: build/ký/đóng gói để t
 tạo GitHub Release hoặc cập nhật appcast. Chọn `publish: true` mới xuất
 bản các bước đó; trigger bằng tag luôn đi theo luồng publish.
 
+Toàn bộ workflow phát hành chạy trên Mac cá nhân qua hai self-hosted runner.
+Xcode được chọn bằng `DEVELOPER_DIR`, không đổi cấu hình Xcode toàn hệ thống.
+
 Luồng công việc:
 
-1. **verify** trên GitHub-hosted macOS: kiểm tra version, CHANGELOG, metadata,
+1. **verify** trên self-hosted Mac: kiểm tra version, CHANGELOG, metadata,
    dictionary và chạy toàn bộ XCTest;
 2. **build** trên hai self-hosted runner riêng biệt cùng máy Mac: tạo song song
    bản `arm64` và `x86_64`, ký bằng

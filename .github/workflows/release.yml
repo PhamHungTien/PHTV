@@ -34,7 +34,7 @@ env:
 jobs:
   verify:
     name: Verify release source
-    runs-on: macos-26
+    runs-on: [self-hosted, macOS, ARM64]
     outputs:
       version: ${{ steps.version.outputs.version }}
 
@@ -44,10 +44,22 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup Xcode
-        uses: maxim-lobanov/setup-xcode@ed7a3b1fda3918c0306d1b724322adc0b8cc0a90 # v1
-        with:
-          xcode-version: latest-stable
+      - name: Select Xcode toolchain
+        run: |
+          set -euo pipefail
+          # Use full Xcode consistently on both architecture jobs.
+          # DEVELOPER_DIR avoids changing the machine-wide xcode-select setting.
+          if [ -z "${DEVELOPER_DIR:-}" ] || [ ! -d "${DEVELOPER_DIR:-/nonexistent}" ]; then
+            XCODE_APP=$(find /Applications -maxdepth 1 -type d -name 'Xcode*.app' -print | sort -V | tail -1)
+            if [ -z "$XCODE_APP" ]; then
+              echo "❌ No Xcode installation found on this runner. Install Xcode or set DEVELOPER_DIR."
+              exit 1
+            fi
+            DEVELOPER_DIR="$XCODE_APP/Contents/Developer"
+          fi
+          echo "DEVELOPER_DIR=$DEVELOPER_DIR" >> "$GITHUB_ENV"
+          echo "🧰 Using DEVELOPER_DIR=$DEVELOPER_DIR"
+          DEVELOPER_DIR="$DEVELOPER_DIR" xcodebuild -version
 
       - name: Determine and validate version
         id: version
@@ -706,7 +718,7 @@ jobs:
   release:
     name: Create Release
     if: github.event_name == 'push' || inputs.publish
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, macOS, ARM64]
     needs: build
     permissions:
       contents: write
@@ -722,19 +734,22 @@ jobs:
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: dmg-arm64
+          path: ${{ runner.temp }}
 
       - name: Download DMG (intel)
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: dmg-x86_64
+          path: ${{ runner.temp }}
 
       - name: Generate release checksums
         env:
           VERSION: ${{ needs.build.outputs.version }}
+        working-directory: ${{ runner.temp }}
         run: |
           set -euo pipefail
-          sha256sum "PHTV-$VERSION-arm64.dmg" "PHTV-$VERSION-intel.dmg" > SHA256SUMS.txt
-          sha256sum --check SHA256SUMS.txt
+          shasum -a 256 "PHTV-$VERSION-arm64.dmg" "PHTV-$VERSION-intel.dmg" > SHA256SUMS.txt
+          shasum -a 256 --check SHA256SUMS.txt
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
@@ -746,9 +761,9 @@ jobs:
           body_path: ${{ runner.temp }}/release-notes.md
           prerelease: ${{ contains(needs.build.outputs.version, '-') }}
           files: |
-            PHTV-${{ needs.build.outputs.version }}-arm64.dmg
-            PHTV-${{ needs.build.outputs.version }}-intel.dmg
-            SHA256SUMS.txt
+            ${{ runner.temp }}/PHTV-${{ needs.build.outputs.version }}-arm64.dmg
+            ${{ runner.temp }}/PHTV-${{ needs.build.outputs.version }}-intel.dmg
+            ${{ runner.temp }}/SHA256SUMS.txt
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -757,6 +772,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
           VERSION: ${{ needs.build.outputs.version }}
+        working-directory: ${{ runner.temp }}
         run: |
           set -euo pipefail
           gh release view "v$VERSION" --json assets --jq '.assets[].name' > assets.txt
@@ -773,7 +789,7 @@ jobs:
     name: Publish Appcasts
     # The checked-in release tooling is Swift; a macOS runner guarantees the
     # same Foundation/Xcode toolchain used by the verify and build stages.
-    runs-on: macos-26
+    runs-on: [self-hosted, macOS, ARM64]
     needs:
       - build
       - release
@@ -790,18 +806,18 @@ jobs:
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: appcast-arm64
-          path: /tmp/phtv-appcast-arm64
+          path: ${{ runner.temp }}/phtv-appcast-arm64
 
       - name: Download appcast (intel)
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: appcast-x86_64
-          path: /tmp/phtv-appcast-intel
+          path: ${{ runner.temp }}/phtv-appcast-intel
 
       - name: Commit and push appcasts
         run: |
-          cp /tmp/phtv-appcast-arm64/appcast.xml       docs/appcast.xml
-          cp /tmp/phtv-appcast-intel/appcast-intel.xml docs/appcast-intel.xml
+          cp "$RUNNER_TEMP/phtv-appcast-arm64/appcast.xml"       docs/appcast.xml
+          cp "$RUNNER_TEMP/phtv-appcast-intel/appcast-intel.xml" docs/appcast-intel.xml
           scripts/tools/release_notes.swift sync-xcode-version \
             --project Apps/macOS/PHTV.xcodeproj/project.pbxproj \
             --version "${{ needs.build.outputs.version }}" \
