@@ -113,7 +113,7 @@ jobs:
       - name: Upload XCTest result bundle
         if: always()
         continue-on-error: true
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ci-xcresult
           path: .build/test-results/PHTV-CI.xcresult
@@ -122,7 +122,7 @@ jobs:
       - name: Upload build log
         if: always()
         continue-on-error: true
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ci-build-log
           path: Apps/macOS/build.log
