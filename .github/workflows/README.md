@@ -42,6 +42,11 @@ Luồng công việc:
 PHTV hiện được phân phối qua `Homebrew/homebrew-cask`. Homebrew theo dõi
 tag GitHub chuẩn để cập nhật cask; workflow release không còn ghi vào tap cũ.
 
+DMG dùng `dmgbuild` với phiên bản dependency cố định trong môi trường Python riêng.
+Bố cục `.DS_Store` được ghi trực tiếp, không điều khiển Finder qua Apple Events
+(tránh lỗi timeout `-1712` trên runner). Nền thường/Retina và vị trí biểu tượng
+được định nghĩa trong `scripts/packaging/`.
+
 Hai kiến trúc dùng DMG và appcast riêng; đây không phải một Universal DMG.
 Nhánh build cho phép tối đa hai kiến trúc chạy đồng thời. Notarization dùng
 `notarytool submit --wait --timeout 5h` trong giới hạn job 360 phút.
