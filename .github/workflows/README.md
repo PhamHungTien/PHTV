@@ -55,6 +55,8 @@ Hai kiến trúc dùng DMG và appcast riêng; đây không phải một Univers
 Hai runner dùng thư mục cài đặt/workspace riêng và cùng nhãn `self-hosted`,
 `macOS`, `ARM64`. Mỗi runner nhận một job để build hai kiến trúc đồng thời.
 Keychain và thư mục tạm độc lập; không khôi phục đè danh sách keychain dùng chung.
+Xcode build chưa ký; sau khi tách kiến trúc, `codesign` ký Developer ID từ trong
+ra ngoài bằng keychain riêng, hardened runtime và entitlements của ứng dụng.
 Job phát hành chờ cả hai hoàn tất. Notarization dùng
 `notarytool submit --wait --timeout 5h` trong giới hạn job 360 phút.
 

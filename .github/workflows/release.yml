@@ -282,6 +282,9 @@ jobs:
         run: |
           echo "🔍 Verifying SPM dependencies..."
           # Resolve packages to check versions
+          # Xcode's certificate lookup uses the shared keychain search list.
+          # Build unsigned, then sign the final thinned bundle below with this
+          # job's explicit keychain, hardened runtime and app entitlements.
           xcodebuild -project PHTV.xcodeproj -scheme PHTV \
             -showBuildSettings -configuration Release 2>/dev/null | grep -i sparkle || echo "Will resolve during build"
           echo "✅ Dependencies verified"
@@ -315,9 +318,9 @@ jobs:
             ARCHS="${{ matrix.arch }}" \
             EXCLUDED_ARCHS="${{ matrix.excluded_archs }}" \
             ONLY_ACTIVE_ARCH=NO \
-            CODE_SIGN_STYLE=Manual \
-            CODE_SIGN_IDENTITY="${{ steps.certificate.outputs.identity }}" \
-            OTHER_CODE_SIGN_FLAGS="--keychain ${{ steps.certificate.outputs.keychain }}" \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
             DEVELOPMENT_TEAM="$APPLE_TEAM_ID" \
             COMPILER_INDEX_STORE_ENABLE=NO \
             clean build \
