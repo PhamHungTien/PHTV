@@ -7,7 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-- Sửa tùy chọn giữ Cài đặt ở phía trước làm cửa sổ tự hiện khi khởi chạy PHTV.
+## [3.7.1] - 2026-10-22
+
+- Sửa lỗi cửa sổ Cài đặt tự hiện khi khởi chạy PHTV nếu bật “Cài đặt luôn ở trên”.
 
 ## [3.7.0] - 2026-10-22
 
@@ -1948,7 +1950,8 @@ Phạm Hùng Tiến
 - Macro (gõ tắt)
 - Hoàn toàn offline
 
-[Unreleased]: https://github.com/PhamHungTien/PHTV/compare/v3.7.0...HEAD
+[Unreleased]: https://github.com/PhamHungTien/PHTV/compare/v3.7.1...HEAD
+[3.7.1]: https://github.com/PhamHungTien/PHTV/compare/v3.7.0...v3.7.1
 [3.7.0]: https://github.com/PhamHungTien/PHTV/compare/v3.6.9...v3.7.0
 [3.6.9]: https://github.com/PhamHungTien/PHTV/compare/v3.6.8...v3.6.9
 [3.6.8]: https://github.com/PhamHungTien/PHTV/compare/v3.6.7...v3.6.8
