@@ -7,6 +7,23 @@
         <language>vi</language>
         <!-- Intel (x86_64) feed — Most recent version first -->
         <item>
+            <title>3.7.0</title>
+            <pubDate>Thu, 22 Oct 2026 13:08:52 +0700</pubDate>
+            <sparkle:version>337</sparkle:version>
+            <sparkle:shortVersionString>3.7.0</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[
+                <h2>PHTV 3.7.0</h2>
+                <ul>
+                <li>Sửa lỗi Clipboard/PHTV Picker bị ẩn khi mở bằng phím tắt lúc biểu tượng Dock đang tắt.</li>
+                <li>Đóng Cài đặt vẫn giữ bộ gõ và biểu tượng thanh menu hoạt động, không khởi động lại ứng dụng.</li>
+                <li>Làm rõ lệnh “Thoát hoàn toàn PHTV” (⌘Q), phân biệt với đóng cửa sổ (⌘W).</li>
+                <li>Đồng bộ các bộ chọn và khoảng cách trong Cài đặt, gồm thời gian lưu Clipboard và thời lượng lau bàn phím.</li>
+                </ul>
+            ]]></description>
+            <enclosure url="https://github.com/PhamHungTien/PHTV/releases/download/v3.7.0/PHTV-3.7.0-intel.dmg" length="11296106" type="application/octet-stream" sparkle:edSignature="vrULjO3YVOo/N5VTTLPUMnXsC3zn0NaKVysU6/nQh/pLqDclJzle8R/q4bxtwTIB6JS7c9cAx3s0+fm99oY1Dg=="/>
+        </item>
+        <item>
             <title>3.6.9</title>
             <pubDate>Wed, 21 Oct 2026 15:30:22 +0700</pubDate>
             <sparkle:version>336</sparkle:version>
@@ -927,27 +944,6 @@
                 </ul>
             ]]></description>
             <enclosure url="https://github.com/PhamHungTien/PHTV/releases/download/v3.4.2/PHTV-3.4.2-intel.dmg" length="9290099" type="application/octet-stream" sparkle:edSignature="0x96WArSPh0QO+T+LusRbTt5N+3E9f2xfMe91XblJAZsum+U7ntjUY6ZPCHoWtzUQdAabhPjc4Xev6I8PYJLDA=="/>
-        </item>
-        <item>
-            <title>3.4.1</title>
-            <pubDate>Mon, 20 Jul 2026 00:53:04 +0700</pubDate>
-            <sparkle:version>307</sparkle:version>
-            <sparkle:shortVersionString>3.4.1</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[
-                <h2>PHTV 3.4.1</h2>
-                <p>Bản cập nhật này cải thiện khả năng tương thích với <strong>Microsoft Teams</strong> và độ phản hồi của phím Space trong <strong>DaVinci Resolve</strong>.</p>
-                <h3>Đã sửa và cải thiện</h3>
-                <ul>
-                    <li><strong>Text Replacements trong Teams</strong>: Các mục thay thế văn bản nhập từ macOS nay hoạt động trong ô chat của cả Teams mới và Teams cũ.</li>
-                    <li><strong>DaVinci Resolve</strong>: Phím Space phản hồi nhanh hơn khi dừng playback trong lúc đang bật chế độ gõ tiếng Việt, tránh phải nhấn nhiều lần.</li>
-                    <li><strong>Vẫn gõ tiếng Việt bình thường</strong>: Telex và macro tiếp tục hoạt động trong ô tiêu đề, phụ đề cùng các vùng nhập văn bản của DaVinci Resolve.</li>
-                    <li><strong>Ổn định hơn</strong>: Giảm các truy vấn Accessibility và Spotlight không cần thiết trên đường xử lý phím của DaVinci Resolve.</li>
-                </ul>
-                <h3>Sau khi cập nhật</h3>
-                <p>Không cần thiết lập lại hoặc cấp thêm quyền. Thiết lập, macro và quy tắc theo ứng dụng hiện có được giữ nguyên.</p>
-            ]]></description>
-            <enclosure url="https://github.com/PhamHungTien/PHTV/releases/download/v3.4.1/PHTV-3.4.1-intel.dmg" length="9277332" type="application/octet-stream" sparkle:edSignature="1uhAxrD2E4kMOIgAF+zCHn2kcP42XSb1MUws878ryrD1K9V6wgnjlcFoJuLI327mpkxkspRk2uSH7DsP1wFdDw=="/>
         </item>
         <item>
             <title>2.8.9</title>
