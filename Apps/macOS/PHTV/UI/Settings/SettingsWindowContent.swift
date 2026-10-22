@@ -64,9 +64,7 @@ struct SettingsWindowContent: View {
             pendingCloseTask = nil
             onboardingTask?.cancel()
             onboardingTask = nil
-            applySettingsWindowBehavior(forceFront: false)
-
-            // Update window level based on user preference
+            // Configure stacking only; creating the view must never show the window.
             updateSettingsWindowLevel()
 
             // Keep settings window stable and on top when needed
@@ -280,7 +278,7 @@ struct SettingsWindowContent: View {
 
     @MainActor
     private func updateSettingsWindowLevel() {
-        applySettingsWindowBehavior(forceFront: appState.settingsWindowAlwaysOnTop)
+        applySettingsWindowBehavior()
     }
 
     @MainActor
@@ -290,24 +288,13 @@ struct SettingsWindowContent: View {
     }
 
     @MainActor
-    private func applySettingsWindowBehavior(forceFront: Bool) {
+    private func applySettingsWindowBehavior() {
         guard let window = NSApp.windows.first(where: { isSettingsWindow($0) }) else { return }
 
         SettingsWindowHelper.applyWindowConfiguration(
             to: window,
             alwaysOnTop: appState.settingsWindowAlwaysOnTop
         )
-
-        guard forceFront,
-              !window.isMiniaturized,
-              window.isVisible,
-              !isClosingSettingsWindow else { return }
-
-        if appState.settingsWindowAlwaysOnTop {
-            window.orderFrontRegardless()
-        } else {
-            window.makeKeyAndOrderFront(nil)
-        }
     }
 }
 

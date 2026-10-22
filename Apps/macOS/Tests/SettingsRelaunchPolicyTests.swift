@@ -1,7 +1,24 @@
 import XCTest
+import AppKit
 @testable import PHTV
 
 final class SettingsRelaunchPolicyTests: XCTestCase {
+    func testPinningHiddenSettingsDoesNotPresentWindow() async {
+        await MainActor.run {
+            let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 780, height: 550),
+                                  styleMask: [.titled, .closable], backing: .buffered, defer: true)
+            window.isReleasedWhenClosed = false
+            defer { window.close() }
+            XCTAssertFalse(window.isVisible)
+            SettingsWindowHelper.applyWindowConfiguration(to: window, alwaysOnTop: true)
+            XCTAssertEqual(window.level, .floating)
+            XCTAssertFalse(window.isVisible)
+            SettingsWindowHelper.applyWindowConfiguration(to: window, alwaysOnTop: false)
+            XCTAssertEqual(window.level, .normal)
+            XCTAssertFalse(window.isVisible)
+        }
+    }
+
     func testBackgroundRelaunchSuppressesLegacyShowSettingsPreference() {
         for preference in [true, false] {
             XCTAssertFalse(SettingsRelaunchPolicy.shouldShowSettingsOnStartup(

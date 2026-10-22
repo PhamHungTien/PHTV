@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Sửa tùy chọn giữ Cài đặt ở phía trước làm cửa sổ tự hiện khi khởi chạy PHTV.
+
 ## [3.7.0] - 2026-10-22
 
 - Sửa lỗi Clipboard/PHTV Picker bị ẩn khi mở bằng phím tắt lúc biểu tượng Dock đang tắt.
