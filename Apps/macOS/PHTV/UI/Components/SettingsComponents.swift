@@ -12,6 +12,7 @@ enum SettingsLayout {
     static let contentMaxWidth: CGFloat = 680
     static let contentPadding: CGFloat = 16
     static let sectionSpacing: CGFloat = 16
+    static let sectionHeaderSpacing: CGFloat = 8
     static let cardContentHorizontalPadding: CGFloat = 12
     static let cardContentVerticalPadding: CGFloat = 8
     static let cardCornerRadius: CGFloat = 12
@@ -77,7 +78,7 @@ struct SettingsCard<Content: View, Trailing: View>: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: SettingsLayout.sectionHeaderSpacing) {
             cardHeader
 
             content

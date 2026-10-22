@@ -51,7 +51,7 @@ struct ClipboardHotkeyConfigView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 0) {
             // Enable toggle
             SettingsToggleRow(
                 icon: "doc.on.clipboard.fill",
@@ -153,6 +153,7 @@ struct ClipboardHotkeyConfigView: View {
                             .foregroundStyle(.tertiary)
                     }
                 }
+                .padding(.vertical, SettingsLayout.rowVerticalPadding)
 
                 Divider()
 
@@ -167,33 +168,16 @@ struct ClipboardHotkeyConfigView: View {
 
                 Divider()
 
-                // Retention window
-                VStack(alignment: .leading, spacing: 8) {
-                    SettingsRowLayout {
-                        Text("Tự động xóa mục cũ hơn")
-                            .font(.subheadline)
-                            .fontWeight(.semibold)
-                            .foregroundStyle(.primary)
-
-                        Picker(
-                            "",
-                            selection: Binding(
-                                get: { appState.clipboardHistoryRetention },
-                                set: { appState.clipboardHistoryRetention = $0 }
-                            )
-                        ) {
-                            ForEach(ClipboardHistoryRetention.allCases) { option in
-                                Text(option.displayName).tag(option)
-                            }
-                        }
-                        .labelsHidden()
-                        .pickerStyle(.menu)
-                        .frame(width: SettingsLayout.defaultPickerWidth)
-                        .help(retentionFootnote)
+                SettingsPickerRow(
+                    title: "Tự động xóa mục cũ hơn",
+                    selection: bindable.clipboardHistoryRetention,
+                    selectedTitle: appState.clipboardHistoryRetention.displayName
+                ) {
+                    ForEach(ClipboardHistoryRetention.allCases) { option in
+                        Text(option.displayName).tag(option)
                     }
-
-
                 }
+                .help(retentionFootnote)
             }
         }
     }

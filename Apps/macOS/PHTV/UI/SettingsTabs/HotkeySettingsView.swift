@@ -45,7 +45,7 @@ struct HotkeySettingsView: View {
                     subtitle: "Hoàn tác nhanh khi gõ sai",
                     icon: "arrow.uturn.backward.circle.fill"
                 ) {
-                    VStack(spacing: 12) {
+                    VStack(spacing: 0) {
                         SettingsToggleRow(
                             icon: "arrow.uturn.backward.circle.fill",
                             iconColor: .accentColor,
@@ -76,6 +76,7 @@ struct HotkeySettingsView: View {
                                         .foregroundStyle(.orange)
                                 }
                             }
+                            .padding(.vertical, SettingsLayout.rowVerticalPadding)
                         }
                     }
                 }

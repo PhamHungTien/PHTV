@@ -40,7 +40,7 @@ struct HotkeyConfigView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 0) {
             // Hotkey 1 Selection - Compact inline row
             SettingsRowLayout {
                 HStack(spacing: 4) {
@@ -569,7 +569,7 @@ struct PauseKeyConfigView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 0) {
             // Enable toggle
             SettingsToggleRow(
                 icon: "pause.fill",
@@ -617,6 +617,7 @@ struct PauseKeyConfigView: View {
                             .foregroundStyle(.orange)
                     }
                 }
+                .padding(.vertical, SettingsLayout.rowVerticalPadding)
             }
         }
     }
@@ -666,7 +667,7 @@ struct EmojiHotkeyConfigView: View {
     private var bindable: Bindable<AppState> { Bindable(appState) }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 0) {
             // Enable toggle
             SettingsToggleRow(
                 icon: "smiley.fill",

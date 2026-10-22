@@ -103,6 +103,16 @@ struct KeyboardCleaningSettingsView: View {
         }
     }
 
+    private var durationTitle: String {
+        switch durationSeconds {
+        case 30: return "30 giây"
+        case 60: return "1 phút"
+        case 120: return "2 phút"
+        case 300: return "5 phút"
+        default: return "\(Int(durationSeconds)) giây"
+        }
+    }
+
     private var durationSection: some View {
         SettingsCard(
             title: "Thời gian",
@@ -112,7 +122,7 @@ struct KeyboardCleaningSettingsView: View {
             SettingsPickerRow(
                 title: "Thời lượng",
                 selection: $durationSeconds,
-                controlWidth: 150
+                selectedTitle: durationTitle
             ) {
                 Text("30 giây").tag(30.0)
                 Text("1 phút").tag(60.0)
