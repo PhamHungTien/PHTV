@@ -6,6 +6,12 @@ Các câu hỏi thường gặp khi cài đặt, cấp quyền và sử dụng P
 
 ---
 
+## Đóng Cài đặt và thoát ứng dụng
+
+- **⌘W hoặc nút đóng:** chỉ đóng cửa sổ Cài đặt; PHTV tiếp tục gõ và giữ biểu tượng trên thanh menu.
+- **Thoát hoàn toàn PHTV (⌘Q):** dừng bộ gõ và biểu tượng menubar. Mở lại PHTV để sử dụng tiếp.
+- **Mở cùng hệ thống:** tự mở PHTV khi đăng nhập macOS; không tự mở lại ngay sau khi bạn chủ động thoát.
+
 ## Cài Đặt & Quyền macOS
 
 ### 1. Vì sao PHTV cần quyền nhập liệu?

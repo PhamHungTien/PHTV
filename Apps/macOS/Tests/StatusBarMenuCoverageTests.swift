@@ -31,7 +31,7 @@ final class StatusBarMenuCoverageTests: XCTestCase {
         for title in ["Hướng dẫn sử dụng", "Báo lỗi...", "Ủng hộ PHTV...", "Kiểm tra cập nhật..."] {
             XCTAssertNotNil(support?.items.first { $0.title == title }?.action, title)
         }
-        XCTAssertNotNil(menu.items.first { $0.title == "Thoát PHTV" }?.action)
+        XCTAssertNotNil(menu.items.first { $0.title == "Thoát hoàn toàn PHTV" }?.action)
     }
     @MainActor
     func testNativeMenuChoicesAndShortcutsAreComplete() {
@@ -42,7 +42,7 @@ final class StatusBarMenuCoverageTests: XCTestCase {
             XCTAssertNotNil(typing?.items.first { $0.title == title }?.action, title)
         }
         XCTAssertEqual(menu.items.first { $0.title == "Mở Cài đặt..." }?.keyEquivalent, ",")
-        XCTAssertEqual(menu.items.first { $0.title == "Thoát PHTV" }?.keyEquivalent, "q")
+        XCTAssertEqual(menu.items.first { $0.title == "Thoát hoàn toàn PHTV" }?.keyEquivalent, "q")
         let features = menu.items.first { $0.title == "Tính năng" }?.submenu
         XCTAssertNotNil(features?.items.first { $0.title == "Bỏ qua nội dung nhạy cảm" }?.action)
         XCTAssertNil(features?.items.first { $0.title == "Mở Clipboard" })

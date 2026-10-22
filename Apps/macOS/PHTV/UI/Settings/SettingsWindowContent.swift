@@ -259,25 +259,7 @@ struct SettingsWindowContent: View {
 
         isClosingSettingsWindow = false
 
-        performAutoRestart()
-    }
-
-    @MainActor
-    private func performAutoRestart() {
-        let task = Process()
-        task.executableURL = URL(fileURLWithPath: "/bin/sh")
-        task.arguments = phtvDeferredRelaunchProcessArguments(
-            parentPID: ProcessInfo.processInfo.processIdentifier,
-            bundlePath: Bundle.main.bundlePath,
-            launchArguments: [SettingsRelaunchPolicy.backgroundArgument]
-        )
-        do {
-            try task.run()
-        } catch {
-            NSLog("[Settings] Failed to schedule background relaunch: %@", error.localizedDescription)
-            return
-        }
-        NSApp.terminate(nil)
+        // Closing preferences must not interrupt the input engine or status item.
     }
 
     /// Check if onboarding should be shown (first time user)

@@ -18,6 +18,12 @@ struct PHTVCommands: Commands {
                 .keyboardShortcut(",", modifiers: .command)
         }
 
+        CommandGroup(replacing: .appTermination) {
+            Button("Thoát hoàn toàn PHTV") { NSApp.terminate(nil) }
+                .keyboardShortcut("q", modifiers: .command)
+                .help("Dừng bộ gõ và gỡ biểu tượng khỏi thanh menu. Dùng ⌘W để chỉ đóng Cài đặt.")
+        }
+
         CommandGroup(after: .appSettings) {
             Button("Kiểm tra cập nhật...") {
                 NotificationCenter.default.post(name: NotificationName.sparkleManualCheck, object: nil)

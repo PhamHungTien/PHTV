@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Sửa lỗi mất biểu tượng menubar khi đóng Cài đặt: giữ bộ gõ chạy liên tục, không tự khởi động lại.
+- Làm rõ lệnh “Thoát hoàn toàn PHTV” (⌘Q), tách biệt với đóng cửa sổ (⌘W).
+
 ## [3.6.9] - 2026-10-21
 
 - Cải thiện giao diện Gõ tắt: viền ô nhập rõ hơn, căn lại số lượng và tối ưu bố cục co giãn.

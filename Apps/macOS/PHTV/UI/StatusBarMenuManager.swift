@@ -259,7 +259,7 @@ final class StatusBarMenuManager: NSObject, NSMenuDelegate {
 
         menu.addItem(.separator())
 
-        let quitItem = NSMenuItem(title: "Thoát PHTV", action: #selector(quitApp), keyEquivalent: "q")
+        let quitItem = NSMenuItem(title: "Thoát hoàn toàn PHTV", action: #selector(quitApp), keyEquivalent: "q")
         quitItem.keyEquivalentModifierMask = .command
         quitItem.target = self
         quitItem.image = sfImage("power")
