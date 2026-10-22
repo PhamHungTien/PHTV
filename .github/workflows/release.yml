@@ -293,7 +293,7 @@ jobs:
           echo "🏗️  Building ${{ matrix.arch }} binary..."
           VERSION="${{ steps.version.outputs.version }}"
           BUILD_NUMBER="${{ steps.set_versions.outputs.build_number }}"
-          
+
           # Build configuration notes:
           # - Sparkle is pinned to version 2.8.1 in project.pbxproj (exactVersion)
           #   This prevents automatic updates that could introduce fat binaries
@@ -462,11 +462,38 @@ jobs:
           "$TEMP_DIR/tools/bin/python" -m pip install --disable-pip-version-check \
             dmgbuild==1.6.7 ds_store==1.3.3 mac_alias==2.2.3
 
+          cat > "$TEMP_DIR/dmg-settings.py" <<'PYTHON'
+          """Finder layout written directly by dmgbuild, without Apple Events."""
+          from pathlib import Path
+
+          app = Path(defines['app']).resolve()
+          background = Path(defines['background']).resolve()
+          if not app.is_dir() or not background.is_file():
+              raise ValueError('App bundle and DMG background must exist')
+
+          format = 'UDZO'
+          filesystem = 'HFS+'
+          files = [str(app)]
+          symlinks = {'Applications': '/Applications'}
+          background = str(background)
+          window_rect = ((200, 120), (640, 420))
+          icon_locations = {'PHTV.app': (170, 210), 'Applications': (470, 210)}
+          icon_size = 96
+          text_size = 13
+          default_view = 'icon-view'
+          show_icon_preview = False
+          show_toolbar = False
+          show_status_bar = False
+          show_pathbar = False
+          show_tab_view = False
+          arrange_by = None
+          PYTHON
+
           BACKGROUND_IMG="$TEMP_DIR/dmg-background.png"
           swift "$GITHUB_WORKSPACE/scripts/packaging/dmg-background.swift" "$BACKGROUND_IMG"
           rm -f "$DMG_NAME"
           "$TEMP_DIR/tools/bin/python" -m dmgbuild \
-            -s "$GITHUB_WORKSPACE/scripts/packaging/dmg-settings.py" \
+            -s "$TEMP_DIR/dmg-settings.py" \
             -D "app=$APP_PATH" \
             -D "background=$BACKGROUND_IMG" \
             "PHTV" "$DMG_NAME"

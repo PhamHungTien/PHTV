@@ -44,8 +44,8 @@ tag GitHub chuẩn để cập nhật cask; workflow release không còn ghi và
 
 DMG dùng `dmgbuild` với phiên bản dependency cố định trong môi trường Python riêng.
 Bố cục `.DS_Store` được ghi trực tiếp, không điều khiển Finder qua Apple Events
-(tránh lỗi timeout `-1712` trên runner). Nền thường/Retina và vị trí biểu tượng
-được định nghĩa trong `scripts/packaging/`.
+(tránh lỗi timeout `-1712` trên runner). Nền thường/Retina được vẽ bằng Swift trong `scripts/packaging/`; cấu hình vị trí
+biểu tượng được tạo tạm trong workflow, không thêm công cụ Python vào repository.
 
 Hai kiến trúc dùng DMG và appcast riêng; đây không phải một Universal DMG.
 Nhánh build cho phép tối đa hai kiến trúc chạy đồng thời. Notarization dùng

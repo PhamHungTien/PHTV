@@ -2,7 +2,7 @@
 import AppKit
 import Foundation
 
-// Keep logical dimensions and icon centres aligned with dmg-settings.py.
+// Keep logical dimensions and icon centres aligned with the release workflow.
 guard CommandLine.arguments.count == 2 else {
     fatalError("Usage: dmg-background.swift OUTPUT.png")
 }
