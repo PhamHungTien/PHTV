@@ -124,7 +124,8 @@ jobs:
 
   build:
     name: Build PHTV (${{ matrix.arch }})
-    runs-on: self-hosted
+    # Two local runner services use separate workspaces on the same Mac.
+    runs-on: [self-hosted, macOS, ARM64]
     timeout-minutes: 360
     needs: verify
     strategy:
@@ -154,9 +155,8 @@ jobs:
       - name: Select Xcode toolchain
         run: |
           set -euo pipefail
-          # Self-hosted runners may have xcode-select pointing at Command Line
-          # Tools; xcodebuild requires full Xcode. DEVELOPER_DIR overrides the
-          # machine default without needing sudo/xcode-select.
+          # Use full Xcode consistently on both architecture jobs.
+          # DEVELOPER_DIR avoids changing the machine-wide xcode-select setting.
           if [ -z "${DEVELOPER_DIR:-}" ] || [ ! -d "${DEVELOPER_DIR:-/nonexistent}" ]; then
             XCODE_APP=$(find /Applications -maxdepth 1 -type d -name 'Xcode*.app' -print | sort -V | tail -1)
             if [ -z "$XCODE_APP" ]; then
@@ -227,7 +227,6 @@ jobs:
           KEYCHAIN_PATH="$RUNNER_TEMP/signing-${{ matrix.arch }}.keychain-db"
           KEYCHAIN_PASSWORD=$(openssl rand -base64 32)
 
-          security list-keychains -d user | sed 's/^[[:space:]]*"//; s/"[[:space:]]*$//' > "$RUNNER_TEMP/keychains-${{ matrix.arch }}.txt"
           security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
           security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
           security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
@@ -245,11 +244,8 @@ jobs:
             -T /usr/bin/security \
             -A
 
-          KEYCHAINS=("$KEYCHAIN_PATH")
-          while IFS= read -r keychain; do
-            KEYCHAINS+=("$keychain")
-          done < "$RUNNER_TEMP/keychains-${{ matrix.arch }}.txt"
-          security list-keychains -d user -s "${KEYCHAINS[@]}"
+          # codesign/xcodebuild receive this job's keychain explicitly. Never
+          # replace the user's shared search list while another runner signs.
           security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
 
           echo "🔎 Available code signing identities:"
@@ -704,14 +700,6 @@ jobs:
           KEYCHAIN_PATH="${{ steps.certificate.outputs.keychain }}"
           if [ -n "$KEYCHAIN_PATH" ] && [ -f "$KEYCHAIN_PATH" ]; then
             security delete-keychain "$KEYCHAIN_PATH" || true
-          fi
-          if [ -f "$RUNNER_TEMP/keychains-${{ matrix.arch }}.txt" ]; then
-            KEYCHAINS=()
-            while IFS= read -r keychain; do
-              KEYCHAINS+=("$keychain")
-            done < "$RUNNER_TEMP/keychains-${{ matrix.arch }}.txt"
-            security list-keychains -d user -s "${KEYCHAINS[@]}" || true
-            rm -f "$RUNNER_TEMP/keychains-${{ matrix.arch }}.txt"
           fi
           rm -f "$RUNNER_TEMP/certificate.p12" "$RUNNER_TEMP/cert_base64.txt" "$RUNNER_TEMP/AppleWWDRCAG3.cer"
 

@@ -33,7 +33,8 @@ Luồng công việc:
 
 1. **verify** trên GitHub-hosted macOS: kiểm tra version, CHANGELOG, metadata,
    dictionary và chạy toàn bộ XCTest;
-2. **build** trên self-hosted runner: tạo riêng bản `arm64` và `x86_64`, ký bằng
+2. **build** trên hai self-hosted runner riêng biệt cùng máy Mac: tạo song song
+   bản `arm64` và `x86_64`, ký bằng
    Developer ID Application, đóng gói DMG, notarize/staple, ký Sparkle;
 3. **release**: tạo draft với nội dung từ `CHANGELOG.md`, tải đủ hai DMG
    và `SHA256SUMS.txt` rồi mới public;
@@ -48,7 +49,10 @@ Bố cục `.DS_Store` được ghi trực tiếp, không điều khiển Finder
 biểu tượng được tạo tạm trong workflow, không thêm công cụ Python vào repository.
 
 Hai kiến trúc dùng DMG và appcast riêng; đây không phải một Universal DMG.
-Nhánh build cho phép tối đa hai kiến trúc chạy đồng thời. Notarization dùng
+Hai runner dùng thư mục cài đặt/workspace riêng và cùng nhãn `self-hosted`,
+`macOS`, `ARM64`. Mỗi runner nhận một job để build hai kiến trúc đồng thời.
+Keychain và thư mục tạm độc lập; không khôi phục đè danh sách keychain dùng chung.
+Job phát hành chờ cả hai hoàn tất. Notarization dùng
 `notarytool submit --wait --timeout 5h` trong giới hạn job 360 phút.
 
 Thay đổi chỉ trong README hoặc tài liệu Markdown thông thường không tự kích
