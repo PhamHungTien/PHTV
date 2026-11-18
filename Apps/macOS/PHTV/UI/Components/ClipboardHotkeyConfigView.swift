@@ -99,10 +99,12 @@ struct ClipboardHotkeyConfigView: View {
                                 isRecording: $isRecording,
                                 onCaptured: { keyCode, modifiers, rawFlags in
                                     withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                                        appState.clipboardHotkeyKeyCode = keyCode
                                         let deviceFlags = rawFlags & (0x0001 | 0x2000 | 0x0002 | 0x0004 | 0x0020 | 0x0040 | 0x0008 | 0x0010)
                                         let combinedRaw = UInt(modifiers.rawValue) | UInt(deviceFlags)
-                                        appState.clipboardHotkeyModifiers = NSEvent.ModifierFlags(rawValue: combinedRaw)
+                                        let hotkey = PHTVHotkeyModifierOnlyNormalizer.normalized(
+                                            keyCode: keyCode, modifiersRaw: combinedRaw)
+                                        appState.clipboardHotkeyKeyCode = hotkey.keyCode
+                                        appState.clipboardHotkeyModifiers = NSEvent.ModifierFlags(rawValue: hotkey.modifiersRaw)
                                         isRecording = false
                                     }
                                 },

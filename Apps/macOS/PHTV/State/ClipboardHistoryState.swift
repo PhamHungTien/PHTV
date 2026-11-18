@@ -84,6 +84,10 @@ final class ClipboardHistoryState {
             forKey: UserDefaultsKey.enableClipboardHistory,
             default: Defaults.enableClipboardHistory
         )
+        PHTVHotkeyModifierOnlyNormalizer.migrateStoredHotkey(
+            defaults: defaults,
+            keyCodeKey: UserDefaultsKey.clipboardHotkeyKeyCode,
+            modifiersKey: UserDefaultsKey.clipboardHotkeyModifiers)
         clipboardHotkeyModifiersRaw = defaults.integer(
             forKey: UserDefaultsKey.clipboardHotkeyModifiers,
             default: Int(Defaults.clipboardHotkeyModifiers)

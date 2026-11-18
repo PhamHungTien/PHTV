@@ -200,6 +200,10 @@ private let phtvCoreSettingsLogState = PHTVCoreSettingsLogState()
     @objc(phtv_loadEmojiHotkeySettingsFromDefaults)
     class func phtv_loadEmojiHotkeySettingsFromDefaults() {
         let defaults = UserDefaults.standard
+        PHTVHotkeyModifierOnlyNormalizer.migrateStoredHotkey(
+            defaults: defaults,
+            keyCodeKey: UserDefaultsKey.emojiHotkeyKeyCode,
+            modifiersKey: UserDefaultsKey.emojiHotkeyModifiers)
 
         let defaultEnabled: Int32 = 1
         let defaultModifiers = Int32(NSEvent.ModifierFlags.command.rawValue)

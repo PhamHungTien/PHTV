@@ -101,8 +101,11 @@ final class EmojiHotkeyManager {
         syncFromAppState(AppState.shared, forceReregister: true)
     }
 
-    func registerHotkey(modifiers: NSEvent.ModifierFlags, keyCode: UInt16) {
+    func registerHotkey(modifiers requestedModifiers: NSEvent.ModifierFlags, keyCode requestedKeyCode: UInt16) {
         unregisterHotkey()
+
+        let (keyCode, modifiers) = PHTVHotkeyModifierOnlyNormalizer.normalized(
+            keyCode: requestedKeyCode, modifiers: requestedModifiers)
 
         let deviceFlagsMask = NSEvent.ModifierFlags(rawValue: 0x0001 | 0x0002 | 0x0004 | 0x0008 | 0x0010 | 0x0020 | 0x0040 | 0x2000)
         let allowedModifiersMask = Self.relevantModifiers.union(deviceFlagsMask)

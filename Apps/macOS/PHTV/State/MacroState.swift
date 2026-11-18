@@ -164,6 +164,10 @@ final class MacroState {
         }
 
         // Load emoji hotkey settings
+        PHTVHotkeyModifierOnlyNormalizer.migrateStoredHotkey(
+            defaults: defaults,
+            keyCodeKey: UserDefaultsKey.emojiHotkeyKeyCode,
+            modifiersKey: UserDefaultsKey.emojiHotkeyModifiers)
         enableEmojiHotkey = defaults.bool(
             forKey: UserDefaultsKey.enableEmojiHotkey,
             default: Defaults.enableEmojiHotkey
