@@ -78,7 +78,7 @@ func phtvDeferredRelaunchProcessArguments(
     done
     sleep \(phtvDeferredRelaunchPollIntervalSeconds)
     if [ "${1:-}" = "--phtv-background" ]; then
-        exec /usr/bin/open -g -j -n "$bundle_path" --args "$@"
+        exec /usr/bin/open -g -n "$bundle_path" --args "$@"
     elif [ "$#" -gt 0 ]; then
         exec /usr/bin/open -n "$bundle_path" --args "$@"
     else

@@ -38,7 +38,9 @@ final class SettingsRelaunchPolicyTests: XCTestCase {
             launchArguments: [SettingsRelaunchPolicy.backgroundArgument]
         )
         XCTAssertTrue(arguments[1].contains("while kill -0"))
-        XCTAssertTrue(arguments[1].contains("/usr/bin/open -g -j -n"))
+        XCTAssertTrue(arguments[1].contains("/usr/bin/open -g -n"))
+        // A hidden relaunch keeps Clipboard and PHTV Picker panels off screen.
+        XCTAssertFalse(arguments[1].contains(" -j "))
         XCTAssertEqual(Array(arguments.suffix(3)), ["123", "/Applications/PHTV.app", "--phtv-background"])
     }
 }

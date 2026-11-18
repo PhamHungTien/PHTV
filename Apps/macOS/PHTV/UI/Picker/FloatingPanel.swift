@@ -99,6 +99,15 @@ final class FloatingPanelSession<Content: View> {
         panel = newPanel
         self.onDismiss = onDismiss
 
+        // A hidden application cannot put any window on screen, not even a
+        // nonactivating panel ordered front regardless. PHTV can be hidden by
+        // ⌘H, by a login item set to hide, or by a background relaunch; the
+        // hotkey then ran but nothing appeared until the user opened PHTV
+        // from the menu bar (issue #237). Unhiding does not steal focus.
+        if NSApp.isHidden {
+            NSApp.unhideWithoutActivation()
+        }
+
         newPanel.standardWindowButton(.closeButton)?.isHidden = true
         newPanel.standardWindowButton(.miniaturizeButton)?.isHidden = true
         newPanel.standardWindowButton(.zoomButton)?.isHidden = true
