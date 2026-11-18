@@ -7,6 +7,26 @@
         <language>vi</language>
         <!-- Most recent version first -->
         <item>
+            <title>3.7.2</title>
+            <pubDate>Wed, 18 Nov 2026 18:44:32 +0700</pubDate>
+            <sparkle:version>339</sparkle:version>
+            <sparkle:shortVersionString>3.7.2</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[
+                <h2>PHTV 3.7.2</h2>
+                <ul>
+                <li>Bộ gõ tự phát hiện khi phím gõ đi thẳng vào ứng dụng mà không qua PHTV (sau khi máy ngủ lâu, khoá màn hình, chuyển phiên người dùng hoặc macOS tạm ngắt event tap) và tự khởi tạo lại ngay, không cần thoát hay mở lại PHTV.</li>
+                <li>Nếu luồng nhận phím bị treo, PHTV chuyển event tap sang luồng mới thay vì chỉ bật lại tap cũ.</li>
+                <li>Tắt màn hình không còn gỡ event tap; mở khoá màn hình và thức dậy từ chế độ ngủ đều kiểm tra lại bộ gõ. Việc theo dõi quyền nhập liệu vẫn chạy cả khi không nhận được thông báo thức dậy từ macOS.</li>
+                <li>Menu thanh trạng thái cảnh báo khi một ứng dụng đang bật Nhập liệu bảo mật (macOS chặn mọi bộ gõ lúc đó) và có mục <strong>Làm mới bộ gõ</strong> trong Hệ thống.</li>
+                <li>Phím tắt PHTV Picker và Clipboard dùng một phím bổ trợ riêng lẻ, như <code>Fn</code> hay <code>⌘</code> phải, hoạt động trở lại; phím tắt đã lưu từ bản cũ được tự chuyển đổi.</li>
+                <li>Clipboard và PHTV Picker hiện đúng khi PHTV đang bị ẩn (khởi động ở nền, ⌘H), không cần mở cửa sổ PHTV trước.</li>
+                <li>Báo cáo lỗi có thêm số lần khôi phục event tap và ứng dụng đang giữ Nhập liệu bảo mật để chẩn đoán nhanh hơn.</li>
+                </ul>
+            ]]></description>
+            <enclosure url="https://github.com/PhamHungTien/PHTV/releases/download/v3.7.2/PHTV-3.7.2-arm64.dmg" length="10979316" type="application/octet-stream" sparkle:edSignature="Ae6Ee07LxwoipXFGoOSOuJXQXodrdvQz/sLHeAmoBrIEB9vLw3E0I7bVdq5jY3aj9r5pvkZDAtvoEKEPzV+aBQ=="/>
+        </item>
+        <item>
             <title>3.7.1</title>
             <pubDate>Thu, 22 Oct 2026 13:32:36 +0700</pubDate>
             <sparkle:version>338</sparkle:version>
@@ -873,39 +893,6 @@
                 </ul>
             ]]></description>
             <enclosure url="https://github.com/PhamHungTien/PHTV/releases/download/v3.4.3/PHTV-3.4.3-arm64.dmg" length="9027592" type="application/octet-stream" sparkle:edSignature="WTQbMmwdM2d/tZxBByzClXEIUrRcLxiCrfawO4Zk+W8xwSlpFVQExmE9KuLagrF1uFfDU7B5YXTTMqDvI2BlDg=="/>
-        </item>
-        <item>
-            <title>3.4.3</title>
-            <pubDate>Wed, 22 Jul 2026 08:18:07 +0700</pubDate>
-            <sparkle:version>309</sparkle:version>
-            <sparkle:shortVersionString>3.4.3</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[
-                <h2>PHTV 3.4.3</h2>
-                <h3>Tổng quan</h3>
-                <p>PHTV 3.4.3 tập trung củng cố quyền riêng tư, độ an toàn của dữ liệu chẩn đoán và độ tin cậy của quy trình cập nhật. Phiên bản này không thay đổi cách gõ hoặc thiết lập hiện có.</p>
-                <h3>Security and Privacy</h3>
-                <ul>
-                <li>Khai báo dữ liệu của GIF/Sticker trong privacy manifest và hiển thị liên kết chính sách PHTV/Klipy ngay trong Cài đặt.</li>
-                <li>Loại dữ liệu tìm kiếm, URL media, đường dẫn Clipboard và payload TCC khỏi log chẩn đoán.</li>
-                <li>Khóa GitHub Actions bằng commit SHA, check in SwiftPM lockfile và thêm Dependabot/CODEOWNERS.</li>
-                </ul>
-                <h3>Engineering</h3>
-                <ul>
-                <li>Dùng <code>CHANGELOG.md</code> làm nguồn duy nhất cho nội dung GitHub Release và Sparkle; thêm validator/test để hai appcast theo kiến trúc không lệch metadata.</li>
-                <li>CI chạy toàn bộ XCTest không retry; workflow release có verify gate; lịch chạy sâu bổ sung static analysis và Thread Sanitizer.</li>
-                <li>Loại toàn bộ <code>nonisolated(unsafe)</code> khỏi runtime state, thay bằng state box có lock; settings backup không còn lưu <code>Any</code> trong type <code>@unchecked Sendable</code>.</li>
-                <li>Bổ sung tài liệu Privacy, Testing, Releasing, Compatibility, Security và Third-Party Notices cùng công cụ local tự nhận diện Xcode stable/beta.</li>
-                <li>Chuyển build/run helper, release metadata validator, repository policy và Homebrew cask updater sang Swift; repository không còn local tool <code>.py</code>/<code>.sh</code>.</li>
-                <li>Đồng bộ version/build mặc định của project Xcode với appcast và tự cập nhật sau mỗi lần phát hành, tránh build local mang version placeholder <code>1.0 (1)</code>.</li>
-                </ul>
-                <h3>Ghi chú nâng cấp</h3>
-                <ul>
-                <li>Không cần cấp thêm quyền hoặc thiết lập lại ứng dụng.</li>
-                <li>Thiết lập, macro, lịch sử Clipboard và quy tắc theo ứng dụng được giữ nguyên.</li>
-                </ul>
-            ]]></description>
-            <enclosure url="https://github.com/PhamHungTien/PHTV/releases/download/v3.4.3/PHTV-3.4.3-arm64.dmg" length="9026407" type="application/octet-stream" sparkle:edSignature="G7zBuNVsRjjYXTtBNkrwfGK58rrPjzMkRx4EPmjCGzi7mIgHA9HRPyRw+9S3Z8z+uJ/BgEN2Tud9Dzdttp5pCw=="/>
         </item>
         <item>
             <title>2.8.9</title>
