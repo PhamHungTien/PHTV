@@ -227,6 +227,7 @@ final class StatusBarMenuManager: NSObject, NSMenuDelegate {
     // MARK: - Menu Structure
 
     private func populate(_ menu: NSMenu) {
+        addSecureInputWarningIfNeeded(to: menu)
         addLanguagePicker(to: menu)
         menu.addItem(.separator())
 
@@ -264,6 +265,19 @@ final class StatusBarMenuManager: NSObject, NSMenuDelegate {
         quitItem.target = self
         quitItem.image = sfImage("power")
         menu.addItem(quitItem)
+    }
+
+    /// macOS withholds keystrokes from input methods while Secure Event Input
+    /// is on. Name the app holding it so the user knows what to close.
+    private func addSecureInputWarningIfNeeded(to menu: NSMenu) {
+        let status = PHTVSecureInputService.currentStatus()
+        guard let title = status.menuDescription else { return }
+        let item = NSMenuItem(title: title, action: nil, keyEquivalent: "")
+        item.isEnabled = false
+        item.image = sfImage("lock.fill")
+        item.toolTip = "Khi một ứng dụng bật Nhập liệu bảo mật (ô mật khẩu, Secure Keyboard Entry), macOS chặn mọi bộ gõ. Đóng ô mật khẩu hoặc tắt tùy chọn này để gõ tiếng Việt lại."
+        menu.addItem(item)
+        menu.addItem(.separator())
     }
 
     private func addLanguagePicker(to menu: NSMenu) {
@@ -461,6 +475,16 @@ final class StatusBarMenuManager: NSObject, NSMenuDelegate {
             m.addItem(item)
         case .accessibilityRequired:
             m.addItem(actionItem("Cần cấp quyền \(PHTVAccessibilityPermissionNaming.displayName)", image: "exclamationmark.shield", sel: #selector(openAccessibilityPrefs)))
+        }
+
+        if appState.typingRuntimeHealth.phase != .accessibilityRequired {
+            let refresh = closureAction("Làm mới bộ gõ", image: "arrow.triangle.2.circlepath") {
+                Task { @MainActor in
+                    PHTVEventTapService.rebuildTap(reason: "menu")
+                }
+            }
+            refresh.toolTip = "Khởi tạo lại phần nhận phím của PHTV mà không cần thoát ứng dụng."
+            m.addItem(refresh)
         }
 
         return m

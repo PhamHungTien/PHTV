@@ -284,6 +284,8 @@ private nonisolated func phtvAttemptTCCRepairInBackground() async -> (fixed: Boo
     }
 
     func runHealthCheck() {
+        // Another user's session owns the keyboard; nothing to repair here.
+        guard PHTVSecureInputService.isSessionOnConsole() else { return }
         if !AXIsProcessTrusted() {
             publishTypingPermissionState(eventTapReady: false)
             continuePermissionGuidanceIfNeeded()
@@ -294,7 +296,22 @@ private nonisolated func phtvAttemptTCCRepairInBackground() async -> (fixed: Boo
         publishTypingPermissionState(eventTapReady: eventTapReady)
         if !eventTapReady {
             requestEventTapRecovery(reason: "healthCheckWaitingForEventTap")
+        } else {
+            PHTVEventTapWatchdogService.start()
+            Task { @MainActor in
+                await PHTVEventTapService.verifyTapThreadHealth()
+            }
         }
+        logSecureInputChangeIfNeeded()
+    }
+
+    /// Secure Event Input blocks every input method. Log the owner once per
+    /// change so bug reports show which app was holding it.
+    private func logSecureInputChangeIfNeeded() {
+        let status = PHTVSecureInputService.currentStatus()
+        guard status != lastLoggedSecureInputStatus else { return }
+        lastLoggedSecureInputStatus = status
+        NSLog("[SecureInput] %@", status.reportDescription)
     }
 
     func checkAccessibilityStatus() {

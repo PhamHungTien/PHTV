@@ -748,6 +748,8 @@ struct BugReportView: View {
             - **Runtime Phase:** \(appState.typingRuntimeHealth.phase.rawValue)
             - **\(PHTVAccessibilityPermissionNaming.displayName) Permission:** \(appState.hasAccessibilityPermission ? "✅ Granted" : "❌ Denied")
             - **Event Tap:** \(checkEventTapStatus())
+            - **Event Tap Recovery:** \(PHTVEventTapService.diagnosticSnapshot().reportDescription)
+            - **Secure Input:** \(PHTVSecureInputService.currentStatus().reportDescription)
             - **Active App Profile:** \(appState.typingRuntimeHealth.activeAppProfile.displayName)
             - **Active Bundle ID:** \(appState.typingRuntimeHealth.activeBundleId ?? "Unknown")
             - **Binary Architecture:** \(PHTVManager.getBinaryArchitectures())

@@ -326,7 +326,10 @@ final class PHTVEventCallbackService {
                        type: CGEventType,
                        event: CGEvent,
                        refcon: UnsafeMutableRawPointer?) -> Unmanaged<CGEvent>? {
-        autoreleasepool {
+        if type == .keyDown {
+            PHTVEventTapWatchdogService.noteMainTapKeyDown(timestamp: event.timestamp)
+        }
+        return autoreleasepool {
             handleInner(proxy: proxy, type: type, event: event, refcon: refcon)
         }
     }

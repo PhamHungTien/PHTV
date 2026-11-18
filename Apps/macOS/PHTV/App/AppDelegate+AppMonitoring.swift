@@ -265,18 +265,38 @@ private func phtvEnglishBehavior(
         _ = note
         StatusBarMenuManager.shared.prepareForSystemTransition()
         cancelEventTapRecovery(reason: "willSleep")
-        stopHealthCheckMonitoring()
+        // Keep the health check scheduled: its timer pauses during sleep and
+        // resumes on wake, so the tap comes back even if macOS never delivers
+        // the wake notification (issue #238).
         _ = PHTVManager.stopEventTap()
         publishTypingPermissionState(eventTapReady: false)
     }
 
+    /// Display sleep is not system sleep: the tap keeps working, so leave it
+    /// in place. Stopping it here made typing depend on receiving the matching
+    /// screensDidWake notification.
+    @objc func receiveScreensDidSleep(_ note: Notification) {
+        _ = note
+        NSLog("[EventTap] Displays asleep — keeping the event tap installed")
+    }
+
+    @objc func receiveScreenUnlocked(_ note: Notification) {
+        _ = note
+        startHealthCheckMonitoring()
+        requestEventTapRecovery(reason: "screenUnlocked", force: true)
+        Task { @MainActor in
+            await PHTVEventTapService.verifyTapThreadHealth()
+        }
+    }
+
     @objc func receiveSessionResignActive(_ note: Notification) {
         _ = note
-        NSLog("[Session] Did resign active — suspending event tap and monitoring")
+        NSLog("[Session] Did resign active — suspending event tap")
         StatusBarMenuManager.shared.prepareForSystemTransition()
         cancelEventTapRecovery(reason: "sessionResignActive")
-        stopHealthCheckMonitoring()
-        stopAccessibilityMonitoring()
+        // Monitoring stays on. The health check skips work while another
+        // session owns the console and restores the tap when this session is
+        // back, even if sessionDidBecomeActive is never delivered.
         _ = PHTVManager.stopEventTap()
         publishTypingPermissionState(eventTapReady: false)
         ClipboardMonitor.shared.stopMonitoring()
@@ -511,7 +531,7 @@ private func phtvEnglishBehavior(
                 appDelegate.receiveSleepNote(notification)
             },
             makeNotificationTask(center: workspaceCenter, name: NSWorkspace.screensDidSleepNotification) { appDelegate, notification in
-                appDelegate.receiveSleepNote(notification)
+                appDelegate.receiveScreensDidSleep(notification)
             },
             makeNotificationTask(center: workspaceCenter, name: NSWorkspace.screensDidWakeNotification) { appDelegate, notification in
                 appDelegate.receiveWakeNote(notification)
@@ -527,6 +547,12 @@ private func phtvEnglishBehavior(
             },
             makeNotificationTask(center: workspaceCenter, name: NSWorkspace.didActivateApplicationNotification) { appDelegate, notification in
                 appDelegate.activeAppChanged(notification)
+            },
+            makeNotificationTask(
+                center: DistributedNotificationCenter.default(),
+                name: Notification.Name("com.apple.screenIsUnlocked")
+            ) { appDelegate, notification in
+                appDelegate.receiveScreenUnlocked(notification)
             }
         ]
 
