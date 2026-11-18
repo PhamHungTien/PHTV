@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.7.2] - 2026-11-18
+
+- Bộ gõ tự phát hiện khi phím gõ đi thẳng vào ứng dụng mà không qua PHTV
+  (sau khi máy ngủ lâu, khoá màn hình, chuyển phiên người dùng hoặc macOS tạm
+  ngắt event tap) và tự khởi tạo lại ngay, không cần thoát hay mở lại PHTV.
+- Nếu luồng nhận phím bị treo, PHTV chuyển event tap sang luồng mới thay vì
+  chỉ bật lại tap cũ.
+- Tắt màn hình không còn gỡ event tap; mở khoá màn hình và thức dậy từ chế độ
+  ngủ đều kiểm tra lại bộ gõ. Việc theo dõi quyền nhập liệu vẫn chạy cả khi
+  không nhận được thông báo thức dậy từ macOS.
+- Menu thanh trạng thái cảnh báo khi một ứng dụng đang bật Nhập liệu bảo mật
+  (macOS chặn mọi bộ gõ lúc đó) và có mục **Làm mới bộ gõ** trong Hệ thống.
+- Phím tắt PHTV Picker và Clipboard dùng một phím bổ trợ riêng lẻ, như `Fn`
+  hay `⌘` phải, hoạt động trở lại; phím tắt đã lưu từ bản cũ được tự chuyển đổi.
+- Clipboard và PHTV Picker hiện đúng khi PHTV đang bị ẩn (khởi động ở nền,
+  ⌘H), không cần mở cửa sổ PHTV trước.
+- Báo cáo lỗi có thêm số lần khôi phục event tap và ứng dụng đang giữ Nhập liệu
+  bảo mật để chẩn đoán nhanh hơn.
+
 ## [3.7.1] - 2026-10-22
 
 - Sửa lỗi cửa sổ Cài đặt tự hiện khi khởi chạy PHTV nếu bật “Cài đặt luôn ở trên”.
