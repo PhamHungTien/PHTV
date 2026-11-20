@@ -830,17 +830,23 @@ final class PHTVAccessibilityService: NSObject {
         let elapsedMs = cache.checkTime > 0
             ? PHTVTimingService.machTimeToMs(now - cache.checkTime)
             : UInt64.max
+        let pageAppliesReplacement: Bool
         if cache.bundleId == bundleId, elapsedMs < 150 {
-            return cache.result
+            pageAppliesReplacement = cache.result
+        } else {
+            pageAppliesReplacement = PHTVSystemTextReplacementService.shouldDeferToNativeTextReplacement(
+                forBundleId: bundleId,
+                document: focusedWindowDocumentForFrontmostApp(),
+                windowTitle: focusedWindowTitleForFrontmostApp()
+            )
+            writeNativeTextReplacementCache(bundleId: bundleId, result: pageAppliesReplacement, checkTime: now)
         }
 
-        let result = PHTVSystemTextReplacementService.shouldDeferToNativeTextReplacement(
-            forBundleId: bundleId,
-            document: focusedWindowDocumentForFrontmostApp(),
-            windowTitle: focusedWindowTitleForFrontmostApp()
-        )
-        writeNativeTextReplacementCache(bundleId: bundleId, result: result, checkTime: now)
-        return result
+        // Chromium's address bar does not apply the replacement, unlike its web
+        // pages, so PHTV expands the shortcut there (issue #245).
+        return pageAppliesReplacement &&
+            !(PHTVAppDetectionService.addressBarSkipsNativeTextReplacement(bundleId) &&
+              isFocusedElementAddressBar())
     }
 
     @objc class func invalidateNativeTextReplacementCache() {

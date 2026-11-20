@@ -401,6 +401,73 @@ final class PHTVAppDetectionService: NSObject {
         browserApps.contains(bundleId)
     }
 
+    /// Desktop apps that get browser input handling but are not web browsers;
+    /// they do not apply macOS Text Replacements themselves.
+    private static let desktopAppsHandledAsBrowsers = BundlePatternSet([
+        "com.qoder.ide",
+        "com.tinyspeck.slackmacgap",
+        "com.hnc.Discord",
+        "com.electron.discord",
+        "com.github.GitHubClient",
+        "com.figma.Desktop",
+        "com.linear",
+        "com.logseq.logseq",
+        "md.obsidian"
+    ])
+
+    /// Gecko browsers do not apply macOS Text Replacements in web pages.
+    private static let geckoBrowserApps = BundlePatternSet([
+        "org.mozilla.firefox",
+        "org.mozilla.firefoxdeveloperedition",
+        "org.mozilla.nightly",
+        "net.waterfox.waterfox",
+        "io.gitlab.librewolf-community",
+        "com.floorp.floorp",
+        "app.zen-browser.zen"
+    ])
+
+    /// Browsers with Chromium's own address bar, which does not apply macOS
+    /// Text Replacements even though their web pages do.
+    private static let chromiumAddressBarApps = BundlePatternSet([
+        "com.google.Chrome",
+        "com.google.Chrome.canary",
+        "com.google.Chrome.dev",
+        "com.google.Chrome.beta",
+        "org.chromium.Chromium",
+        "com.brave.Browser",
+        "com.brave.Browser.beta",
+        "com.brave.Browser.nightly",
+        "com.microsoft.edgemac",
+        "com.microsoft.edgemac.Dev",
+        "com.microsoft.edgemac.Beta",
+        "com.microsoft.edgemac.Canary",
+        "com.microsoft.Edge",
+        "com.microsoft.Edge.Dev",
+        "com.coccoc.browser",
+        "com.vivaldi.Vivaldi",
+        "com.operasoftware.Opera",
+        "com.operasoftware.OperaGX",
+        "com.collovos.naver.whale",
+        "ru.yandex.desktop.yandex-browser",
+        "net.imput.helium"
+    ])
+
+    /// Chromium and WebKit browsers apply macOS Text Replacements in web text
+    /// fields themselves (Safari also in its address bar). If PHTV expands the
+    /// imported shortcut too, the two edits overlap and part of the expansion
+    /// is duplicated (issue #245).
+    @objc class func appliesNativeTextReplacementInWebPages(_ bundleId: String?) -> Bool {
+        isBrowserApp(bundleId) &&
+            !geckoBrowserApps.contains(bundleId) &&
+            !desktopAppsHandledAsBrowsers.contains(bundleId)
+    }
+
+    /// Chromium's address bar does not apply macOS Text Replacements, so PHTV
+    /// expands them there.
+    @objc class func addressBarSkipsNativeTextReplacement(_ bundleId: String?) -> Bool {
+        chromiumAddressBarApps.contains(bundleId)
+    }
+
     @objc class func isSpotlightLikeApp(_ bundleId: String?) -> Bool {
         forcePrecomposedApps.contains(bundleId)
     }
@@ -482,9 +549,6 @@ final class PHTVAppDetectionService: NSObject {
         strictAddressBarDetectionApps.contains(bundleId)
     }
 
-    // Native Text Replacements are still inconsistent in most browser
-    // content-editable fields and chat editors. Known AI web contexts are
-    // handled as a narrow exception below after issue #219.
     @objc class func supportsNativeSystemTextReplacements(_ bundleId: String?) -> Bool {
         supportsNativeSystemTextReplacements(
             bundleId,
@@ -493,11 +557,11 @@ final class PHTVAppDetectionService: NSObject {
         )
     }
 
-    /// Some web chat editors now apply macOS Text Replacements themselves.
-    /// When PHTV also expands the imported shortcut, the two asynchronous
-    /// transactions overlap and duplicate part of the expansion (issue #219).
-    /// Keep the existing browser fallback by default, but hand off these
-    /// known native-compatible AI web contexts to macOS.
+    /// Whether macOS Text Replacements are applied by the app itself, so PHTV
+    /// leaves the imported shortcuts to it. When both expand a shortcut, the
+    /// two asynchronous edits overlap and duplicate part of the expansion
+    /// (issues #219, #245). In Gecko browsers only some AI web editors apply
+    /// them, in script.
     @objc(supportsNativeSystemTextReplacements:document:windowTitle:)
     class func supportsNativeSystemTextReplacements(
         _ bundleId: String?,
@@ -509,10 +573,15 @@ final class PHTVAppDetectionService: NSObject {
         }
 
         if isBrowserApp(normalized) {
-            return supportsNativeTextReplacementInKnownWebContext(
-                document: document,
-                windowTitle: windowTitle
-            )
+            // Zalo's web editor gets PHTV's expansion, like its desktop app.
+            if isZaloContext(bundleId: normalized, document: document, windowTitle: windowTitle) {
+                return false
+            }
+            return appliesNativeTextReplacementInWebPages(normalized) ||
+                supportsNativeTextReplacementInKnownWebContext(
+                    document: document,
+                    windowTitle: windowTitle
+                )
         }
 
         if isZaloApp(normalized) ||

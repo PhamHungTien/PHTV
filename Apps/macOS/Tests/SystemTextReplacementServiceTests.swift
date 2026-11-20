@@ -177,7 +177,7 @@ final class SystemTextReplacementServiceTests: XCTestCase {
     func testNativeTextReplacementDeferralUsesStableGuiFieldsOnly() {
         XCTAssertFalse(
             PHTVSystemTextReplacementService.shouldDeferToNativeTextReplacement(
-                forBundleId: "com.google.Chrome"
+                forBundleId: "org.mozilla.firefox"
             )
         )
         XCTAssertFalse(
@@ -272,10 +272,48 @@ final class SystemTextReplacementServiceTests: XCTestCase {
         )
         XCTAssertFalse(
             PHTVSystemTextReplacementService.shouldDeferToNativeTextReplacement(
-                forBundleId: "com.google.Chrome",
+                forBundleId: "org.mozilla.firefox",
                 document: "https://example.com/",
                 windowTitle: "Example"
             )
         )
+    }
+
+    /// Chromium and WebKit browsers apply macOS Text Replacements in any web
+    /// text field; PHTV expanding them too duplicated part of the text.
+    func testIssue245ChromiumAndWebKitPagesApplyTextReplacementsThemselves() {
+        let page = "https://en.wikipedia.org/wiki/Special:Search"
+        for bundleId in ["com.google.Chrome", "com.apple.Safari", "company.thebrowser.Browser",
+                         "com.microsoft.edgemac", "com.coccoc.browser"] {
+            XCTAssertTrue(
+                PHTVSystemTextReplacementService.shouldDeferToNativeTextReplacement(
+                    forBundleId: bundleId, document: page, windowTitle: "Search - Wikipedia"),
+                bundleId
+            )
+            // Without page details (no Accessibility) the page still applies them.
+            XCTAssertTrue(
+                PHTVSystemTextReplacementService.shouldDeferToNativeTextReplacement(
+                    forBundleId: bundleId, document: nil, windowTitle: nil),
+                bundleId
+            )
+        }
+        for bundleId in ["org.mozilla.firefox", "app.zen-browser.zen"] {
+            XCTAssertFalse(
+                PHTVSystemTextReplacementService.shouldDeferToNativeTextReplacement(
+                    forBundleId: bundleId, document: page, windowTitle: "Search - Wikipedia"),
+                bundleId
+            )
+        }
+        XCTAssertFalse(
+            PHTVSystemTextReplacementService.shouldDeferToNativeTextReplacement(
+                forBundleId: "com.google.Chrome", document: "https://chat.zalo.me/", windowTitle: "Zalo")
+        )
+
+        XCTAssertTrue(PHTVAppDetectionService.addressBarSkipsNativeTextReplacement("com.google.Chrome"))
+        XCTAssertTrue(PHTVAppDetectionService.addressBarSkipsNativeTextReplacement("com.brave.Browser"))
+        XCTAssertFalse(PHTVAppDetectionService.addressBarSkipsNativeTextReplacement("com.apple.Safari"))
+        XCTAssertFalse(PHTVAppDetectionService.addressBarSkipsNativeTextReplacement("com.google.Chrome.app.abc"))
+        XCTAssertFalse(PHTVAppDetectionService.appliesNativeTextReplacementInWebPages("com.apple.TextEdit"))
+        XCTAssertFalse(PHTVAppDetectionService.appliesNativeTextReplacementInWebPages("com.tinyspeck.slackmacgap"))
     }
 }

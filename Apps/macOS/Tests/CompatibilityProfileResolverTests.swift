@@ -14,7 +14,7 @@ final class CompatibilityProfileResolverTests: XCTestCase {
 
         XCTAssertEqual(profile.kind, .browser)
         XCTAssertTrue(profile.isBrowser)
-        XCTAssertFalse(profile.supportsNativeSystemTextReplacements)
+        XCTAssertTrue(profile.supportsNativeSystemTextReplacements)
         XCTAssertFalse(profile.shouldPostToHIDTap)
     }
 
@@ -25,7 +25,7 @@ final class CompatibilityProfileResolverTests: XCTestCase {
             XCTAssertEqual(profile.kind, .browser, bundleId)
             XCTAssertTrue(profile.isBrowser, bundleId)
             XCTAssertTrue(profile.containsUnicodeCompound, bundleId)
-            XCTAssertFalse(profile.supportsNativeSystemTextReplacements, bundleId)
+            XCTAssertTrue(profile.supportsNativeSystemTextReplacements, bundleId)
             XCTAssertFalse(profile.shouldPostToHIDTap, bundleId)
         }
     }
