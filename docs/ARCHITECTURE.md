@@ -131,7 +131,9 @@ Xem phạm vi và ranh giới tại [BACKUP.md](BACKUP.md).
 
 ## Runtime Permission Flow
 
-PHTV chỉ cần một quyền macOS: **Trợ năng** trên macOS 26 trở xuống hoặc **Device Control and Data Access** trên macOS 27+. Đây là cùng một Accessibility/AX TCC service; app vẫn kiểm tra bằng `AXIsProcessTrusted()` và prompt bằng `AXIsProcessTrustedWithOptions`.
+PHTV chỉ cần một quyền macOS: **Trợ năng** trên macOS 26 trở xuống, **Device Control and Data Access** trên macOS 27.0–27.2 hoặc **System & App Protection Override** trên macOS 27.3+. Đây là cùng một Accessibility/AX TCC service; app vẫn kiểm tra bằng `AXIsProcessTrusted()` và prompt bằng `AXIsProcessTrustedWithOptions`.
+
+Mọi truy vấn AX đi qua `PHTVAXQueryGate`, không bao giờ nhắm vào chính cửa sổ của PHTV: AppKit trả lời truy vấn tới tiến trình của mình ngay trên event-tap thread và crash.
 
 PHTV dùng active `.defaultTap` tại `.cgSessionEventTap`. AX trust chỉ cho phép thử; probe và production tap đều phải tạo, gắn run loop và enable thành công thì mới sẵn sàng.
 

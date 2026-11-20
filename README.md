@@ -58,7 +58,8 @@ PHTV chỉ cần đúng một quyền của macOS để hoạt động:
 
 | Phiên bản macOS | Quyền cần cấp | Dùng để làm gì |
 | --- | --- | --- |
-| **macOS 27 trở lên** | **Device Control and Data Access** | Cho phép PHTV nhận phím và đưa chữ đã xử lý vào ứng dụng đang dùng. |
+| **macOS 27.3 trở lên** | **System & App Protection Override** | Cho phép PHTV nhận phím và đưa chữ đã xử lý vào ứng dụng đang dùng. |
+| **macOS 27.0 – 27.2** | **Device Control and Data Access** | Cho phép PHTV nhận phím và đưa chữ đã xử lý vào ứng dụng đang dùng. |
 | **macOS 26 trở xuống** | **Trợ năng** | Cho phép PHTV nhận phím và đưa chữ đã xử lý vào ứng dụng đang dùng. |
 
 Các kiểm tra Accessibility/AX và event tap là trạng thái vận hành nội bộ, không phải quyền bổ sung mà người dùng phải cấp.
@@ -225,7 +226,7 @@ open PHTV.xcodeproj
 # Build với Cmd+B, chạy với Cmd+R
 ```
 
-Project hiện chỉ có app chính `PHTV` và test target `PHEngineTests`; không còn target InputMethodKit riêng. Khi chạy bản tự build, hãy cấp đúng một quyền cho bundle vừa build: **Device Control and Data Access** trên macOS 27 trở lên, hoặc **Trợ năng** trên macOS cũ hơn.
+Project hiện chỉ có app chính `PHTV` và test target `PHEngineTests`; không còn target InputMethodKit riêng. Khi chạy bản tự build, hãy cấp đúng một quyền cho bundle vừa build: **System & App Protection Override** trên macOS 27.3 trở lên, **Device Control and Data Access** trên macOS 27.0–27.2, hoặc **Trợ năng** trên macOS cũ hơn.
 
 Xem chi tiết kiến trúc: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 

@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Sửa lỗi PHTV thoát đột ngột khi đang gõ trong chính cửa sổ của PHTV (Cài
+  đặt, Báo lỗi, PHTV Picker): bộ gõ không còn đọc thông tin Trợ năng của cửa
+  sổ PHTV.
+- Trên macOS 27.3 trở lên, PHTV gọi đúng tên mục quyền mới trong System
+  Settings: **System & App Protection Override**.
+
 ## [3.7.2] - 2026-11-18
 
 - Bộ gõ tự phát hiện khi phím gõ đi thẳng vào ứng dụng mà không qua PHTV
