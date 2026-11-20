@@ -72,7 +72,7 @@ và bị xóa sau khi giao dịch hoàn tất hoặc hoàn tác thành công. Xe
 
 ## Quyền macOS
 
-- **Trợ năng / Device Control and Data Access**: quyền Accessibility/AX duy nhất để active event tap nhận phím, tương tác với ô nhập liệu và commit chuỗi đã xử lý. Tên hiển thị thay đổi trên macOS 27+.
+- **Trợ năng / Device Control and Data Access / System & App Protection Override**: quyền Accessibility/AX duy nhất để active event tap nhận phím, tương tác với ô nhập liệu và commit chuỗi đã xử lý. Tên hiển thị thay đổi trên macOS 27 và 27.3.
 - **Automation/Apple Events**: chỉ dùng trong luồng phục hồi TCC có xác nhận của
   người dùng; PHTV không tự động điều khiển ứng dụng khác trong quá trình gõ.
 

@@ -46,6 +46,23 @@ ranh giới rõ:
 Các file hot path như engine, event callback và hotkey phải được chia theo hành
 vi, giữ allocation/lock ngoài đường xử lý phím và benchmark lại latency.
 
+## Biểu tượng ứng dụng
+
+`Apps/macOS/PHTV.icon` là tệp Icon Composer duy nhất của biểu tượng: chữ P
+(`Assets/P.svg`) và ngôi sao (`Assets/Star.svg`) là hai lớp vector cùng một màu
+vàng trên nền gradient đỏ. Sửa biểu tượng bằng Icon Composer, giữ định dạng
+`.icon` để macOS 26 trở lên dựng đủ các kiểu Default, Dark, Clear và Tinted;
+Xcode tự sinh `.icns` cho macOS cũ hơn.
+
+`docs/images/icon.png` (README, trang web, ảnh quảng bá) được xuất từ chính tệp
+này, không vẽ tay:
+
+```bash
+"$(xcode-select -p)/../Applications/Icon Composer.app/Contents/Executables/ictool" \
+  Apps/macOS/PHTV.icon --export-image --output-file docs/images/icon.png \
+  --platform macOS --rendition Default --width 1024 --height 1024 --scale 1
+```
+
 ## Dependency và dịch vụ mạng
 
 - Commit lockfile cùng thay đổi dependency.

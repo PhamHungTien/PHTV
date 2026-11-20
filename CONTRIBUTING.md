@@ -56,7 +56,7 @@ Tạo [issue mới](https://github.com/PhamHungTien/PHTV/issues/new) với thôn
 - Cách tái hiện (bước chi tiết)
 - Hành vi mong đợi vs thực tế
 - Phiên bản macOS, ứng dụng/trang web gặp lỗi và phiên bản PHTV
-- Trạng thái quyền **Device Control and Data Access** (macOS 27+) hoặc **Trợ năng** (macOS cũ hơn), cùng trạng thái event tap nếu lỗi liên quan đến gõ phím
+- Trạng thái quyền **System & App Protection Override** (macOS 27.3+), **Device Control and Data Access** (macOS 27.0–27.2) hoặc **Trợ năng** (macOS cũ hơn), cùng trạng thái event tap nếu lỗi liên quan đến gõ phím
 - Screenshot/video (nếu có)
 
 ## Đề Xuất Tính Năng
@@ -106,7 +106,7 @@ PHTV/
 
 ### Build và Test
 
-> **Yêu cầu**: macOS 14.0+ và Xcode phiên bản mới nhất. Bản chạy thật cần đúng một quyền cho bundle đang test: **Device Control and Data Access** trên macOS 27 trở lên, hoặc **Trợ năng** trên macOS cũ hơn. Readiness nội bộ còn yêu cầu Accessibility/AX được tin cậy, tap của default session đang hoạt động và production tap đang được bật.
+> **Yêu cầu**: macOS 14.0+ và Xcode phiên bản mới nhất. Bản chạy thật cần đúng một quyền cho bundle đang test: **System & App Protection Override** trên macOS 27.3 trở lên, **Device Control and Data Access** trên macOS 27.0–27.2, hoặc **Trợ năng** trên macOS cũ hơn. Readiness nội bộ còn yêu cầu Accessibility/AX được tin cậy, tap của default session đang hoạt động và production tap đang được bật.
 
 ```bash
 # Clone project

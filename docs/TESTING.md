@@ -11,8 +11,8 @@ build/analyze và kiểm tra thủ công trên các ứng dụng đích.
 - macOS 14 trở lên.
 - Xcode đầy đủ. `scripts/dev.swift` tự tìm Xcode stable hoặc Xcode Beta; có thể
   đặt `DEVELOPER_DIR` để chọn rõ phiên bản.
-- Bản chạy tương tác cần quyền Trợ năng (macOS 26 trở xuống) hoặc Device Control
-  and Data Access (macOS 27+). XCTest thuần không tự cấp hoặc sửa quyền TCC của máy.
+- Bản chạy tương tác cần quyền Trợ năng (macOS 26 trở xuống), Device Control and
+  Data Access (macOS 27.0–27.2) hoặc System & App Protection Override (macOS 27.3+). XCTest thuần không tự cấp hoặc sửa quyền TCC của máy.
 
 Kiểm tra môi trường:
 

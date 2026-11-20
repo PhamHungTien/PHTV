@@ -25,7 +25,8 @@ Chỉ bản phát hành ổn định mới nhất được hỗ trợ chủ đ�
 
 ## Phạm vi ưu tiên
 
-- lạm dụng quyền **Device Control and Data Access**/**Trợ năng** hoặc API
+- lạm dụng quyền **System & App Protection Override**/**Device Control and Data
+  Access**/**Trợ năng** hoặc API
   Accessibility để đọc/gửi dữ liệu ngoài mục đích xử lý bộ gõ;
 - rò rỉ nội dung gõ, clipboard, macro, từ khóa tìm GIF/Sticker hoặc định danh;
 - thực thi mã, command injection, path traversal hoặc nhập cấu hình không an toàn;
@@ -39,8 +40,9 @@ bảo mật rõ ràng.
 ## Mô hình quyền và dữ liệu
 
 PHTV cần đúng một quyền để nhận phím và đưa văn bản đã xử lý vào ứng dụng đang
-dùng: **Device Control and Data Access** trên macOS 27 trở lên, hoặc **Trợ năng**
-trên macOS cũ hơn. PHTV không cần chạy bằng `sudo`.
+dùng: **System & App Protection Override** trên macOS 27.3 trở lên, **Device
+Control and Data Access** trên macOS 27.0–27.2, hoặc **Trợ năng** trên macOS cũ
+hơn. PHTV không cần chạy bằng `sudo`.
 
 Bên trong ứng dụng, trạng thái sẵn sàng chỉ được xác nhận khi Accessibility/AX đã
 được tin cậy, tap của default session đang hoạt động và production tap đang được

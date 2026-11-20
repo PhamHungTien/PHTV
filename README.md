@@ -41,7 +41,7 @@ open /Applications/PHTV.app
 **Quan trọng:** Trước khi sử dụng, bạn nên tắt các tính năng tự động sửa lỗi của macOS (Correct spelling, Capitalize words, inline predictive text,...) trong **System Settings > Keyboard > Edit Input Sources** để tránh xung đột. Xem [hướng dẫn chi tiết](docs/INSTALL.md#chuẩn-bị-trước-khi-cài-đặt).
 
 **Sau khi cài:**
-1. Mở PHTV và cấp đúng một quyền theo phiên bản hệ điều hành: **Device Control and Data Access** trên macOS 27 trở lên, hoặc **Trợ năng** trên macOS cũ hơn.
+1. Mở PHTV và cấp đúng một quyền theo phiên bản hệ điều hành: **System & App Protection Override** trên macOS 27.3 trở lên, **Device Control and Data Access** trên macOS 27.0–27.2, hoặc **Trợ năng** trên macOS cũ hơn.
 2. Click icon **En** trên menu bar, chọn **Vi** để bật tiếng Việt.
 3. Nhấn **Control + Shift** để chuyển đổi Việt/Anh (có thể tùy chỉnh trong Settings).
 4. Bắt đầu gõ.
@@ -286,7 +286,7 @@ Click biểu tượng **Vi** (Việt) / **En** (Anh) trên menu bar:
 | **macOS** | 14.0+ (Sonoma trở lên) |
 | **Kiến trúc** | DMG riêng cho Intel và Apple Silicon |
 | **Xcode** | Phiên bản mới nhất (nếu build từ source) |
-| **Quyền** | Đúng một quyền: Device Control and Data Access (macOS 27+) hoặc Trợ năng (macOS cũ hơn) |
+| **Quyền** | Đúng một quyền: System & App Protection Override (macOS 27.3+), Device Control and Data Access (macOS 27.0–27.2) hoặc Trợ năng (macOS cũ hơn) |
 
 > **Lưu ý**: PHTV hỗ trợ cả Intel và Apple Silicon (M1/M2/M3/M4/...). Workflow phát hành tạo đúng DMG theo kiến trúc để giảm dung lượng tải.
 

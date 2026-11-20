@@ -24,7 +24,7 @@ PHTV là bộ gõ tiếng Việt native cho macOS. Tài liệu này hướng d�
 | **macOS** | 14.0 Sonoma trở lên |
 | **CPU** | Có DMG riêng cho Intel và Apple Silicon |
 | **Dung lượng** | Khoảng 50 MB |
-| **Quyền macOS** | Một quyền: Trợ năng (macOS 26 trở xuống) hoặc Device Control and Data Access (macOS 27+) |
+| **Quyền macOS** | Một quyền: Trợ năng (macOS 26 trở xuống), Device Control and Data Access (macOS 27.0–27.2) hoặc System & App Protection Override (macOS 27.3+) |
 | **Build từ source** | Xcode mới nhất, Swift 6 |
 
 Engine gõ tiếng Việt chạy offline trên máy và không gửi nội dung bạn gõ trong ứng dụng khác ra máy chủ. Sparkle và khu GIF/Sticker có kết nối mạng; xem [Quyền riêng tư](PRIVACY.md).
@@ -168,11 +168,11 @@ Project hiện chỉ còn app target `PHTV` và test target `PHEngineTests`. Kh�
 
 ## Cấp Quyền macOS
 
-PHTV chỉ cần một quyền để bắt phím và gửi chữ đã xử lý vào ứng dụng bạn đang dùng. Tên hiển thị là **Trợ năng** trên macOS 26 trở xuống và **Device Control and Data Access** trên macOS 27+.
+PHTV chỉ cần một quyền để bắt phím và gửi chữ đã xử lý vào ứng dụng bạn đang dùng. Tên hiển thị là **Trợ năng** trên macOS 26 trở xuống, **Device Control and Data Access** trên macOS 27.0–27.2 và **System & App Protection Override** trên macOS 27.3 trở lên.
 
 | Quyền | Vị trí | Mục đích |
 | --- | --- | --- |
-| **Trợ năng / Device Control and Data Access** | `System Settings > Privacy & Security > Accessibility` (tên mục thay đổi trên macOS 27+) | Cho phép PHTV dùng active event tap, tương tác với ô nhập liệu và commit chữ. |
+| **Trợ năng / Device Control and Data Access / System & App Protection Override** | `System Settings > Privacy & Security` (tên mục thay đổi theo phiên bản macOS) | Cho phép PHTV dùng active event tap, tương tác với ô nhập liệu và commit chữ. |
 
 PHTV chỉ báo sẵn sàng sau khi quyền đã được cấp và event tap production đã tạo, enable thành công.
 
@@ -189,7 +189,7 @@ PHTV chỉ báo sẵn sàng sau khi quyền đã được cấp và event tap pr
 
 Một số phiên bản macOS có thể giữ lại entry TCC cũ sau khi app được cập nhật hoặc ký lại. Khi bạn bấm mở quyền đang thiếu, PHTV sẽ làm mới riêng entry TCC của quyền đó trước khi mở System Settings:
 
-- `Accessibility` là tên service TCC nội bộ của quyền này, kể cả khi macOS 27+ hiển thị là Device Control and Data Access.
+- `Accessibility` là tên service TCC nội bộ của quyền này, kể cả khi macOS 27+ hiển thị tên khác.
 
 Nếu vẫn chưa hoạt động sau khi bật quyền, hãy thoát hẳn PHTV và mở lại một lần để macOS áp dụng trạng thái TCC mới.
 
@@ -223,9 +223,9 @@ cấp quyền macOS trên máy đích và kiểm tra cảnh báo Login Items/ph�
 Kiểm tra theo thứ tự:
 
 1. Menu bar đang ở trạng thái **Vi**, không phải **En**.
-2. Quyền **Trợ năng** (hoặc **Device Control and Data Access** trên macOS 27+) đã bật PHTV.
+2. Quyền **Trợ năng** (tên mới trên macOS 27+: **Device Control and Data Access**, từ 27.3 là **System & App Protection Override**) đã bật PHTV.
 3. Tắt các tính năng tự sửa chữ của macOS trong Keyboard settings.
-5. Thử gõ trong Notes hoặc TextEdit để loại trừ lỗi riêng của ứng dụng đang dùng.
+4. Thử gõ trong Notes hoặc TextEdit để loại trừ lỗi riêng của ứng dụng đang dùng.
 6. Thoát hẳn PHTV và mở lại nếu bạn vừa cấp quyền.
 
 Nếu PHTV vẫn báo thiếu quyền dù đã bật, mở Settings của PHTV hoặc onboarding và bấm lại nút mở quyền. Ứng dụng sẽ làm mới entry TCC của quyền đang thiếu rồi mở đúng mục System Settings.
