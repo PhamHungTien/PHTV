@@ -830,23 +830,42 @@ final class PHTVAccessibilityService: NSObject {
         let elapsedMs = cache.checkTime > 0
             ? PHTVTimingService.machTimeToMs(now - cache.checkTime)
             : UInt64.max
-        let pageAppliesReplacement: Bool
         if cache.bundleId == bundleId, elapsedMs < 150 {
-            pageAppliesReplacement = cache.result
-        } else {
-            pageAppliesReplacement = PHTVSystemTextReplacementService.shouldDeferToNativeTextReplacement(
-                forBundleId: bundleId,
-                document: focusedWindowDocumentForFrontmostApp(),
-                windowTitle: focusedWindowTitleForFrontmostApp()
-            )
-            writeNativeTextReplacementCache(bundleId: bundleId, result: pageAppliesReplacement, checkTime: now)
+            return cache.result
         }
 
         // Chromium's address bar does not apply the replacement, unlike its web
         // pages, so PHTV expands the shortcut there (issue #245).
-        return pageAppliesReplacement &&
-            !(PHTVAppDetectionService.addressBarSkipsNativeTextReplacement(bundleId) &&
-              isFocusedElementAddressBar())
+        let result = PHTVSystemTextReplacementService.shouldDeferToNativeTextReplacement(
+            forBundleId: bundleId,
+            document: focusedWindowDocumentForFrontmostApp(),
+            windowTitle: focusedWindowTitleForFrontmostApp()
+        ) && !(PHTVAppDetectionService.addressBarSkipsNativeTextReplacement(bundleId) &&
+               isFocusedElementNamedAddressBar(bundleId: bundleId))
+        writeNativeTextReplacementCache(bundleId: bundleId, result: result, checkTime: now)
+        return result
+    }
+
+    /// Strict address bar test for text replacement decisions. Unlike
+    /// isFocusedElementAddressBar(), which guesses from the role when it cannot
+    /// reach the page's web area (a deeply nested chat editor counts as an
+    /// address bar there), this requires the field to name itself as one.
+    private class func isFocusedElementNamedAddressBar(bundleId: String) -> Bool {
+        guard let focused = focusedElement() else { return false }
+        let labels = [kAXDescriptionAttribute, kAXTitleAttribute, "AXIdentifier"].map {
+            stringAttribute(focused, $0)
+        }
+        guard labels.contains(where: { containsAddressBarKeyword($0, bundleId: bundleId) }) else {
+            return false
+        }
+        // A web form field labelled "address" or "URL" sits inside the page.
+        var current = focused
+        for _ in 0..<40 {
+            guard let parent = elementAttribute(current, kAXParentAttribute) else { break }
+            if stringAttribute(parent, kAXRoleAttribute) == "AXWebArea" { return false }
+            current = parent
+        }
+        return true
     }
 
     @objc class func invalidateNativeTextReplacementCache() {
