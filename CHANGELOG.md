@@ -12,6 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   sổ PHTV.
 - Trên macOS 27.3 trở lên, PHTV gọi đúng tên mục quyền mới trong System
   Settings: **System & App Protection Override**.
+- Thanh địa chỉ của trình duyệt: khi gõ ngay sau khi bấm vào ô, PHTV kiểm tra
+  lại ô đang nhập thay vì dùng kết quả cũ, tránh để gợi ý tự động của trình
+  duyệt nuốt phím xoá (gõ "dd" ra "dđ").
 
 ## [3.7.2] - 2026-11-18
 

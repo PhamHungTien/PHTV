@@ -114,6 +114,8 @@ final class PHTVAccessibilityService: NSObject {
         var lastClaudeCodeSessionCheckTime: UInt64 = 0
         var lastAddressBarResult = false
         var lastAddressBarCheckTime: UInt64 = 0
+        /// Keystrokes after a focus change that re-check instead of caching "not an address bar".
+        var addressBarFreshFocusProbes = 0
         var lastNotionCodeBlockResult = false
         var lastNotionCodeBlockCheckTime: UInt64 = 0
         var lastNativeTextReplacementBundleId: String?
@@ -575,9 +577,9 @@ final class PHTVAccessibilityService: NSObject {
         return false
     }
 
-    private class func focusedElement() -> AXUIElement? {
+    private class func focusedElement(timeout: Float = 0.05) -> AXUIElement? {
         let systemWide = AXUIElementCreateSystemWide()
-        _ = AXUIElementSetMessagingTimeout(systemWide, 0.05)
+        _ = AXUIElementSetMessagingTimeout(systemWide, timeout)
         return elementAttribute(systemWide, kAXFocusedUIElementAttribute)
     }
 
@@ -747,7 +749,24 @@ final class PHTVAccessibilityService: NSObject {
     }
 
     @objc class func invalidateAddressBarCache() {
-        writeAddressBarCache(result: false, checkTime: 0)
+        cacheState.withLock { state in
+            state.lastAddressBarResult = false
+            state.lastAddressBarCheckTime = 0
+            state.addressBarFreshFocusProbes = addressBarFreshFocusProbeLimit
+        }
+    }
+
+    private static let addressBarFreshFocusProbeLimit = 3
+
+    /// Right after a focus change the browser may still report the previous
+    /// element. A negative answer is then not cached for the next few
+    /// keystrokes, so the key that needs the omnibox fix sees the real field.
+    private class func consumeAddressBarFreshFocusProbe() -> Bool {
+        cacheState.withLock { state in
+            guard state.addressBarFreshFocusProbes > 0 else { return false }
+            state.addressBarFreshFocusProbes -= 1
+            return true
+        }
     }
 
     private class func readNotionCodeBlockCache() -> (result: Bool, checkTime: UInt64) {
@@ -861,7 +880,13 @@ final class PHTVAccessibilityService: NSObject {
         let strictDetection = PHTVCompatibilityProfileResolver.resolve(forBundleId: bundleId)
             .needsStrictAddressBarDetection
 
-        guard let focused = focusedElement() else {
+        // Right after a click or focus change (cache invalidated) a browser is
+        // often still rebuilding its accessibility tree and misses the 50 ms
+        // budget. Missing the omnibox there lets its inline autocomplete swallow
+        // the replacement backspace ("dd" -> "dđ"), so the first key after a
+        // focus change waits a little longer for the answer.
+        let freshFocus = cache.checkTime == 0
+        guard let focused = focusedElement() ?? (freshFocus ? focusedElement(timeout: 0.25) : nil) else {
             // AX failed: use recent cached result, otherwise safe default (false).
             if cache.checkTime > 0 && elapsedMs < 2000 {
                 isAddressBar = cache.result
@@ -916,6 +941,9 @@ final class PHTVAccessibilityService: NSObject {
             strictDetection: strictDetection
         )
 
+        if freshFocus, !isAddressBar, consumeAddressBarFreshFocusProbe() {
+            return false
+        }
         writeAddressBarCache(result: isAddressBar, checkTime: now)
         return isAddressBar
     }
