@@ -7,6 +7,20 @@
         <language>vi</language>
         <!-- Intel (x86_64) feed — Most recent version first -->
         <item>
+            <title>3.7.6</title>
+            <pubDate>Sat, 21 Nov 2026 00:32:47 +0700</pubDate>
+            <sparkle:version>343</sparkle:version>
+            <sparkle:shortVersionString>3.7.6</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[
+                <h2>PHTV 3.7.6</h2>
+                <ul>
+                <li>Khi bật <strong>Dùng Text Replacements của macOS</strong>, gõ tắt trong trang web trên Chrome, Safari, Edge, Brave, Arc, Cốc Cốc… không còn bị lặp nội dung (<code>dtd</code> ra &quot;Đang trên đường!g trên đường!&quot;). Các trình duyệt này tự thay từ viết tắt của macOS trong ô nhập, nên PHTV để trình duyệt thay; ở thanh địa chỉ của Chrome, nơi trình duyệt không tự thay, PHTV vẫn thay như trước (#245).</li>
+                </ul>
+            ]]></description>
+            <enclosure url="https://github.com/PhamHungTien/PHTV/releases/download/v3.7.6/PHTV-3.7.6-intel.dmg" length="11174911" type="application/octet-stream" sparkle:edSignature="XLfzhnA6xqnWUx9ttZfH7uIVj54yS8/fUuO+BLbJF7D5YFbr+oKnuDQohmUQtqe0Wg3y0wt8jQv2lodT85sXBQ=="/>
+        </item>
+        <item>
             <title>3.7.5</title>
             <pubDate>Sat, 21 Nov 2026 00:06:02 +0700</pubDate>
             <sparkle:version>342</sparkle:version>
@@ -804,35 +818,6 @@
                 </ul>
             ]]></description>
             <enclosure url="https://github.com/PhamHungTien/PHTV/releases/download/v3.4.7/PHTV-3.4.7-intel.dmg" length="9304051" type="application/octet-stream" sparkle:edSignature="RQSieq4orN6QTqSIec3U45op9RuziDDNDmiRNBP2a3OOl9YesQzAGVcbf+4NGmMEXYp+b8Udd6T9drieTSCDBw=="/>
-        </item>
-        <item>
-            <title>3.4.6</title>
-            <pubDate>Wed, 22 Jul 2026 16:46:40 +0700</pubDate>
-            <sparkle:version>313</sparkle:version>
-            <sparkle:shortVersionString>3.4.6</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[
-                <h2>PHTV 3.4.6</h2>
-                <h3>Tổng quan</h3>
-                <p>PHTV 3.4.6 tiếp tục hoàn thiện khả năng nhập liệu trong ô Quest của Qoder, đặc biệt khi chuyển tiếp giữa từ tiếng Anh và tiếng Việt. Phiên bản này tập trung đồng bộ quá trình xoá, khôi phục từ tiếng Anh và nhập ký tự tiếp theo để nội dung luôn xuất hiện đúng tại vị trí con trỏ.</p>
-                <h3>Fixed and Improved</h3>
-                <ul>
-                <li><strong>Ổn định từ tiếng Anh trong Qoder Quest (#216)</strong>
-                <ul>
-                <li>Khắc phục hiện tượng từ tiếng Anh như <code>scenario</code> bị mất ký tự sau khi nhấn Space hoặc bắt đầu nhập từ tiếp theo.</li>
-                <li>Ngăn con trỏ nhảy ngược về từ vừa nhập, tránh nội dung mới ghi đè hoặc xen vào giữa từ tiếng Anh đã hoàn thành.</li>
-                <li>Đồng bộ thứ tự xoá, gửi lại chuỗi Unicode và phím phân cách trong luồng tự động khôi phục tiếng Anh dành riêng cho Qoder.</li>
-                <li>Giữ nguyên cơ chế nhập liệu chuyên dụng của vùng code Monaco và Terminal tích hợp trong Qoder.</li>
-                </ul>
-                </li>
-                </ul>
-                <h3>Ghi chú nâng cấp</h3>
-                <ul>
-                <li>Không cần cấp thêm quyền hoặc thiết lập lại PHTV sau khi cập nhật.</li>
-                <li>Thiết lập, macro, lịch sử Clipboard và quy tắc theo ứng dụng được giữ nguyên.</li>
-                </ul>
-            ]]></description>
-            <enclosure url="https://github.com/PhamHungTien/PHTV/releases/download/v3.4.6/PHTV-3.4.6-intel.dmg" length="9295609" type="application/octet-stream" sparkle:edSignature="FpQ4jvKgf6VFWw57SML4NZkQwBOiJSUms7pinPcfV3acRW3PxbpBNSgoTs8XnsOES+qVkjpwSOIOBftYzeoVBA=="/>
         </item>
         <item>
             <title>2.8.9</title>
