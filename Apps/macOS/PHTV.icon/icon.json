@@ -1,6 +1,19 @@
 {
   "fill" : {
-    "solid" : "display-p3:0.29754,0.00576,0.00852,1.00000"
+    "linear-gradient" : [
+      "display-p3:0.56000,0.05000,0.07000,1.00000",
+      "display-p3:0.27000,0.00800,0.01500,1.00000"
+    ],
+    "orientation" : {
+      "start" : {
+        "x" : 0.5,
+        "y" : 0.0
+      },
+      "stop" : {
+        "x" : 0.5,
+        "y" : 1.0
+      }
+    }
   },
   "groups" : [
     {
@@ -8,28 +21,30 @@
         {
           "blend-mode" : "normal",
           "fill" : {
-            "linear-gradient" : [
-              "display-p3:0.81111,0.89934,0.69635,1.00000",
-              "display-p3:0.96783,0.84574,0.00000,1.00000"
-            ],
-            "orientation" : {
-              "start" : {
-                "x" : 0.5491770622255995,
-                "y" : 0.567322398377086
-              },
-              "stop" : {
-                "x" : 0.5,
-                "y" : 0.3
-              }
-            }
+            "solid" : "display-p3:1.00000,0.83000,0.20000,1.00000"
           },
-          "image-name" : "P.png",
+          "image-name" : "Star.svg",
+          "name" : "Star",
+          "position" : {
+            "scale" : 1,
+            "translation-in-points" : [
+              0,
+              0
+            ]
+          }
+        },
+        {
+          "blend-mode" : "normal",
+          "fill" : {
+            "solid" : "display-p3:1.00000,0.83000,0.20000,1.00000"
+          },
+          "image-name" : "P.svg",
           "name" : "P",
           "position" : {
-            "scale" : 0.63,
+            "scale" : 1,
             "translation-in-points" : [
-              14.958124999999995,
-              21.875
+              0,
+              0
             ]
           }
         }
@@ -39,7 +54,7 @@
         "opacity" : 0.5
       },
       "translucency" : {
-        "enabled" : true,
+        "enabled" : false,
         "value" : 0.5
       }
     }

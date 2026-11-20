@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Biểu tượng mới: chữ P vàng với ngôi sao trong lòng chữ trên nền đỏ, rõ ở
+  mọi kích thước và hiển thị đúng ở các kiểu biểu tượng sáng, tối, trong suốt
+  và phủ màu của macOS.
+
 ## [3.7.3] - 2026-11-20
 
 - Sửa lỗi PHTV thoát đột ngột khi đang gõ trong chính cửa sổ của PHTV (Cài
