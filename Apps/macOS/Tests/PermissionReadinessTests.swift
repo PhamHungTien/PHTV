@@ -132,9 +132,15 @@ final class PermissionReadinessTests: XCTestCase {
         )
         XCTAssertEqual(
             PHTVAccessibilityPermissionNaming.displayName(
+                operatingSystemVersion: OperatingSystemVersion(majorVersion: 27, minorVersion: 3, patchVersion: 0)
+            ),
+            "System & App Protection Override"
+        )
+        XCTAssertEqual(
+            PHTVAccessibilityPermissionNaming.displayName(
                 operatingSystemVersion: OperatingSystemVersion(majorVersion: 28, minorVersion: 0, patchVersion: 0)
             ),
-            "Device Control and Data Access"
+            "System & App Protection Override"
         )
     }
 }
