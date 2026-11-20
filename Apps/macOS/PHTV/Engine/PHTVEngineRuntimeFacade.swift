@@ -63,23 +63,41 @@ private struct MacroPrefixIndex: Sendable {
 
 private struct MacroLookupSnapshot: Sendable {
     let entries: [[UInt32]: MacroLookupEntry]
+    /// Shortcuts defined with capitals ("KTh"), keyed by their lowercase form,
+    /// so "kth", "Kth" and "KTH" find them too. A shortcut defined in
+    /// lowercase always wins over a folded one.
+    let caseFoldedEntries: [[UInt32]: MacroLookupEntry]
     let nativeTextReplacementPrefixIndex: MacroPrefixIndex
 
     static let empty = MacroLookupSnapshot(
         entries: [:],
+        caseFoldedEntries: [:],
         nativeTextReplacementPrefixIndex: .empty
     )
 
-    init(entries: [[UInt32]: MacroLookupEntry]) {
+    init(entries: [[UInt32]: MacroLookupEntry], codeTable: Int32) {
         self.entries = entries
+        var folded: [[UInt32]: MacroLookupEntry] = [:]
+        for (key, entry) in entries {
+            let lowered = caseFoldedMacroKey(key, codeTable: codeTable)
+            guard lowered != key, entries[lowered] == nil else { continue }
+            // Two cased spellings of one shortcut: keep a deterministic choice.
+            if let existing = folded[lowered], existing.staticContentCode.lexicographicallyPrecedes(entry.staticContentCode) {
+                continue
+            }
+            folded[lowered] = entry
+        }
+        caseFoldedEntries = folded
         nativeTextReplacementPrefixIndex = MacroPrefixIndex(entries: entries)
     }
 
     private init(
         entries: [[UInt32]: MacroLookupEntry],
+        caseFoldedEntries: [[UInt32]: MacroLookupEntry],
         nativeTextReplacementPrefixIndex: MacroPrefixIndex
     ) {
         self.entries = entries
+        self.caseFoldedEntries = caseFoldedEntries
         self.nativeTextReplacementPrefixIndex = nativeTextReplacementPrefixIndex
     }
 }
@@ -105,7 +123,7 @@ private final class MacroLookupStateBox: @unchecked Sendable {
             guard let base = buffer.baseAddress else { return [:] }
             return macroMapFromBinaryData(base, size: buffer.count, codeTable: codeTable)
         }
-        let snapshot = MacroLookupSnapshot(entries: entries)
+        let snapshot = MacroLookupSnapshot(entries: entries, codeTable: codeTable)
         snapshotsByCodeTable[codeTable] = snapshot
         return snapshot
     }
@@ -585,6 +603,26 @@ private func lowercasedMacroLookupCode(_ code: UInt32, codeTable: Int32) -> UInt
     return UInt32(loweredCharacter) | charCodeMask
 }
 
+private func caseFoldedMacroKey(_ key: [UInt32], codeTable: Int32) -> [UInt32] {
+    key.map { lowercasedMacroLookupCode($0, codeTable: codeTable) ?? $0 }
+}
+
+private func lowercasedMacroOutputCode(_ code: UInt32, codeTable: Int32) -> UInt32 {
+    let charCodeMask = EngineBitMask.charCode
+
+    let keyCharacter = EngineMacroKeyMap.character(for: code)
+    if keyCharacter != 0 {
+        let lowerCharacter = caseTransformedScalar(keyCharacter, upper: false)
+        if let mappedKeyState = macroCharacterToKeyState[lowerCharacter] {
+            return mappedKeyState
+        }
+    }
+    guard (code & charCodeMask) != 0 else {
+        return code
+    }
+    return lowercasedMacroLookupCode(code, codeTable: codeTable) ?? code
+}
+
 private func uppercasedMacroOutputCode(_ code: UInt32, codeTable: Int32) -> UInt32 {
     let charCodeMask = EngineBitMask.charCode
 
@@ -670,7 +708,8 @@ private func findMacroContentForNormalizedKeys(
         macroLookupState.lock.unlock()
     }
 
-    let entries = macroLookupState.snapshotLocked(forCodeTable: codeTable).entries
+    let snapshot = macroLookupState.snapshotLocked(forCodeTable: codeTable)
+    let entries = snapshot.entries
 
     if let directEntry = entries[keys] {
         setLastMatchedMacroSnippetType(directEntry.snippetType, isExactMatch: true)
@@ -683,7 +722,16 @@ private func findMacroContentForNormalizedKeys(
 
     var candidate = keys
     guard let firstLowerCode = lowercasedMacroLookupCode(candidate[0], codeTable: codeTable) else {
-        return nil
+        // Typed in lowercase: a shortcut defined with capitals ("KTh") still
+        // matches, and its content follows the typed case ("kth" -> "kinh thánh").
+        guard autoCapsEnabled,
+              caseFoldedMacroKey(keys, codeTable: codeTable) == keys,
+              let entry = snapshot.caseFoldedEntries[keys] else {
+            return nil
+        }
+        setLastMatchedMacroSnippetType(entry.snippetType)
+        return macroContentCode(for: entry, codeTable: codeTable)
+            .map { lowercasedMacroOutputCode($0, codeTable: codeTable) }
     }
     candidate[0] = firstLowerCode
 
@@ -702,7 +750,8 @@ private func findMacroContentForNormalizedKeys(
     }
 
     // System replacements inherit capitalization even when user macro auto-caps is off.
-    guard let entry = entries[candidate],
+    let foldedEntry = autoCapsEnabled ? snapshot.caseFoldedEntries[candidate] : nil
+    guard let entry = entries[candidate] ?? foldedEntry,
           autoCapsEnabled || entry.snippetType == EngineMacroSnippetType.systemTextReplacement else {
         return nil
     }

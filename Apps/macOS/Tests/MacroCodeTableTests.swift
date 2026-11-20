@@ -392,6 +392,38 @@ final class MacroCodeTableTests: XCTestCase {
         PHTVEngineRuntimeFacade.setAutoCapsMacro(0)
     }
 
+    func testShortcutDefinedWithCapitalsFollowsTypedCase() {
+        loadMacros([MacroItem(shortcut: "KTh", expansion: "Kinh Thánh")])
+        PHTVEngineRuntimeFacade.setAutoCapsMacro(1)
+        defer { PHTVEngineRuntimeFacade.setAutoCapsMacro(0) }
+
+        for (token, expected) in [("KTh", "Kinh Thánh"), ("Kth", "Kinh Thánh"), ("KTH", "KINH THÁNH"), ("kth", "kinh thánh")] {
+            let result = macroResult(afterTyping: token)
+            XCTAssertTrue(result.didTrigger, "token=\(token)")
+            XCTAssertEqual(
+                PHTVEngineDataBridge.macroString(fromMacroData: result.macroData, codeTable: 0),
+                expected,
+                "token=\(token)"
+            )
+        }
+    }
+
+    func testShortcutDefinedWithCapitalsStaysExactWithoutAutoCaps() {
+        loadMacros([MacroItem(shortcut: "KTh", expansion: "Kinh Thánh")])
+        XCTAssertTrue(typedTokenTriggersMacro("KTh"))
+        XCTAssertFalse(typedTokenTriggersMacro("kth"))
+        XCTAssertFalse(typedTokenTriggersMacro("KTH"))
+    }
+
+    func testLowercaseShortcutKeepsContentCaseWhenTypedInLowercase() {
+        loadMacros([MacroItem(shortcut: "hn", expansion: "Hà Nội")])
+        PHTVEngineRuntimeFacade.setAutoCapsMacro(1)
+        defer { PHTVEngineRuntimeFacade.setAutoCapsMacro(0) }
+        let result = macroResult(afterTyping: "hn")
+        XCTAssertTrue(result.didTrigger)
+        XCTAssertEqual(PHTVEngineDataBridge.macroString(fromMacroData: result.macroData, codeTable: 0), "Hà Nội")
+    }
+
     func testVNISystemTextReplacementExpandsThroughPHTV() {
         PHTVEngineRuntimeFacade.setCurrentInputType(VKeyInputType.vni.rawValue)
         PHTVEngineRuntimeFacade.setNativeSystemTextReplacementMode(false)
