@@ -7,8 +7,23 @@ struct MacroTransferArchive: Codable {
 }
 
 enum MacroTransferCodec {
+    /// Limits the engine binary format can hold, unique IDs, and categories
+    /// that exist.
+    static func validate(_ macros: [MacroItem], categories: [MacroCategory]?) throws {
+        guard macros.count <= 65535, Set(macros.map(\.id)).count == macros.count,
+              macros.allSatisfy({ !$0.shortcut.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                  && $0.shortcut.utf8.count <= 255 && $0.expansion.utf8.count <= 65535 && $0.usageCount >= 0 })
+        else { throw BackupError.invalid("gõ tắt trống, trùng ID hoặc vượt giới hạn engine") }
+        if let categories {
+            guard Set(categories.map(\.id)).count == categories.count else { throw BackupError.invalid("trùng danh mục") }
+            let ids = Set(categories.map(\.id)).union([MacroCategory.defaultCategory.id])
+            guard macros.allSatisfy({ $0.categoryId == nil || ids.contains($0.categoryId!) })
+            else { throw BackupError.invalid("danh mục gõ tắt không tồn tại") }
+        }
+    }
+
     static func encode(macros: [MacroItem], categories: [MacroCategory]) throws -> Data {
-        try SettingsBackupSchema.validateMacros(macros, categories: categories)
+        try validate(macros, categories: categories)
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
         let data = try encoder.encode(MacroTransferArchive(categories: categories, macros: macros))
@@ -32,13 +47,13 @@ enum MacroTransferCodec {
             guard let text = String(data: data, encoding: .utf8) else { throw BackupError.invalid("file gõ tắt không phải UTF-8") }
             archive = MacroTransferArchive(categories: nil, macros: try csv(text))
         }
-        try SettingsBackupSchema.validateMacros(archive.macros, categories: archive.categories)
+        try validate(archive.macros, categories: archive.categories)
         return archive
     }
 
     static func merged(_ archive: MacroTransferArchive, macros: [MacroItem], categories: [MacroCategory]) throws -> MacroTransferArchive {
-        try SettingsBackupSchema.validateMacros(macros, categories: categories)
-        try SettingsBackupSchema.validateMacros(archive.macros, categories: archive.categories)
+        try validate(macros, categories: categories)
+        try validate(archive.macros, categories: archive.categories)
         var groups = categories
         var groupIndices = Dictionary(uniqueKeysWithValues: groups.enumerated().map { ($0.element.id, $0.offset) })
         for group in archive.categories ?? [] {
@@ -56,7 +71,7 @@ enum MacroTransferCodec {
             byShortcut[shortcut] = item.id
         }
         let merged = byID.values.sorted { $0.shortcut.localizedCompare($1.shortcut) == .orderedAscending }
-        try SettingsBackupSchema.validateMacros(merged, categories: groups)
+        try validate(merged, categories: groups)
         return MacroTransferArchive(categories: groups, macros: merged)
     }
 

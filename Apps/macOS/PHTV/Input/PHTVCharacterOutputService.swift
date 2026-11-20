@@ -165,8 +165,8 @@ final class PHTVCharacterOutputService: NSObject {
         #endif
 
         if macroPlan.shouldTryAXReplacement {
-            let replacedByAX = PHTVEngineDataBridge.replaceSpotlightLikeMacroIfNeeded(
-                isSpotlightLike ? 1 : 0,
+            let replacedByAX = replaceSpotlightLikeMacroIfNeeded(
+                isSpotlightLike,
                 backspaceCount: originalBackspaceCount,
                 macroData: macroData,
                 codeTable: codeTable)
@@ -229,4 +229,26 @@ final class PHTVCharacterOutputService: NSObject {
         return false
     }
 
+    /// Spotlight-like fields drop synthetic key events, so a macro there is
+    /// written through Accessibility in one replacement.
+    private class func replaceSpotlightLikeMacroIfNeeded(
+        _ spotlightLike: Bool,
+        backspaceCount: Int32,
+        macroData: [UInt32],
+        codeTable: Int32
+    ) -> Bool {
+        guard spotlightLike else {
+            return false
+        }
+
+        let macroText = PHTVEngineDataBridge.macroString(
+            fromMacroData: macroData,
+            codeTable: codeTable
+        )
+        return PHTVEventContextBridgeService.replaceFocusedTextViaAX(
+            backspaceCount: backspaceCount,
+            insertText: macroText,
+            verify: backspaceCount > 0
+        )
+    }
 }

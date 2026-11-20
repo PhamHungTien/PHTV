@@ -60,6 +60,8 @@ Engine xử lý tiếng Việt viết bằng Swift. Nhận keycode và trả v�
 - `PHTVAutoEnglishRestoreBridge.swift` — Auto-English restore detector
 - `PHTVEngineBridgeExports.swift` — Entry points dùng chung giữa engine và runtime
 
+Engine chỉ dùng Foundation và không gọi vào Input/, Context/, System/ hay UI/; riêng `PHTVEngineSessionService.swift` và `PHTVEngineStartupDataService.swift` là phần khởi động của app. Khi sửa engine, phần cần AppKit hoặc Accessibility đặt ở tầng gọi engine (ví dụ ghi macro qua AX nằm trong `PHTVCharacterOutputService`). `MacroTransferCodec` và `BackupError` cũng chỉ dùng Foundation.
+
 ### Input/
 - `PHTVEventTapService.swift` — Tạo, bật, tắt CGEventTap
 - `PHTVEventCallbackService.swift` — Callback chính xử lý key event

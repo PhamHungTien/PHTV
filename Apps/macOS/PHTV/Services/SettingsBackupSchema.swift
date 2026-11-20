@@ -129,7 +129,7 @@ enum SettingsBackupSchema {
                     && ["en", "english", "vi", "vietnamese"].contains(type.lowercased())
             }) else { throw BackupError.invalid("từ điển tùy chỉnh") }
         }
-        try validateMacros(backup.macros ?? [], categories: backup.macroCategories)
+        try MacroTransferCodec.validate(backup.macros ?? [], categories: backup.macroCategories)
         for apps in [backup.excludedAppsV2, backup.sendKeyStepByStepApps, backup.upperCaseExcludedApps] {
             if let apps {
                 guard apps.count <= 10000, Set(apps.map(\.bundleIdentifier)).count == apps.count,
@@ -199,19 +199,6 @@ enum SettingsBackupSchema {
                 cursor += length + 1
             }
             guard cursor == bytes.count else { throw BackupError.invalid("Smart Switch") }
-        }
-    }
-
-    static func validateMacros(_ macros: [MacroItem], categories: [MacroCategory]?) throws {
-        guard macros.count <= 65535, Set(macros.map(\.id)).count == macros.count,
-              macros.allSatisfy({ !$0.shortcut.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                  && $0.shortcut.utf8.count <= 255 && $0.expansion.utf8.count <= 65535 && $0.usageCount >= 0 })
-        else { throw BackupError.invalid("gõ tắt trống, trùng ID hoặc vượt giới hạn engine") }
-        if let categories {
-            guard Set(categories.map(\.id)).count == categories.count else { throw BackupError.invalid("trùng danh mục") }
-            let ids = Set(categories.map(\.id)).union([MacroCategory.defaultCategory.id])
-            guard macros.allSatisfy({ $0.categoryId == nil || ids.contains($0.categoryId!) })
-            else { throw BackupError.invalid("danh mục gõ tắt không tồn tại") }
         }
     }
 }

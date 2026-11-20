@@ -132,7 +132,7 @@ final class SettingsBackupService {
         if backup.macros != nil || backup.macroCategories != nil {
             let macros = try backup.macros ?? stored([MacroItem].self, key: UserDefaultsKey.macroList, fallback: [])
             let categories = try backup.macroCategories ?? stored([MacroCategory].self, key: UserDefaultsKey.macroCategories, fallback: [])
-            try SettingsBackupSchema.validateMacros(macros, categories: categories)
+            try MacroTransferCodec.validate(macros, categories: categories)
         }
         func encode<T: Encodable>(_ value: T?, key: String) throws {
             if let value { values[key] = try JSONEncoder().encode(value) }

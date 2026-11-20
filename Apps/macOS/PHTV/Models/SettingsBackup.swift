@@ -37,19 +37,6 @@ struct ClipboardBackupFile: Codable, Sendable {
     var data: Data
 }
 
-enum BackupError: LocalizedError, Equatable {
-    case invalid(String)
-    case rollbackFailed
-
-    var errorDescription: String? {
-        switch self {
-        case .invalid(let reason): return "Bản sao lưu không hợp lệ: \(reason)"
-        case .rollbackFailed:
-            return "Chưa khôi phục được dữ liệu cũ. Bản phục hồi được giữ lại; hãy kiểm tra dung lượng và quyền ghi rồi mở lại PHTV."
-        }
-    }
-}
-
 indirect enum AnyCodableValue: Codable, Sendable {
     case integer(Int), double(Double), boolean(Bool), string(String)
     case array([AnyCodableValue]), dictionary([String: AnyCodableValue])
