@@ -1525,8 +1525,12 @@ final class PHTVVietnameseEngine {
 
     func upperCaseFirstCharacter() {
         if (typingWord[0] & CAPS_MASK) == 0 {
+            // A raw native Text Replacement prefix is already on screen when
+            // its word gets capitalized one key later: keep the deletion the
+            // engine planned for it (issue #240).
+            let plannedBackspaces = hCode == HookCodeState.willProcess.rawValue ? hBPC : 0
             hCode = HookCodeState.willProcess.rawValue
-            hBPC = 0; hNCC = 1
+            hBPC = plannedBackspaces; hNCC = 1
             typingWord[0] |= CAPS_MASK
             hData[0] = get(typingWord[0])
             upperCaseStatus = 0

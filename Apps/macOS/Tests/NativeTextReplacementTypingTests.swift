@@ -2,10 +2,10 @@
 //  NativeTextReplacementTypingTests.swift
 //  PHTV
 //
-//  Regression coverage for issue #244: with "Dùng Text Replacements của
-//  macOS" on, AI chat boxes leave shortcut expansion to macOS. A word that
-//  only starts like a native shortcut (o… → omw, d… → dtd) must still be
-//  composed as Vietnamese, including right after a space.
+//  Regression coverage for issues #240 and #244: with "Dùng Text
+//  Replacements của macOS" on, PHTV leaves shortcut expansion to macOS. A
+//  word that only starts like a native shortcut (o… → omw, d… → dtd) must
+//  still be composed as Vietnamese, after a space and at a sentence start.
 //  Created by Phạm Hùng Tiến on 2026.
 //  Copyright © 2026 Phạm Hùng Tiến. All rights reserved.
 //
@@ -63,6 +63,21 @@ final class NativeTextReplacementTypingTests: XCTestCase {
         XCTAssertEqual(screen(afterTyping: "owr"), "ở")
         XCTAssertEqual(screen(afterTyping: "ddi"), "đi")
         XCTAssertEqual(screen(afterTyping: "Ddi"), "Đi")
+    }
+
+    /// With "Viết hoa đầu câu" the first word of a sentence is capitalized one
+    /// key late, after the raw prefix is already on screen (issue #240).
+    func testSentenceStartIsCapitalizedWhenTheWordStartsLikeANativeShortcut() {
+        let savedUppercase = PHTVEngineRuntimeFacade.upperCaseFirstChar()
+        PHTVEngineRuntimeFacade.setUpperCaseFirstChar(1)
+        defer { PHTVEngineRuntimeFacade.setUpperCaseFirstChar(savedUppercase) }
+
+        for native in [true, false] {
+            PHTVEngineRuntimeFacade.setNativeSystemTextReplacementMode(native)
+            XCTAssertEqual(screen(afterTyping: "vaang. ddi"), "vâng. Đi", "native=\(native)")
+            XCTAssertEqual(screen(afterTyping: "vaang. owr ddaau"), "vâng. Ở đâu", "native=\(native)")
+            XCTAssertEqual(screen(afterTyping: "vaang. os"), "vâng. Ó", "native=\(native)")
+        }
     }
 
     func testNativeShortcutStaysRawSoMacOSCanExpandIt() {
