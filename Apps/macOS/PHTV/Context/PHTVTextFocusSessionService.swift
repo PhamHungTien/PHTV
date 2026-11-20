@@ -98,6 +98,7 @@ enum PHTVTextFocusSessionService {
                   isSupported(bundleId: frontmost.bundleIdentifier) else { return (false, false) }
             pid = frontmost.processIdentifier
         }
+        guard PHTVAXQueryGate.canQuery(pid: pid) else { return (false, false) }
         let app = AXUIElementCreateApplication(pid)
         // Never wait for the default AX timeout on the keyboard event thread.
         guard prepareRead(app) else {

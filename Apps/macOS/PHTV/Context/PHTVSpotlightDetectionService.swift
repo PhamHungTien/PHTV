@@ -101,6 +101,8 @@ final class PHTVSpotlightDetectionService: NSObject {
     }
 
     private class func stringAttribute(_ element: AXUIElement, _ attribute: String) -> String? {
+        // Never query PHTV's own windows (see PHTVAXQueryGate).
+        guard PHTVAXQueryGate.canQuery(element) else { return nil }
         var value: CFTypeRef?
         guard AXUIElementCopyAttributeValue(element, attribute as CFString, &value) == .success,
               let value,
@@ -111,6 +113,8 @@ final class PHTVSpotlightDetectionService: NSObject {
     }
 
     private class func elementAttribute(_ element: AXUIElement, _ attribute: String) -> AXUIElement? {
+        // Never query PHTV's own windows (see PHTVAXQueryGate).
+        guard PHTVAXQueryGate.canQuery(element) else { return nil }
         var value: CFTypeRef?
         guard AXUIElementCopyAttributeValue(element, attribute as CFString, &value) == .success,
               let value,
