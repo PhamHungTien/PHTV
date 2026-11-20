@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.7.5] - 2026-11-20
+
+- Khi bật cả **Dùng Text Replacements của macOS** và **Viết hoa đầu câu**, từ
+  đầu câu mở đầu giống một từ viết tắt của macOS giờ viết hoa đúng, không còn
+  ra "dĐi" thay cho "Đi" hay "oỞ" thay cho "Ở" (#240).
+
 ## [3.7.4] - 2026-11-20
 
 - Khi bật **Dùng Text Replacements của macOS**, từ gõ sau dấu cách mà mở đầu
