@@ -7,6 +7,20 @@
         <language>vi</language>
         <!-- Most recent version first -->
         <item>
+            <title>3.7.5</title>
+            <pubDate>Sat, 21 Nov 2026 00:06:01 +0700</pubDate>
+            <sparkle:version>342</sparkle:version>
+            <sparkle:shortVersionString>3.7.5</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[
+                <h2>PHTV 3.7.5</h2>
+                <ul>
+                <li>Khi bật cả <strong>Dùng Text Replacements của macOS</strong> và <strong>Viết hoa đầu câu</strong>, từ đầu câu mở đầu giống một từ viết tắt của macOS giờ viết hoa đúng, không còn ra &quot;dĐi&quot; thay cho &quot;Đi&quot; hay &quot;oỞ&quot; thay cho &quot;Ở&quot; (#240).</li>
+                </ul>
+            ]]></description>
+            <enclosure url="https://github.com/PhamHungTien/PHTV/releases/download/v3.7.5/PHTV-3.7.5-arm64.dmg" length="10838230" type="application/octet-stream" sparkle:edSignature="buCYsQGHXTLeS5yWP0vcKLVKHkSh5fNS9FA76a6wN2d1L3H22fPTRMIUrgfCgLWIffK2x+nzJXI1IN6hye/rAQ=="/>
+        </item>
+        <item>
             <title>3.7.4</title>
             <pubDate>Fri, 20 Nov 2026 22:00:14 +0700</pubDate>
             <sparkle:version>341</sparkle:version>
@@ -819,40 +833,6 @@
                 </ul>
             ]]></description>
             <enclosure url="https://github.com/PhamHungTien/PHTV/releases/download/v3.4.6/PHTV-3.4.6-arm64.dmg" length="9030451" type="application/octet-stream" sparkle:edSignature="poJfqsavs2DqErl47Xbwp5QlFppCtpm6erCbZKXNLhljcUXfbPeoP4AOqbZa4pJDgtb6FT2JvhpjbNDg6gPcAQ=="/>
-        </item>
-        <item>
-            <title>3.4.5</title>
-            <pubDate>Wed, 22 Jul 2026 15:47:45 +0700</pubDate>
-            <sparkle:version>312</sparkle:version>
-            <sparkle:shortVersionString>3.4.5</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[
-                <h2>PHTV 3.4.5</h2>
-                <h3>Tổng quan</h3>
-                <p>PHTV 3.4.5 tiếp tục hoàn thiện khả năng gõ tiếng Việt trong ô Quest của Qoder. Phiên bản này tập trung xử lý thứ tự xoá và chèn ký tự của giao diện Chromium, giúp câu dài và các từ có nhiều lần biến đổi dấu được nhập ổn định hơn.</p>
-                <h3>Fixed and Improved</h3>
-                <ul>
-                <li><strong>Ổn định nhập liệu trong Qoder Quest (#216)</strong>
-                <ul>
-                <li>Khắc phục hiện tượng mất ký tự, thiếu dấu hoặc đảo thứ tự chữ khi gõ nhanh các từ như <code>tiếng</code>, <code>Việt</code> và các câu tiếng Việt dài.</li>
-                <li>Loại bỏ cơ chế ký tự đệm và thao tác vùng chọn Accessibility không phù hợp với ô Quest, tránh Qoder phát sinh các lần xoá ngoài ý muốn.</li>
-                <li>Gửi thao tác xoá và chuỗi Unicode theo nhịp riêng cho Qoder, bảo đảm giao dịch sửa dấu hoàn tất trước khi nhận phím vật lý tiếp theo.</li>
-                <li>Giới hạn thay đổi trong ô Quest; vùng code Monaco và Terminal tích hợp vẫn giữ nguyên cơ chế tương thích chuyên dụng hiện có.</li>
-                </ul>
-                </li>
-                </ul>
-                <h3>Chất lượng</h3>
-                <ul>
-                <li>Bổ sung kiểm thử hồi quy cho nhận diện ô Quest, kế hoạch xoá/chèn và phạm vi áp dụng, tránh ảnh hưởng Chrome, Dia, Notion cùng các IDE khác.</li>
-                <li>Toàn bộ <strong>426/426 tests</strong> đạt trên macOS 27 beta.</li>
-                </ul>
-                <h3>Ghi chú nâng cấp</h3>
-                <ul>
-                <li>Không cần cấp thêm quyền hoặc thiết lập lại PHTV sau khi cập nhật.</li>
-                <li>Thiết lập, macro, lịch sử Clipboard và quy tắc theo ứng dụng được giữ nguyên.</li>
-                </ul>
-            ]]></description>
-            <enclosure url="https://github.com/PhamHungTien/PHTV/releases/download/v3.4.5/PHTV-3.4.5-arm64.dmg" length="9030443" type="application/octet-stream" sparkle:edSignature="lGERACQbCJ5pymZ80ba4D6U4IYv7SH2hxP9x/ypuWFjf6eW5mU/1A4Q/uyJ2Sw6aCrKHEmAGR+oEgy/MQZTdAQ=="/>
         </item>
         <item>
             <title>2.8.9</title>
