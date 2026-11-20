@@ -177,11 +177,11 @@ private final class RuntimeSettingsStateBox: @unchecked Sendable {
     var restoreIfWrongSpelling: Int32 = Defaults.restoreIfWrongSpelling ? 1 : 0
     var customEscapeKey: Int32 = 0
     var pauseKeyEnabled: Int32 = 0
-    var pauseKey: Int32 = Int32(KeyCode.leftOption)
+    var pauseKey: Int32 = Int32(KEY_LEFT_OPTION)
     var sendKeyStepByStep: Int32 = 0
     var enableEmojiHotkey: Int32 = 1
     var emojiHotkeyModifiers: Int32 = 1 << 20
-    var emojiHotkeyKeyCode: Int32 = Int32(KeyCode.eKey)
+    var emojiHotkeyKeyCode: Int32 = Int32(KEY_E)
     var showIconOnDock: Int32 = 0
     var performLayoutCompat: Int32 = 0
     var singleModifierSwitchKeys: Int32 = 0

@@ -7,7 +7,6 @@
 //  Copyright © 2026 Phạm Hùng Tiến. All rights reserved.
 //
 
-import Carbon
 import Foundation
 
 private func phtvCallClearCustomDictionary() {
@@ -74,49 +73,6 @@ final class PHTVEngineDataBridge: NSObject {
 
     class func startNewSession() {
         phtvCallStartNewSession()
-    }
-
-    private class func hotkeyKeyDisplayLabel(_ keyCode: UInt16) -> String {
-        if keyCode == UInt16(kVK_Space) || keyCode == KeyCode.space {
-            return "␣"
-        }
-
-        let keyChar = EngineMacroKeyMap.character(for: UInt32(keyCode) | EngineBitMask.caps)
-        if keyChar >= 33,
-           keyChar <= 126,
-           let scalar = UnicodeScalar(Int(keyChar)) {
-            return String(scalar)
-        }
-
-        return "KEY_\(keyCode)"
-    }
-
-    class func quickConvertMenuTitle() -> String {
-        let quickConvertHotkey = PHTVConvertToolHotkeyService.currentHotkey()
-        var components: [String] = []
-
-        if PHTVConvertToolHotkeyService.hasControl(quickConvertHotkey) {
-            components.append("⌃")
-        }
-        if PHTVConvertToolHotkeyService.hasOption(quickConvertHotkey) {
-            components.append("⌥")
-        }
-        if PHTVConvertToolHotkeyService.hasCommand(quickConvertHotkey) {
-            components.append("⌘")
-        }
-        if PHTVConvertToolHotkeyService.hasShift(quickConvertHotkey) {
-            components.append("⇧")
-        }
-
-        if PHTVConvertToolHotkeyService.hasKey(quickConvertHotkey) {
-            let keyCode = PHTVConvertToolHotkeyService.switchKey(quickConvertHotkey)
-            components.append(hotkeyKeyDisplayLabel(keyCode))
-        }
-
-        if components.isEmpty {
-            return "Chuyển mã nhanh"
-        }
-        return "Chuyển mã nhanh - [\(components.joined(separator: " + ").uppercased())]"
     }
 
     class func macroString(
