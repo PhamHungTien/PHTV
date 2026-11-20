@@ -2805,33 +2805,35 @@ final class PHTVVietnameseEngine {
 
     // MARK: - Main flow handler
 
+    /// While the typed word is still a prefix of a macOS Text Replacement
+    /// shortcut in a native-replacement context, pass the physical key through
+    /// unchanged so Telex (dd/aa/ow/...) cannot alter the shortcut before macOS
+    /// sees its delimiter. The key is still recorded in the typing buffer, so
+    /// the word composes normally once it stops matching a shortcut.
+    private func keepsNativeTextReplacementPrefixRaw(_ data: UInt16) -> Bool {
+        guard phtvRuntimeNativeSystemTextReplacementEnabled() != 0,
+              phtvRuntimeUseMacroEnabled() != 0 else { return false }
+        let rawKey = UInt32(data) | (isCaps ? CAPS_MASK : 0)
+        var rawMacroPrefix = hMacroRawKey
+        rawMacroPrefix.append(rawKey)
+        let isNativeReplacementPrefix = rawMacroPrefix.withUnsafeBufferPointer { ptr in
+            phtvHasNativeTextReplacementPrefix(ptr.baseAddress, Int32(ptr.count)) != 0
+        }
+        guard isNativeReplacementPrefix else { return false }
+
+        hCode = HookCodeState.doNothing.rawValue
+        hBPC = 0; hNCC = 0; hExt = 3
+        insertKey(data, isCaps)
+        // The caller returns before its macro bookkeeping. Keep both macro
+        // buffers in sync so the complete shortcut is still recognized when
+        // its delimiter arrives.
+        hMacroKey.append(rawKey)
+        hMacroRawKey.append(rawKey)
+        return true
+    }
+
     func handleMainFlow(state: VKeyEventState, data: UInt16, otherControlKey: Bool) {
         if willTempOffEngine { hCode = HookCodeState.doNothing.rawValue; hExt = 3; return }
-
-        if phtvRuntimeNativeSystemTextReplacementEnabled() != 0,
-           phtvRuntimeUseMacroEnabled() != 0 {
-            var rawMacroPrefix = hMacroRawKey
-            rawMacroPrefix.append(UInt32(data) | (isCaps ? CAPS_MASK : 0))
-            let isNativeReplacementPrefix = rawMacroPrefix.withUnsafeBufferPointer { ptr in
-                phtvHasNativeTextReplacementPrefix(ptr.baseAddress, Int32(ptr.count)) != 0
-            }
-            if isNativeReplacementPrefix {
-                // Keep the exact physical character visible. This prevents
-                // Telex (dd/aa/ow/...) from changing the shortcut before
-                // macOS's Text Replacement service sees its delimiter.
-                hCode = HookCodeState.doNothing.rawValue
-                hBPC = 0; hNCC = 0; hExt = 3
-                insertKey(data, isCaps)
-                // This early path intentionally bypasses the regular main-flow
-                // bookkeeping below. Keep both macro buffers in sync so the
-                // complete native shortcut is still recognized when its
-                // delimiter arrives.
-                let rawKey = UInt32(data) | (isCaps ? CAPS_MASK : 0)
-                hMacroKey.append(rawKey)
-                hMacroRawKey.append(rawKey)
-                return
-            }
-        }
 
         if spaceCount > 0 {
             hBPC = 0; hNCC = 0; hExt = 0
@@ -2849,6 +2851,9 @@ final class PHTVVietnameseEngine {
         }
 
         insertState(data, isCaps)
+        // Runs after the session bookkeeping above: a key typed right after a
+        // space belongs to a new word, not to the one before it (issue #244).
+        if keepsNativeTextReplacementPrefixRaw(data) { return }
         let wasAutoEnglishSessionActive = autoEnglishSessionActive
 
         // Spell gate (EngineKeyHandleEventMainFlowSpellGate.inc)

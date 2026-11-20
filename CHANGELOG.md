@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Ô chat của các trang AI (ChatGPT, Gemini, Claude, Grok, Perplexity, Kimi)
+  khi bật **Dùng Text Replacements của macOS**: từ gõ sau dấu cách mà mở đầu
+  giống một từ viết tắt của macOS (`omw`, `dtd`…) giờ thêm dấu đúng, không còn
+  ra "oử" thay cho "ở" hay "dd" thay cho "đ" (#244).
 - Biểu tượng mới: chữ P vàng với ngôi sao trong lòng chữ trên nền đỏ, rõ ở
   mọi kích thước và hiển thị đúng ở các kiểu biểu tượng sáng, tối, trong suốt
   và phủ màu của macOS.
