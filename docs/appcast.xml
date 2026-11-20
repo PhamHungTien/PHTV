@@ -7,6 +7,20 @@
         <language>vi</language>
         <!-- Most recent version first -->
         <item>
+            <title>3.7.7</title>
+            <pubDate>Sat, 21 Nov 2026 00:54:11 +0700</pubDate>
+            <sparkle:version>344</sparkle:version>
+            <sparkle:shortVersionString>3.7.7</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[
+                <h2>PHTV 3.7.7</h2>
+                <ul>
+                <li>Sửa lỗi của bản 3.7.6: trong ô chat của ChatGPT và những ô nhập nằm sâu trong trang, gõ tắt vẫn bị lặp nội dung khi bật <strong>Dùng Text Replacements của macOS</strong>. PHTV giờ chỉ coi là thanh địa chỉ khi ô nhập tự nhận là thanh địa chỉ của trình duyệt (#245).</li>
+                </ul>
+            ]]></description>
+            <enclosure url="https://github.com/PhamHungTien/PHTV/releases/download/v3.7.7/PHTV-3.7.7-arm64.dmg" length="10840678" type="application/octet-stream" sparkle:edSignature="4sC1+/5DmxjLd1h9kduf3gSMFyHKPlqRldb0yqw57OQaHHN0gXRztS3vH3QtoiYO0Rz5qLl4Sa+375kFbZkqDw=="/>
+        </item>
+        <item>
             <title>3.7.6</title>
             <pubDate>Sat, 21 Nov 2026 00:32:40 +0700</pubDate>
             <sparkle:version>343</sparkle:version>
@@ -773,51 +787,6 @@
                 </ul>
             ]]></description>
             <enclosure url="https://github.com/PhamHungTien/PHTV/releases/download/v3.4.8/PHTV-3.4.8-arm64.dmg" length="9307711" type="application/octet-stream" sparkle:edSignature="+Jlp9+0eOIACWKgyHEh9JUNdmwJGyVvXpVUx1zhsBC85DscCFJZ/KjOCQswjMKU0r3zLBqq/JFTkT40r8mTwCw=="/>
-        </item>
-        <item>
-            <title>3.4.7</title>
-            <pubDate>Sun, 09 Aug 2026 15:06:58 +0700</pubDate>
-            <sparkle:version>314</sparkle:version>
-            <sparkle:shortVersionString>3.4.7</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[
-                <h2>PHTV 3.4.7</h2>
-                <h3>Tổng quan</h3>
-                <p>PHTV 3.4.7 tập trung vào độ ổn định khi chạy nền lâu ngày trên macOS 27 beta, đặc biệt là vòng đời biểu tượng trên menu bar khi máy ngủ, thức dậy hoặc chuyển phiên người dùng.</p>
-                <h3>Fixed and Improved</h3>
-                <ul>
-                <li><strong>Ngăn crash khi macOS khôi phục biểu tượng menu bar</strong>
-                <ul>
-                <li>Khắc phục đường đi dễ gây <code>SIGABRT</code> trong <code>NSSceneStatusItem</code>/ <code>NSRemoteView</code> khi AppKit kết nối lại status item sau sleep, khóa màn hình hoặc đổi phiên người dùng.</li>
-                <li>Chuyển status item sang kích thước cố định và tháo item trước khi hệ thống tạm dừng, sau đó tạo lại sau khi menu bar ổn định.</li>
-                <li>Áp dụng xử lý đồng nhất cho sleep hệ thống, sleep màn hình và thay đổi trạng thái phiên đăng nhập.</li>
-                </ul>
-                </li>
-                <li><strong>Giảm tình trạng PHTV tự bị tắt khi chạy nền</strong>
-                <ul>
-                <li>Tắt automatic termination và sudden termination cho ứng dụng bộ gõ luôn phải hoạt động nền.</li>
-                </ul>
-                </li>
-                <li><strong>Tránh trùng nội dung với macOS Text Replacement (#219)</strong>
-                <ul>
-                <li>Các shortcut Text Replacement trên Kimi, Grok, Gemini và một số trang chat AI được chuyển giao cho cơ chế thay thế native của macOS để tránh PHTV và trình duyệt cùng chèn nội dung một lần nữa.</li>
-                <li>Giữ nguyên toàn bộ prefix ASCII của shortcut ngay từ ký tự đầu tiên trong chế độ Tiếng Việt, vì vậy Text Replacement hoạt động đúng cả khi ký tự cuối viết thường; không còn phải chuyển sang Tiếng Anh hoặc viết hoa để “né” lỗi.</li>
-                <li>Các trình duyệt và ứng dụng web khác vẫn giữ fallback PHTV hiện có; Zalo, Teams, Terminal và IDE không thay đổi hành vi.</li>
-                </ul>
-                </li>
-                </ul>
-                <h3>Chất lượng</h3>
-                <ul>
-                <li>Universal Debug build thành công bằng Xcode beta với SDK macOS 27.</li>
-                <li>Kiểm tra Swift syntax, <code>Info.plist</code>, <code>git diff --check</code> và repository policy đều đạt.</li>
-                </ul>
-                <h3>Ghi chú nâng cấp</h3>
-                <ul>
-                <li>Không cần cấp thêm quyền hoặc thiết lập lại PHTV sau khi cập nhật.</li>
-                <li>Thiết lập, macro, lịch sử Clipboard và quy tắc theo ứng dụng được giữ nguyên.</li>
-                </ul>
-            ]]></description>
-            <enclosure url="https://github.com/PhamHungTien/PHTV/releases/download/v3.4.7/PHTV-3.4.7-arm64.dmg" length="9036091" type="application/octet-stream" sparkle:edSignature="3yyEQcb9Bg76VvRDI0i1V1io+rwo9LqygmYDf+qaXkOAeMDQ+tYK4HuGFO87DgnnUNVhyd9qyWpu/h1QQzFNAw=="/>
         </item>
         <item>
             <title>2.8.9</title>
