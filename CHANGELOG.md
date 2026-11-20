@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.7.3] - 2026-11-20
+
 - Sửa lỗi PHTV thoát đột ngột khi đang gõ trong chính cửa sổ của PHTV (Cài
   đặt, Báo lỗi, PHTV Picker): bộ gõ không còn đọc thông tin Trợ năng của cửa
   sổ PHTV.
