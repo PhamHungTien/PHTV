@@ -7,6 +7,23 @@
         <language>vi</language>
         <!-- Intel (x86_64) feed — Most recent version first -->
         <item>
+            <title>3.7.3</title>
+            <pubDate>Fri, 20 Nov 2026 11:41:48 +0700</pubDate>
+            <sparkle:version>340</sparkle:version>
+            <sparkle:shortVersionString>3.7.3</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[
+                <h2>PHTV 3.7.3</h2>
+                <ul>
+                <li>Sửa lỗi PHTV thoát đột ngột khi đang gõ trong chính cửa sổ của PHTV (Cài đặt, Báo lỗi, PHTV Picker): bộ gõ không còn đọc thông tin Trợ năng của cửa sổ PHTV.</li>
+                <li>Trên macOS 27.3 trở lên, PHTV gọi đúng tên mục quyền mới trong System Settings: <strong>System &amp; App Protection Override</strong>.</li>
+                <li>Thanh địa chỉ của trình duyệt: khi gõ ngay sau khi bấm vào ô, PHTV kiểm tra lại ô đang nhập thay vì dùng kết quả cũ, tránh để gợi ý tự động của trình duyệt nuốt phím xoá (gõ &quot;dd&quot; ra &quot;dđ&quot;).</li>
+                <li>Gõ tắt có chữ hoa (ví dụ <code>KTh</code> → &quot;Kinh Thánh&quot;) nhận cả <code>kth</code>, <code>Kth</code> và <code>KTH</code> khi bật <strong>Tự động viết hoa</strong>; nội dung theo đúng kiểu chữ đã gõ: &quot;kinh thánh&quot;, &quot;Kinh Thánh&quot;, &quot;KINH THÁNH&quot;.</li>
+                </ul>
+            ]]></description>
+            <enclosure url="https://github.com/PhamHungTien/PHTV/releases/download/v3.7.3/PHTV-3.7.3-intel.dmg" length="11318787" type="application/octet-stream" sparkle:edSignature="kZyDlg/xeXJn/xybAtpeXqoeN/XJxAl2T0PWKxl6cG8rGhEk9NimgjSoacjKovtR8V1cnlNwx9zGH1EUPsgPCw=="/>
+        </item>
+        <item>
             <title>3.7.2</title>
             <pubDate>Wed, 18 Nov 2026 18:44:29 +0700</pubDate>
             <sparkle:version>339</sparkle:version>
@@ -860,39 +877,6 @@
                 </ul>
             ]]></description>
             <enclosure url="https://github.com/PhamHungTien/PHTV/releases/download/v3.4.4/PHTV-3.4.4-intel.dmg" length="9294853" type="application/octet-stream" sparkle:edSignature="uCcFCMc2YqszeSbLFnVwMTc7oq0dLUCmUXwSya7KW9IDhMPJofxqROWyqJRXnBj0svTzK5h3vuiU1/XZvUIwCw=="/>
-        </item>
-        <item>
-            <title>3.4.3</title>
-            <pubDate>Wed, 22 Jul 2026 13:25:05 +0700</pubDate>
-            <sparkle:version>310</sparkle:version>
-            <sparkle:shortVersionString>3.4.3</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[
-                <h2>PHTV 3.4.3</h2>
-                <h3>Tổng quan</h3>
-                <p>PHTV 3.4.3 tập trung củng cố quyền riêng tư, độ an toàn của dữ liệu chẩn đoán và độ tin cậy của quy trình cập nhật. Phiên bản này không thay đổi cách gõ hoặc thiết lập hiện có.</p>
-                <h3>Security and Privacy</h3>
-                <ul>
-                <li>Khai báo dữ liệu của GIF/Sticker trong privacy manifest và hiển thị liên kết chính sách PHTV/Klipy ngay trong Cài đặt.</li>
-                <li>Loại dữ liệu tìm kiếm, URL media, đường dẫn Clipboard và payload TCC khỏi log chẩn đoán.</li>
-                <li>Khóa GitHub Actions bằng commit SHA, check in SwiftPM lockfile và thêm Dependabot/CODEOWNERS.</li>
-                </ul>
-                <h3>Engineering</h3>
-                <ul>
-                <li>Dùng <code>CHANGELOG.md</code> làm nguồn duy nhất cho nội dung GitHub Release và Sparkle; thêm validator/test để hai appcast theo kiến trúc không lệch metadata.</li>
-                <li>CI chạy toàn bộ XCTest không retry; workflow release có verify gate; lịch chạy sâu bổ sung static analysis và Thread Sanitizer.</li>
-                <li>Loại toàn bộ <code>nonisolated(unsafe)</code> khỏi runtime state, thay bằng state box có lock; settings backup không còn lưu <code>Any</code> trong type <code>@unchecked Sendable</code>.</li>
-                <li>Bổ sung tài liệu Privacy, Testing, Releasing, Compatibility, Security và Third-Party Notices cùng công cụ local tự nhận diện Xcode stable/beta.</li>
-                <li>Chuyển build/run helper, release metadata validator, repository policy và Homebrew cask updater sang Swift; repository không còn local tool <code>.py</code>/<code>.sh</code>.</li>
-                <li>Đồng bộ version/build mặc định của project Xcode với appcast và tự cập nhật sau mỗi lần phát hành, tránh build local mang version placeholder <code>1.0 (1)</code>.</li>
-                </ul>
-                <h3>Ghi chú nâng cấp</h3>
-                <ul>
-                <li>Không cần cấp thêm quyền hoặc thiết lập lại ứng dụng.</li>
-                <li>Thiết lập, macro, lịch sử Clipboard và quy tắc theo ứng dụng được giữ nguyên.</li>
-                </ul>
-            ]]></description>
-            <enclosure url="https://github.com/PhamHungTien/PHTV/releases/download/v3.4.3/PHTV-3.4.3-intel.dmg" length="9294837" type="application/octet-stream" sparkle:edSignature="gwmXiHmsuZjmiLtK808hRwGtonHfj552nRo0tBIJfPKmEcOzaHQiAbwUI1QWZ8QfUsh1ujHgG0zTSCnjixFbAg=="/>
         </item>
         <item>
             <title>2.8.9</title>
