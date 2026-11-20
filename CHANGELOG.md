@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.7.7] - 2026-11-21
+
+- Sửa lỗi của bản 3.7.6: trong ô chat của ChatGPT và những ô nhập nằm sâu trong
+  trang, gõ tắt vẫn bị lặp nội dung khi bật **Dùng Text Replacements của
+  macOS**. PHTV giờ chỉ coi là thanh địa chỉ khi ô nhập tự nhận là thanh địa chỉ
+  của trình duyệt (#245).
+
 ## [3.7.6] - 2026-11-21
 
 - Khi bật **Dùng Text Replacements của macOS**, gõ tắt trong trang web trên
