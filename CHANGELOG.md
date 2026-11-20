@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.7.6] - 2026-11-21
+
+- Khi bật **Dùng Text Replacements của macOS**, gõ tắt trong trang web trên
+  Chrome, Safari, Edge, Brave, Arc, Cốc Cốc… không còn bị lặp nội dung (`dtd`
+  ra "Đang trên đường!g trên đường!"). Các trình duyệt này tự thay từ viết tắt
+  của macOS trong ô nhập, nên PHTV để trình duyệt thay; ở thanh địa chỉ của
+  Chrome, nơi trình duyệt không tự thay, PHTV vẫn thay như trước (#245).
+
 ## [3.7.5] - 2026-11-20
 
 - Khi bật cả **Dùng Text Replacements của macOS** và **Viết hoa đầu câu**, từ
